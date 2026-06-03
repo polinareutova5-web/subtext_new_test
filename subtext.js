@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbx1El5q__qIjBuoNFT3nxYW7HLduyoaAseisl6iI4SgUKuMEBCMkwCgMQjz2v6xPzHp/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyrYqx4YHKj9iJAv0PN_CnTHzuSnz_WlAZN2InHB3_rrEvifecIT13TnA9pyIeyWsQ7/exec";
 let userId = "";
 let username = "";
 let currentCourse = "";
@@ -564,10 +564,10 @@ function renderCourseData() {
           const homeworkLink = getLessonHomeworkLink(l);
           const actions = [
             materialsLink
-              ? `<a href="${escapeAttr(materialsLink)}" target="_blank" rel="noopener" class="lesson-btn">Материалы</a>`
+              ? `<a href="${escapeAttr(materialsLink)}" target="_blank" rel="noopener" class="lesson-btn lesson-action-btn">Материалы</a>`
               : "",
             homeworkLink
-              ? `<a href="${escapeAttr(homeworkLink)}" target="_blank" rel="noopener" class="lesson-btn">ДЗ</a>`
+               ? `<a href="${escapeAttr(homeworkLink)}" target="_blank" rel="noopener" class="lesson-btn lesson-action-btn">ДЗ</a>`
               : "",
         ].filter(Boolean).join("<br>");
 
