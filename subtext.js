@@ -569,7 +569,7 @@ function renderCourseData() {
             homeworkLink
               ? `<a href="${escapeAttr(homeworkLink)}" target="_blank" rel="noopener" class="lesson-btn">ДЗ</a>`
               : "",
-          ].filter(Boolean).join("");
+        ].filter(Boolean).join("<br>");
 
           return `<div class="lesson-card">
           <strong>Урок ${escapeHtml(l.num)}</strong><br>
