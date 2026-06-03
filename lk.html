@@ -604,25 +604,26 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.32rem;
-      margin-top: 0.6rem;
+      gap: 0.24rem;
+      margin-top: 0.48rem;
     }
 
-    .lesson-actions .lesson-btn {
-     min-width: 104px;
-      margin-top: 0;
-      padding: 0.36rem 0.78rem;
-      border-radius: 20px;
-      font-size: 0.76rem;
-      font-weight: 600;
-      line-height: 1.1;
-      background: linear-gradient(135deg, #2584f5, #2fa9f3);
-      box-shadow: 0 5px 12px rgba(22, 119, 255, 0.16);
+    .lesson-card .lesson-actions .lesson-action-btn {
+      min-width: 78px !important;
+      margin-top: 0 !important;
+      padding: 0.24rem 0.56rem !important;
+      border-radius: 14px !important;
+      font-size: 0.66rem !important;
+      font-weight: 500 !important;
+      letter-spacing: 0.01em;
+      line-height: 1.05 !important;
+      background: linear-gradient(135deg, #2f8df2, #35b7df) !important;
+      box-shadow: 0 3px 7px rgba(22, 119, 255, 0.12) !important;
     }
 
-    .lesson-actions .lesson-btn:hover {
-      transform: translateY(-1px) scale(1.01);
-      box-shadow: 0 8px 18px rgba(22, 119, 255, 0.22), 0 0 0 3px rgba(53, 216, 255, 0.07);
+    .lesson-card .lesson-actions .lesson-action-btn:hover {
+      transform: translateY(-1px) scale(1.005);
+      box-shadow: 0 5px 10px rgba(22, 119, 255, 0.16), 0 0 0 2px rgba(53, 216, 255, 0.05) !important;
     }
 
 
@@ -660,9 +661,10 @@
     .announcement-list p { margin: 0.5rem 0; color: var(--muted); line-height: 1.7; }
     .announcement-list strong { color: var(--blue); }
 
-    #about > div {
-      max-width: 900px !important;
-      padding: 2.2rem !important;
+    .about-panel {
+      max-width: 940px;
+      margin: 0 auto;
+      padding: 2.2rem;
       border: 1px solid rgba(255, 255, 255, 0.78);
       border-radius: var(--radius-xl);
       background: var(--glass);
@@ -670,15 +672,91 @@
       backdrop-filter: blur(20px);
     }
 
-    #about h3 { color: var(--blue); }
-
-    #about div[style*="width: 200px"] {
-      width: 230px !important;
-      padding: 1.15rem;
-      border: 1px solid rgba(22, 119, 255, 0.14);
+    .about-intro {
+      max-width: 760px;
+      margin: 0 auto 2rem;
+      padding: 1rem 1.2rem;
       border-radius: var(--radius-lg);
-      background: rgba(255, 255, 255, 0.66);
-      box-shadow: 0 14px 32px rgba(7, 42, 83, 0.1);
+      color: #333;
+      font-size: 1.06rem;
+      line-height: 1.8;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.56);
+      border: 1px solid rgba(22, 119, 255, 0.1);
+    }
+
+    .about-teachers-title {
+      margin: 2.2rem 0 1.4rem;
+      color: var(--blue);
+      font-size: 1.4rem;
+      text-align: center;
+    }
+
+    .teacher-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.15rem;
+    }
+
+    .teacher-card {
+      position: relative;
+      overflow: hidden;
+      padding: 1.25rem 1rem;
+      border: 1px solid rgba(22, 119, 255, 0.16);
+      border-radius: var(--radius-lg);
+      text-align: center;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(235, 248, 255, 0.62));
+      box-shadow: 0 12px 26px rgba(7, 42, 83, 0.09);
+    }
+
+    .teacher-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 5px;
+      background: linear-gradient(90deg, var(--blue), var(--cyan));
+      opacity: 0.78;
+    }
+
+    .teacher-photo {
+      width: 128px;
+      height: 128px;
+      margin: 0 auto 0.9rem;
+      border: 4px solid rgba(255, 255, 255, 0.92);
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 8px 22px rgba(7, 42, 83, 0.16);
+    }
+
+    .teacher-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .teacher-name {
+      display: block;
+      color: var(--ink);
+      font-size: 1rem;
+      line-height: 1.3;
+    }
+
+    .teacher-subject {
+      display: inline-block;
+      margin-top: 0.45rem;
+      padding: 0.28rem 0.65rem;
+      border-radius: 999px;
+      color: var(--blue);
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: rgba(22, 119, 255, 0.08);
+    }
+
+    .teacher-bio {
+      margin-top: 0.85rem;
+      color: #5f6f7d;
+      font-size: 0.88rem;
+      line-height: 1.55;
     }
 
     .schedule-panel {
@@ -1105,60 +1183,48 @@
 
       <!-- ====================== РАЗДЕЛ "О НАС" ====================== -->
       <section id="about" class="section hidden">
-        <h2 style="text-align:center;margin-bottom:40px;">О нас</h2>
+       <h2>О нас</h2>
 
-        <div style="max-width:800px;margin:0 auto;padding:0 20px;">
-          <div style="text-align:center;font-size:1.08rem;line-height:1.8;color:#333;margin-bottom:50px;">
+       <div class="about-panel">
+          <div class="about-intro">
             Мы — Subtext, современная образовательная платформа, которая помогает ученикам уверенно осваивать английский, французский, испанские языки, биологию и физику. Скоро будут и другие предметы!<br><br>
             Работаем с 2025 года и помогаем ученикам достичь своих целей.
           </div>
 
-          <h3 style="text-align:center;margin:40px 0 30px;font-size:1.4rem;">Наши преподаватели</h3>
+           <h3 class="about-teachers-title">Наши преподаватели</h3>
 
-          <div style="display:flex;flex-wrap:wrap;gap:35px;justify-content:center;">
-            <div style="text-align:center;width:200px;">
-              <div style="width:150px;height:150px;margin:0 auto 15px;border-radius:50%;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,0.12);">
-                <img src="https://i.imgur.com/3rk6gSA.jpeg" style="width:100%;height:100%;object-fit:cover;" alt="Реутова Полина Дмитриевна">
+          <div class="teacher-grid">
+            <article class="teacher-card">
+              <div class="teacher-photo">
+                <img src="https://i.imgur.com/3rk6gSA.jpeg" alt="Реутова Полина Дмитриевна">
               </div>
-              <strong style="font-size:1.1rem;">Реутова Полина Дмитриевна</strong><br>
-              <small style="color:#555;">Английский язык</small>
-              <p style="font-size:0.92rem;margin-top:10px;color:#666;line-height:1.5;">
+             <strong class="teacher-name">Реутова Полина Дмитриевна</strong>
+              <span class="teacher-subject">Английский язык</span>
+              <p class="teacher-bio">
                 Работаю с учениками всех возрастов: помогаю детям учиться с интересом, а взрослым — уверенно достигать поставленных целей.
               </p>
-            </div>
-
-            <div style="text-align:center;width:200px;">
-              <div style="width:150px;height:150px;margin:0 auto 15px;border-radius:50%;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,0.12);">
-                <img src="https://i.imgur.com/cH16EwE.jpeg" style="width:100%;height:100%;object-fit:cover;" alt="Селезнева Татьяна Николаевна">
+           </article>
+            <article class="teacher-card">
+              <div class="teacher-photo">
+                <img src="https://i.imgur.com/cH16EwE.jpeg" alt="Селезнева Татьяна Николаевна">
               </div>
-              <strong style="font-size:1.1rem;">Селезнева Татьяна Николаевна</strong><br>
-              <small style="color:#555;">Физика</small>
-              <p style="font-size:0.92rem;margin-top:10px;color:#666;line-height:1.5;">
+            <strong class="teacher-name">Селезнева Татьяна Николаевна</strong>
+              <span class="teacher-subject">Физика</span>
+              <p class="teacher-bio">
                 Стаж преподавательской деятельности 35 лет. Учитель высшей категории по физике. Готовлю учеников к ОГЭ.
               </p>
-            </div>
+           </article>
             
-            <div style="text-align:center;width:200px;">
-              <div style="width:150px;height:150px;margin:0 auto 15px;border-radius:50%;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,0.12);">
-                <img src="https://i.imgur.com/cH16EwE.jpeg" style="width:100%;height:100%;object-fit:cover;" alt="Думчева Аделаида Андреевна">
+           <article class="teacher-card">
+              <div class="teacher-photo">
+                <img src="https://i.imgur.com/cH16EwE.jpeg" alt="Кимель Наталья Борисовна">
               </div>
-              <strong style="font-size:1.1rem;">Думчева Аделаида Андреевна</strong><br>
-              <small style="color:#555;">Биология</small>
-              <p style="font-size:0.92rem;margin-top:10px;color:#666;line-height:1.5;">
-                Биолог по призванию и по состоянию души. Закончила МПГУ по педагогическому образованию с профилями «Биология» и «Английский язык». Имею опыт подготовки школьников к ОГЭ и ЕГЭ, помогаю повышать успеваемость. 
-              </p>
-            </div>
-
-            <div style="text-align:center;width:200px;">
-              <div style="width:150px;height:150px;margin:0 auto 15px;border-radius:50%;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,0.12);">
-                <img src="https://i.imgur.com/AEAZQeU.jpeg" style="width:100%;height:100%;object-fit:cover;" alt="Кимель Наталья Борисовна">
-              </div>
-              <strong style="font-size:1.1rem;">Кимель Наталья Борисовна</strong><br>
-              <small style="color:#555;">Французский и испанский</small>
-              <p style="font-size:0.92rem;margin-top:10px;color:#666;line-height:1.5;">
-                Обучаю французскому и испанскому языкам через практику и погружение в культуру страны! Провожу занятия с учениками любого возраста. Готовлю к ОГЭ.Закончила МГЛУ (МГПИИЯ им. Мориса Тореза) с красным дипломом
-              </p>
-            </div>
+              < <strong class="teacher-name">Кимель Наталья Борисовна</strong>
+              <span class="teacher-subject">Французский и испанский</span>
+              <p class="teacher-bio">
+                Обучаю французскому и испанскому языкам через практику и погружение в культуру страны! Провожу занятия с учениками любого возраста. Помогаю детям школьного возраста повысить успеваемость и легче справляться с домашней работой. Готовлю к ОГЭ. Закончила МГЛУ (МГПИИЯ им. Мориса Тореза) с красным дипломом.
+            </p>
+              </article>
           </div>
         </div>
       </section>
