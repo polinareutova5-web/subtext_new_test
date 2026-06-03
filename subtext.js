@@ -167,6 +167,41 @@ function getSubmissionFormLink(course = getCurrentCourse()) {
   return "";
 }
 
+function getLessonLinkValue(lesson = {}, keys = []) {
+  for (const key of keys) {
+    const value = lesson[key];
+    if (value === undefined || value === null) continue;
+
+    if (typeof value === "string") {
+      const link = value.trim();
+      if (link) return link;
+      continue;
+    }
+
+    if (typeof value === "object" && !Array.isArray(value)) {
+      const link = String(value.link || value.url || value.href || "").trim();
+      if (link) return link;
+    }
+  }
+
+  return "";
+}
+
+function getLessonMaterialsLink(lesson = {}) {
+  return getLessonLinkValue(lesson, ["link", "materialLink", "materialsLink", "url"]);
+}
+
+function getLessonHomeworkLink(lesson = {}) {
+  return getLessonLinkValue(lesson, [
+    "hwLink",
+    "homeworkLink",
+    "homeworkUrl",
+    "hwUrl",
+    "homework",
+    "hw",
+  ]);
+}
+
 function renderSubmissionFormLink(course = getCurrentCourse()) {
   const linkEl = document.getElementById("submission-form-link");
   const emptyEl = document.getElementById("submission-form-empty");
@@ -522,12 +557,25 @@ function renderCourseData() {
 
   const lessons = document.getElementById("lessons-list");
   if (lessons) {
-    const list = (cabinetData.lessons || []).filter(l => l.course === course);
+    const list = (cabinetData.lessons || []).filter(l => normalizeCourseName(l.course) === normalizeCourseName(course));
     lessons.innerHTML = list.length
-      ? list.map(l => `<div class="lesson-card">
+     ? list.map(l => {
+          const materialsLink = getLessonMaterialsLink(l);
+          const homeworkLink = getLessonHomeworkLink(l);
+          const actions = [
+            materialsLink
+              ? `<a href="${escapeAttr(materialsLink)}" target="_blank" rel="noopener" class="lesson-btn">Материалы</a>`
+              : "",
+            homeworkLink
+              ? `<a href="${escapeAttr(homeworkLink)}" target="_blank" rel="noopener" class="lesson-btn">ДЗ</a>`
+              : "",
+          ].filter(Boolean).join("");
+
+          return `<div class="lesson-card">
           <strong>Урок ${escapeHtml(l.num)}</strong><br>
-          <a href="${escapeAttr(l.link)}" target="_blank" rel="noopener">Материалы</a>
-        </div>`).join("")
+           ${actions || '<span style="opacity:.6">Ссылки пока не добавлены</span>'}
+        </div>`;
+        }).join("")
       : "<p>Нет доступных уроков.</p>";
   }
 
