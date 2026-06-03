@@ -573,7 +573,7 @@
     /* ===== BUTTONS ===== */
     .lesson-btn,
     .buy-btn,
-    .big-hw-btn,
+    .big-form-btn,
     #support-chat button {
       position: relative;
       display: inline-block;
@@ -593,7 +593,7 @@
 
     .lesson-btn:hover,
     .buy-btn:hover,
-    .big-hw-btn:hover,
+    .big-form-btn:hover,
     #support-chat button:hover {
       transform: translateY(-3px) scale(1.025);
       box-shadow: 0 20px 48px rgba(22, 119, 255, 0.36), 0 0 0 6px rgba(53, 216, 255, 0.12);
@@ -960,7 +960,7 @@
     <nav class="nav-container" aria-label="Навигация по кабинету">
       <button onclick="showSection('profile')">Профиль</button>
       <button onclick="showSection('lessons')">Уроки</button>
-      <button onclick="showSection('homework')">ДЗ</button>
+      <button onclick="showSection('submission')">ДЗ</button>
       <button onclick="showSection('shop')">Магазин</button>
       <button onclick="showSection('schedule')">Расписание</button>
       <button onclick="showSection('materials')">Материалы</button>
@@ -1018,18 +1018,23 @@
       </section>
 
       <!-- ===== ДЗ ===== -->
-      <section id="homework" class="section hidden">
+         <section id="submission" class="section hidden">
         <div class="section-title">Сдать домашнее задание</div>
         <div class="glass-panel center-panel">
           <p style="margin-bottom:1.5rem;color:var(--muted);line-height:1.7">
             Нажмите кнопку ниже, чтобы открыть форму для отправки ДЗ.
           </p>
           <a
-            href="https://docs.google.com/forms/d/e/1FAIpQLSdyaEIut7zciiAfhbNexWHxXLy6eE1IoEwpprm-x8I-penPrw/viewform"
+             id="submission-form-link"
+            href="#"
             target="_blank"
-            class="big-hw-btn">
+             rel="noopener"
+            class="big-form-btn hidden">
             📄 Открыть форму ДЗ
           </a>
+           <p id="submission-form-empty" style="color:var(--muted);line-height:1.7">
+            Форма для выбранного предмета пока не назначена.
+          </p>
         </div>
       </section>
 
