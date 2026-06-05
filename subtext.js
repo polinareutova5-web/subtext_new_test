@@ -92,6 +92,57 @@ function getCourseMappedValue(source, course, fallback = "") {
   return fallback;
 }
 
+
+unction splitIdList(value) {
+  if (value === undefined || value === null) return [];
+  if (Array.isArray(value)) return value.flatMap(splitIdList);
+  return String(value)
+    .split(/[\n,;|]+/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeId(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function getAchievementCourse(achievement = {}) {
+  return achievement.course || achievement.subject || achievement.subjectKey || achievement.courseKey || "";
+}
+
+function getAchievementAssignedIds(achievement = {}) {
+  const idKeys = [
+    "userId",
+    "userID",
+    "userid",
+    "studentId",
+    "studentID",
+    "student_id",
+    "assigned_ids",
+    "assignedIds",
+    "userIds",
+    "users",
+    "ids",
+    "ID ученика",
+    "Айди ученика",
+    "айди ученика",
+    "ученик",
+  ];
+
+  return idKeys.flatMap(key => splitIdList(achievement[key]));
+}
+
+function isAchievementAssignedToCurrentUser(achievement = {}) {
+  const assignedIds = getAchievementAssignedIds(achievement);
+  if (!assignedIds.length) return true;
+
+  const currentUserIds = [userId, cabinetData?.user?.id, cabinetData?.user?.userId]
+    .map(normalizeId)
+    .filter(Boolean);
+
+  return assignedIds.some(id => currentUserIds.includes(normalizeId(id)));
+}
+
 function getCourseProgress(course = getCurrentCourse()) {
   const user = cabinetData?.user || {};
   const progressSource = user.progressByCourse || user.progresses || user.courseProgress || user.progress;
@@ -544,14 +595,23 @@ function renderCourseData() {
   
   const achievements = document.getElementById("achievements-list");
   if (achievements) {
-    const list = (cabinetData.achievements || []).filter(a => a.course === course);
+     const list = (cabinetData.achievements || []).filter(a => {
+      const achievementCourse = getAchievementCourse(a);
+      return normalizeCourseName(achievementCourse) === normalizeCourseName(course) && isAchievementAssignedToCurrentUser(a);
+    });
     achievements.innerHTML = list.length
-      ? list.map(a => `<div style="display:flex;flex-direction:column;align-items:center;width:100px;">
+     ? list.map(a => {
+          const title = a.title || a.name || a["название"] || a["Название"] || "Достижение";
+          const image = a.image || a.icon || a["иконка"] || a["Иконка"] || "";
+          return `<div style="display:flex;flex-direction:column;align-items:center;width:100px;">
           <div style="width:80px;height:80px;border-radius:50%;overflow:hidden;box-shadow:0 6px 16px rgba(0,0,0,.15);background:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
-            <img src="${escapeAttr(a.image)}" alt="${escapeAttr(a.title)}" style="width:100%;height:100%;object-fit:cover;">
+           ${image
+              ? `<img src="${escapeAttr(image)}" alt="${escapeAttr(title)}" style="width:100%;height:100%;object-fit:cover;">`
+              : `<span style="font-size:2rem" aria-hidden="true">🏆</span>`}
           </div>
-          <div style="font-size:0.8rem;text-align:center;font-weight:600;">${escapeHtml(a.title)}</div>
-        </div>`).join("")
+         <div style="font-size:0.8rem;text-align:center;font-weight:600;">${escapeHtml(title)}</div>
+        </div>`;
+        }).join("")
       : '<p style="opacity:.6">Пока нет достижений</p>';
   }
 
