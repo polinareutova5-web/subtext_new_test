@@ -266,14 +266,34 @@ function collectNotificationsFromData(data = {}) {
     u.notices,
   ];
 
+  let results = [];
+
   for (const candidate of candidates) {
-    const parsed = parseNotificationsValue(candidate);
-    if (parsed.length) return parsed;
+    if (!candidate) continue;
+
+    // если массив объектов, фильтруем по userId
+    if (Array.isArray(candidate)) {
+      const filtered = candidate.filter(item => {
+        const idsRaw = String(item.userId || item.userids || item.Получатели || "").trim();
+        if (!idsRaw) return false;
+        const ids = idsRaw.split(",").map(id => id.trim());
+        return ids.includes(String(userId));
+      });
+      if (filtered.length) {
+        results = filtered;
+        break;
+      }
+    } else if (typeof candidate === "string") {
+      const parsed = parseNotificationsValue(candidate);
+      if (parsed.length) {
+        results = parsed.map(text => ({ title: "Уведомление", text, read: false, sound: true }));
+        break;
+      }
+    }
   }
 
-  return [];
+  return results;
 }
-
 
 
 function renderNotifications(items = []) {
