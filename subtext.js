@@ -324,7 +324,9 @@ async function loadNotifications({ silent = false } = {}) {
   try {
     const res = await fetch(buildUrl({ action: "get_notifications", userId }));
     const data = await res.json();
-    const rawNotifications = collectNotificationsFromData(data);
+
+    // ==== ИСПРАВЛЕНИЕ: получаем массив уведомлений прямо из API ====
+    const rawNotifications = Array.isArray(data.notifications) ? data.notifications : [];
 
     if (!rawNotifications.length && data.success === false) {
       throw new Error(data.error || "Notifications action is unavailable");
@@ -334,6 +336,7 @@ async function loadNotifications({ silent = false } = {}) {
       notificationsLoadedOnce = true;
       return;
     }
+
     const nextNotifications = rawNotifications.map(normalizeNotification);
     const previousIds = new Set(notificationsCache.map(item => item.id));
     const hasNewSoundNotification = notificationsLoadedOnce
@@ -356,7 +359,6 @@ async function loadNotifications({ silent = false } = {}) {
     console.warn("Notifications API is unavailable", e);
   }
 }
-
 function startNotificationsPolling() {
   if (notificationsTimer) clearInterval(notificationsTimer);
   loadNotifications({ silent: true });
