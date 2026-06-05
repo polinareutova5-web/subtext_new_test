@@ -192,8 +192,57 @@ const COURSE_TABLES = {
 
 #### `ачивки`
 
-| уровень | название | иконка |
+Ачивки больше не должны начисляться по уровню. В каждой таблице предмета должен быть свой лист `Ачивки`, и строки в нем привязываются к ID ученика. Так у английского, физики, математики и других предметов могут быть разные наборы достижений для одного и того же ученика.
+
+Рекомендуемый формат, если одна строка — одна ачивка одного ученика:
+
+| userId | название | иконка |
 | --- | --- | --- |
+| 12345 | First speaking win | https://example.com/speaking.png |
+
+Если одну ачивку нужно выдать нескольким ученикам одной строкой, можно использовать список ID через запятую, точку с запятой или перенос строки:
+
+| assigned_ids | название | иконка |
+| --- | --- | --- |
+| 12345,67890 | Grammar hero | https://example.com/grammar.png |
+
+Apps Script должен читать лист `Ачивки` именно из таблицы выбранного предмета и возвращать только ачивки текущего `userId`, либо возвращать поле `userId`/`assigned_ids`, чтобы фронтенд дополнительно отфильтровал лишние достижения. Поле `уровень` для начисления ачивок больше не используется. Пример фильтрации на стороне Apps Script:
+
+```js
+function idListContains(value, userId) {
+  return String(value || '')
+    .split(/[\n,;|]+/)
+    .map(id => id.trim().toLowerCase())
+    .filter(Boolean)
+    .includes(String(userId).trim().toLowerCase());
+}
+
+function getAchievementsForUser(course, userId) {
+  const ss = SpreadsheetApp.openById(COURSE_TABLES[course]);
+  const sheet = ss.getSheetByName('Ачивки');
+  if (!sheet) return [];
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0].map(String);
+  const userIdCol = headers.indexOf('userId');
+  const assignedIdsCol = headers.indexOf('assigned_ids');
+  const titleCol = headers.indexOf('название');
+  const iconCol = headers.indexOf('иконка');
+
+  return rows.slice(1)
+    .filter(row => {
+      if (userIdCol >= 0 && String(row[userIdCol]).trim() === String(userId).trim()) return true;
+      if (assignedIdsCol >= 0 && idListContains(row[assignedIdsCol], userId)) return true;
+      return false;
+    })
+    .map(row => ({
+      course,
+      userId,
+      title: titleCol >= 0 ? row[titleCol] : '',
+      image: iconCol >= 0 ? row[iconCol] : '',
+    }));
+}
+```
 
 #### `ДЗ`
 
