@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbyIx2QD37NnOnn0gwdD8niNxKegjVply-Clb4citJ1IWzeBG8kpNtXt8XPolzw4ltk/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyxHBY2dlAN32_AU4uYmB-NKKPaJ4r168nZuyt6vzxV_2T5u3xS2JN8uw6xyPYdEoVS/exec";
 const SESSION_KEY = "subtextTeacherSession";
 
 let loginMode = "password";
