@@ -1,0 +1,143 @@
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subtext — Кабинет преподавателя</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="teacher.css" />
+</head>
+<body>
+  <main id="login-page" class="login-page">
+    <section class="login-card">
+      <div class="login-badge">Subtext teachers</div>
+      <h1>Кабинет преподавателя</h1>
+      <p>Вход отделён от ученического сайта. После авторизации все разделы автоматически фильтруются по предмету преподавателя.</p>
+
+      <div class="login-tabs" role="tablist" aria-label="Варианты входа">
+        <button id="tab-password" class="active" type="button" onclick="setLoginMode('password')">Логин + пароль</button>
+        <button id="tab-code" type="button" onclick="setLoginMode('code')">Код доступа</button>
+      </div>
+
+      <form id="teacher-login-form" class="login-form">
+        <div id="password-login-fields" class="login-fields">
+          <label>Логин<input id="teacher-login" autocomplete="username" placeholder="teacher@example.com" /></label>
+          <label>Пароль<input id="teacher-password" type="password" autocomplete="current-password" placeholder="••••••••" /></label>
+        </div>
+        <div id="code-login-fields" class="login-fields hidden">
+          <label>Код доступа<input id="teacher-code" autocomplete="one-time-code" placeholder="Например: PHYSICS-2026" /></label>
+        </div>
+        <button class="primary-btn" type="submit">Войти</button>
+        <div id="login-error" class="error" aria-live="polite"></div>
+      </form>
+      <a class="student-link" href="index.html">← Вход для учеников</a>
+    </section>
+  </main>
+
+  <main id="app-page" class="app-page hidden">
+    <aside class="sidebar">
+      <div class="brand">Subtext</div>
+      <div class="teacher-card-mini">
+        <span class="avatar">👩‍🏫</span>
+        <strong id="teacher-name">Преподаватель</strong>
+        <span id="teacher-subject" class="subject-pill">subject</span>
+        <select id="subject-switcher" class="subject-switcher hidden" aria-label="Выбор предмета"></select>
+      </div>
+      <nav id="teacher-nav" class="teacher-nav" aria-label="Разделы преподавателя">
+        <button class="active" data-section="dashboard">Главная</button>
+        <button data-section="students">Ученики</button>
+        <button data-section="lessons">Уроки</button>
+        <button data-section="materials">Материалы</button>
+        <button data-section="shop">Магазин</button>
+        <button data-section="slots">Слоты</button>
+        <button data-section="groups">Группы</button>
+        <button data-section="homework">Домашние задания</button>
+        <button data-section="support">Поддержка</button>
+        <button data-section="purchases">Покупки</button>
+        <button data-section="achievements">Достижения</button>
+        <button data-section="tools">Рассылка и монеты</button>
+        <button data-section="stats">Статистика</button>
+      </nav>
+      <button class="logout-btn" type="button" onclick="logoutTeacher()">Выйти</button>
+    </aside>
+
+    <section class="content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Единая система предметов</p>
+          <h1 id="section-title">Главная панель</h1>
+        </div>
+        <button class="ghost-btn" type="button" onclick="refreshCurrentSubject()">Обновить данные</button>
+      </header>
+
+      <div id="app-status" class="status hidden"></div>
+
+      <section id="dashboard" class="section active-section">
+        <div class="metric-grid">
+          <article class="metric"><span>Ученики</span><strong id="metric-students">0</strong></article>
+          <article class="metric"><span>Активные записи</span><strong id="metric-bookings">0</strong></article>
+          <article class="metric"><span>Вопросы поддержки</span><strong id="metric-support">0</strong></article>
+          <article class="metric"><span>Покупки</span><strong id="metric-purchases">0</strong></article>
+        </div>
+        <div class="dashboard-grid">
+          <article class="panel"><h2>Последние покупки</h2><div id="latest-purchases" class="compact-list"></div></article>
+          <article class="panel"><h2>Последние ДЗ</h2><div id="latest-homework" class="compact-list"></div></article>
+        </div>
+      </section>
+
+      <section id="students" class="section">
+        <div class="panel">
+          <div class="section-head"><h2>Ученики предмета</h2><input id="student-search" placeholder="Поиск по ID, имени, уровню..." /></div>
+          <div id="students-table" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <section id="lessons" class="section"><div class="panel"><div class="section-head"><h2>Уроки</h2></div><form id="lessons-form" class="editor-form"></form><div id="lessons-table" class="table-wrap"></div></div></section>
+      <section id="materials" class="section"><div class="panel"><div class="section-head"><h2>Материалы</h2></div><form id="materials-form" class="editor-form"></form><div id="materials-table" class="table-wrap"></div></div></section>
+      <section id="shop" class="section"><div class="panel"><div class="section-head"><h2>Магазин</h2></div><form id="shop-form" class="editor-form"></form><div id="shop-table" class="table-wrap"></div></div></section>
+      <section id="slots" class="section"><div class="panel"><div class="section-head"><h2>Индивидуальные слоты</h2></div><form id="slots-form" class="editor-form"></form><div id="slots-table" class="table-wrap"></div></div></section>
+      <section id="groups" class="section"><div class="panel"><div class="section-head"><h2>Групповые занятия</h2></div><form id="groups-form" class="editor-form"></form><div id="groups-table" class="table-wrap"></div></div></section>
+
+      <section id="homework" class="section"><div class="panel"><div class="section-head"><h2>Домашние задания</h2></div><div id="homework-table" class="table-wrap"></div></div></section>
+      <section id="support" class="section"><div class="panel"><div class="section-head"><h2>Поддержка</h2></div><div id="support-table" class="table-wrap"></div></div></section>
+      <section id="purchases" class="section"><div class="panel"><div class="section-head"><h2>Покупки</h2><input id="purchase-filter" placeholder="Фильтр по ученику" /></div><div id="purchases-table" class="table-wrap"></div></div></section>
+      <section id="achievements" class="section"><div class="panel"><div class="section-head"><h2>Достижения</h2></div><form id="achievements-form" class="editor-form"></form><div id="achievements-table" class="table-wrap"></div></div></section>
+
+      <section id="tools" class="section">
+        <div class="dashboard-grid">
+          <article class="panel">
+            <h2>Рассылка ученикам предмета</h2>
+            <textarea id="broadcast-message" rows="5" placeholder="Например: завтра занятие переносится на 18:00"></textarea>
+            <button class="primary-btn" type="button" onclick="sendBroadcast()">Отправить всем своим ученикам</button>
+          </article>
+          <article class="panel">
+            <h2>Массовая выдача монет</h2>
+            <label>Получатели<select id="coins-target"><option value="all">Все ученики предмета</option><option value="selected">Выбранные ID</option><option value="one">Один ученик</option></select></label>
+            <label>ID учеников<input id="coins-students" placeholder="12345, 67890" /></label>
+            <label>Количество монет<input id="coins-amount" type="number" min="1" value="10" /></label>
+            <button class="primary-btn" type="button" onclick="grantCoins()">Начислить монеты</button>
+          </article>
+        </div>
+      </section>
+
+      <section id="stats" class="section">
+        <div class="metric-grid">
+          <article class="metric"><span>Средний прогресс</span><strong id="stat-progress">0%</strong></article>
+          <article class="metric"><span>Покупки</span><strong id="stat-purchases">0</strong></article>
+          <article class="metric"><span>Посещённые занятия</span><strong id="stat-attended">0</strong></article>
+          <article class="metric"><span>Выполненные ДЗ</span><strong id="stat-homework">0</strong></article>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="student-dialog" class="modal">
+    <form method="dialog" class="modal-card" id="student-card-form">
+      <div class="section-head"><h2>Карточка ученика</h2><button class="icon-btn" value="cancel" aria-label="Закрыть">×</button></div>
+      <div id="student-card-fields" class="editor-form"></div>
+      <menu><button class="ghost-btn" value="cancel">Отмена</button><button class="primary-btn" value="default" type="submit">Сохранить</button></menu>
+    </form>
+  </dialog>
+
+  <script src="teacher.js"></script>
+</body>
+</html>
