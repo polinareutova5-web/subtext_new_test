@@ -523,6 +523,27 @@ function renderProgress(progress) {
   }
 }
 
+function getLessonHomeworkLink(lesson = {}) {
+  return String(
+    lesson.hwLink ||
+    lesson.hwlink ||
+    lesson.hw_link ||
+    lesson.homeworkLink ||
+    lesson.homework_link ||
+    lesson.homework ||
+    lesson.hw ||
+    lesson.dzLink ||
+    lesson.dzlink ||
+    lesson.dz_link ||
+    lesson.dz ||
+    lesson["ДЗ"] ||
+    lesson["дз"] ||
+    lesson["ДЗ ссылка"] ||
+    lesson["дз ссылка"] ||
+    ""
+  ).trim();
+}
+
 function renderCourseData() {
   if (!cabinetData) return;
   const course = getCurrentCourse();
@@ -544,10 +565,19 @@ function renderCourseData() {
   if (lessons) {
     const list = (cabinetData.lessons || []).filter(l => l.course === course);
     lessons.innerHTML = list.length
-      ? list.map(l => `<div class="lesson-card">
-          <strong>Урок ${escapeHtml(l.num)}</strong><br>
-          <a href="${escapeAttr(l.link)}" target="_blank" rel="noopener">Материалы</a>
-        </div>`).join("")
+     ? list.map(l => {
+          const materialLink = String(l.link || "").trim();
+          const homeworkLink = getLessonHomeworkLink(l);
+          const actions = [
+            materialLink ? `<a href="${escapeAttr(materialLink)}" target="_blank" rel="noopener" class="lesson-btn lesson-action-btn">Материалы</a>` : "",
+            homeworkLink ? `<a href="${escapeAttr(homeworkLink)}" target="_blank" rel="noopener" class="lesson-btn lesson-action-btn">ДЗ</a>` : "",
+          ].filter(Boolean).join("");
+
+          return `<div class="lesson-card">
+          <strong>Урок ${escapeHtml(l.num)}</strong>
+          <div class="lesson-actions">${actions || '<span style="opacity:.6">Ссылки пока не добавлены</span>'}</div>
+        </div>`;
+        }).join("")
       : "<p>Нет доступных уроков.</p>";
   }
 
