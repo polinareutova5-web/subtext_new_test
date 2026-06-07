@@ -602,21 +602,28 @@
 
     .lesson-actions {
       display: flex;
-      flex-direction: column;
+       flex-wrap: wrap;
       align-items: center;
-      gap: 0.24rem;
-      margin-top: 0.48rem;
+      justify-content: center;
+      gap: 0.34rem;
+      width: 100%;
+      margin: 0.58rem auto 0;
+      text-align: center;
     }
 
     .lesson-card .lesson-actions .lesson-action-btn {
-      min-width: 78px !important;
-      margin-top: 0 !important;
-      padding: 0.24rem 0.56rem !important;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      min-width: 72px !important;
+      margin: 0 !important;
+      padding: 0.28rem 0.62rem !important;
       border-radius: 14px !important;
-      font-size: 0.66rem !important;
-      font-weight: 500 !important;
+       font-size: 0.68rem !important;
+      font-weight: 600 !important;
       letter-spacing: 0.01em;
       line-height: 1.05 !important;
+      text-align: center;
       background: linear-gradient(135deg, #2f8df2, #35b7df) !important;
       box-shadow: 0 3px 7px rgba(22, 119, 255, 0.12) !important;
     }
@@ -1299,7 +1306,7 @@
     <button onclick="sendSupport()">Отправить</button>
   </div>
 
-    <script src="subtext.js?v=20260604-lesson-actions-slim"></script>
+     <script src="subtext.js?v=20260607-lesson-homework-actions"></script>
 
   <div class="hearts-container" id="hearts"></div>
 
