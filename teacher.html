@@ -214,33 +214,50 @@
     }
 
     function renderGrid() {
-      const table = document.getElementById('data-grid');
-      if (gridData.length === 0) {
-        table.innerHTML = '<tr><td>Лист пуст</td></tr>';
-        return;
-      }
+  const table = document.getElementById('data-grid');
+  
+  // Если данных нет вообще, показываем пустую таблицу с заголовками
+  if (gridData.length === 0) {
+    table.innerHTML = '<tr><td style="text-align:center;padding:20px;">Лист пуст. Добавьте строки или столбцы.</td></tr>';
+    return;
+  }
 
-      const cols = gridData[0].length;
-      const rows = gridData.length;
-      
-      let html = '<thead><tr><th class="corner row-header col-header"></th>';
-      for (let c = 0; c < cols; c++) {
-        html += `<th class="col-header" data-col="${c}">${String.fromCharCode(65 + c)}</th>`;
-      }
-      html += '</tr></thead><tbody>';
+  const cols = gridData[0].length;
+  const rows = gridData.length;
+  
+  // Добавляем 5 пустых строк внизу для удобства редактирования
+  const extraEmptyRows = 5;
+  const totalRows = rows + extraEmptyRows;
+  
+  let html = '<thead><tr><th class="corner row-header col-header"></th>';
+  for (let c = 0; c < cols; c++) {
+    html += `<th class="col-header" data-col="${c}">${String.fromCharCode(65 + c)}</th>`;
+  }
+  html += '</tr></thead><tbody>';
 
-      for (let r = 0; r < rows; r++) {
-        html += `<tr><th class="row-header" data-row="${r}">${r + 1}</th>`;
-        for (let c = 0; c < cols; c++) {
-          const val = gridData[r][c] !== null && gridData[r][c] !== undefined ? gridData[r][c] : '';
-          const isDirty = dirtyCells.has(`${r},${c}`);
-          html += `<td contenteditable="true" data-row="${r}" data-col="${c}" class="${isDirty ? 'dirty' : ''}" oninput="markDirty(this)" onblur="validateCell(this)">${escapeHtml(val)}</td>`;
-        }
-        html += '</tr>';
-      }
-      html += '</tbody>';
-      table.innerHTML = html;
+  // Рендерим существующие данные
+  for (let r = 0; r < rows; r++) {
+    html += `<tr><th class="row-header" data-row="${r}">${r + 1}</th>`;
+    for (let c = 0; c < cols; c++) {
+      const val = gridData[r][c] !== null && gridData[r][c] !== undefined ? gridData[r][c] : '';
+      const isDirty = dirtyCells.has(`${r},${c}`);
+      html += `<td contenteditable="true" data-row="${r}" data-col="${c}" class="${isDirty ? 'dirty' : ''}" oninput="markDirty(this)" onblur="validateCell(this)">${escapeHtml(val)}</td>`;
     }
+    html += '</tr>';
+  }
+
+  // Добавляем пустые строки внизу
+  for (let r = rows; r < totalRows; r++) {
+    html += `<tr><th class="row-header" data-row="${r}" style="color:#999;font-style:italic;">${r + 1}</th>`;
+    for (let c = 0; c < cols; c++) {
+      html += `<td contenteditable="true" data-row="${r}" data-col="${c}" style="color:#ccc;" oninput="markDirty(this)" onblur="validateCell(this)"></td>`;
+    }
+    html += '</tr>';
+  }
+
+  html += '</tbody>';
+  table.innerHTML = html;
+}
 
     function escapeHtml(text) {
       return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -260,48 +277,47 @@
     }
 
     async function saveChanges() {
-      if (dirtyCells.size === 0) {
-        setStatus('Нет изменений для сохранения');
-        return;
-      }
+  if (dirtyCells.size === 0) {
+    setStatus('Нет изменений для сохранения');
+    return;
+  }
 
-      showLoader(true);
-      setStatus('Сохранение...');
-      
-      try {
-        const changes = [];
-        dirtyCells.forEach((value, key) => {
-          const [r, c] = key.split(',').map(Number);
-          changes.push({ row: r, col: c, value: value });
-        });
+  showLoader(true);
+  setStatus('Сохранение...');
+  
+  try {
+    const changes = [];
+    dirtyCells.forEach((value, key) => {
+      const [r, c] = key.split(',').map(Number);
+      changes.push({ row: r, col: c, value: value });
+    });
 
-        const course = currentTableType === 'course' ? session.course : '';
-        const params = new URLSearchParams({
-          action: 'teacher_save_sheet',
-          tableType: currentTableType,
-          course: course,
-          sheetName: currentSheet,
-          changes: JSON.stringify(changes)
-        });
+    const course = currentTableType === 'course' ? session.course : '';
+    const params = new URLSearchParams({
+      action: 'teacher_save_sheet',
+      tableType: currentTableType,
+      course: course,
+      sheetName: currentSheet,
+      changes: JSON.stringify(changes)
+    });
 
-        const res = await fetch(`${API_URL}?${params.toString()}`);
-        const data = await res.json();
+    const res = await fetch(`${API_URL}?${params.toString()}`);
+    const data = await res.json();
 
-        if (data.success) {
-          dirtyCells.clear();
-          document.getElementById('save-btn').textContent = '💾 Сохранить изменения';
-          setStatus('✅ Успешно сохранено');
-          await loadData(currentSheet); // Перезагружаем для синхронизации
-        } else {
-          setStatus(data.error, true);
-        }
-      } catch (e) {
-        setStatus('Ошибка сохранения', true);
-      } finally {
-        showLoader(false);
-      }
+    if (data.success) {
+      dirtyCells.clear();
+      document.getElementById('save-btn').textContent = '💾 Сохранить изменения';
+      setStatus('✅ Успешно сохранено');
+      await loadData(currentSheet); // Перезагружаем для синхронизации
+    } else {
+      setStatus(data.error, true);
     }
-
+  } catch (e) {
+    setStatus('Ошибка сохранения', true);
+  } finally {
+    showLoader(false);
+  }
+}
     async function refreshData() {
       if (dirtyCells.size > 0 && !confirm('Есть несохраненные изменения. Обновить без сохранения?')) return;
       await loadData(currentSheet);
