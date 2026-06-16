@@ -310,126 +310,134 @@
 
     // --- Structural Changes ---
     async function addRow() {
-      const rowIndex = prompt('Введите номер строки для вставки (оставьте пустым для добавления в конец):');
-      if (rowIndex === null) return;
-      
-      showLoader(true);
-      try {
-        const course = currentTableType === 'course' ? session.course : '';
-        const idx = rowIndex === '' ? -1 : Number(rowIndex) - 1;
-        const params = new URLSearchParams({
-          action: 'teacher_add_row',
-          tableType: currentTableType,
-          course: course,
-          sheetName: currentSheet,
-          rowIndex: idx,
-          rowData: JSON.stringify([]) // Пустая строка
-        });
-        const res = await fetch(`${API_URL}?${params.toString()}`);
-        const data = await res.json();
-        if (data.success) {
-          await loadData(currentSheet);
-          setStatus('Строка добавлена');
-        } else {
-          setStatus(data.error, true);
-        }
-      } catch (e) {
-        setStatus('Ошибка', true);
-      } finally {
-        showLoader(false);
-      }
+  const rowIndex = prompt('Введите номер строки для вставки (оставьте пустым, чтобы добавить в самый конец):');
+  if (rowIndex === null) return; // Пользователь нажал "Отмена"
+  
+  showLoader(true);
+  try {
+    const course = currentTableType === 'course' ? session.course : '';
+    // Если пусто, передаем пустую строку, бэкенд поймет это как "в конец"
+    const idx = rowIndex.trim() === '' ? '' : Number(rowIndex) - 1;
+    
+    const params = new URLSearchParams({
+      action: 'teacher_add_row',
+      tableType: currentTableType,
+      course: course,
+      sheetName: currentSheet,
+      rowIndex: idx,
+      rowData: JSON.stringify(['']) // Гарантированно передаем массив с одним пустым элементом
+    });
+    
+    const res = await fetch(`${API_URL}?${params.toString()}`);
+    const data = await res.json();
+    
+    if (data.success) {
+      await loadData(currentSheet);
+      setStatus('✅ Строка добавлена');
+    } else {
+      setStatus(data.error, true);
     }
+  } catch (e) {
+    setStatus('Ошибка при добавлении строки', true);
+  } finally {
+    showLoader(false);
+  }
+}
 
-    async function deleteRow() {
-      const rowIndex = prompt('Введите номер строки для удаления:');
-      if (!rowIndex) return;
-      if (!confirm(`Удалить строку ${rowIndex}?`)) return;
+async function deleteRow() {
+  const rowIndex = prompt('Введите номер строки для удаления:');
+  if (!rowIndex) return;
+  if (!confirm(`Удалить строку ${rowIndex}?`)) return;
 
-      showLoader(true);
-      try {
-        const course = currentTableType === 'course' ? session.course : '';
-        const params = new URLSearchParams({
-          action: 'teacher_delete_row',
-          tableType: currentTableType,
-          course: course,
-          sheetName: currentSheet,
-          rowIndex: Number(rowIndex) - 1
-        });
-        const res = await fetch(`${API_URL}?${params.toString()}`);
-        const data = await res.json();
-        if (data.success) {
-          await loadData(currentSheet);
-          setStatus('Строка удалена');
-        } else {
-          setStatus(data.error, true);
-        }
-      } catch (e) {
-        setStatus('Ошибка', true);
-      } finally {
-        showLoader(false);
-      }
+  showLoader(true);
+  try {
+    const course = currentTableType === 'course' ? session.course : '';
+    const params = new URLSearchParams({
+      action: 'teacher_delete_row',
+      tableType: currentTableType,
+      course: course,
+      sheetName: currentSheet,
+      rowIndex: Number(rowIndex) - 1
+    });
+    const res = await fetch(`${API_URL}?${params.toString()}`);
+    const data = await res.json();
+    if (data.success) {
+      await loadData(currentSheet);
+      setStatus('✅ Строка удалена');
+    } else {
+      setStatus(data.error, true);
     }
+  } catch (e) {
+    setStatus('Ошибка при удалении строки', true);
+  } finally {
+    showLoader(false);
+  }
+}
 
-    async function addColumn() {
-      const colIndex = prompt('Введите номер столбца (букву A=1, B=2...) для вставки после него:');
-      if (!colIndex) return;
-      const colNum = colIndex.toUpperCase().charCodeAt(0) - 65;
-      
-      showLoader(true);
-      try {
-        const course = currentTableType === 'course' ? session.course : '';
-        const params = new URLSearchParams({
-          action: 'teacher_add_column',
-          tableType: currentTableType,
-          course: course,
-          sheetName: currentSheet,
-          colIndex: colNum
-        });
-        const res = await fetch(`${API_URL}?${params.toString()}`);
-        const data = await res.json();
-        if (data.success) {
-          await loadData(currentSheet);
-          setStatus('Столбец добавлен');
-        } else {
-          setStatus(data.error, true);
-        }
-      } catch (e) {
-        setStatus('Ошибка', true);
-      } finally {
-        showLoader(false);
-      }
+async function addColumn() {
+  const colIndex = prompt('Введите букву столбца (A, B, C...), ПОСЛЕ которого нужно вставить новый (оставьте пустым, чтобы добавить в самый конец):');
+  if (colIndex === null) return;
+  
+  showLoader(true);
+  try {
+    const course = currentTableType === 'course' ? session.course : '';
+    // Если пусто, передаем пустую строку
+    const idx = colIndex.trim() === '' ? '' : colIndex.toUpperCase().charCodeAt(0) - 65;
+    
+    const params = new URLSearchParams({
+      action: 'teacher_add_column',
+      tableType: currentTableType,
+      course: course,
+      sheetName: currentSheet,
+      colIndex: idx
+    });
+    
+    const res = await fetch(`${API_URL}?${params.toString()}`);
+    const data = await res.json();
+    
+    if (data.success) {
+      await loadData(currentSheet);
+      setStatus('✅ Столбец добавлен');
+    } else {
+      setStatus(data.error, true);
     }
+  } catch (e) {
+    setStatus('Ошибка при добавлении столбца', true);
+  } finally {
+    showLoader(false);
+  }
+}
 
-    async function deleteColumn() {
-      const colIndex = prompt('Введите номер столбца (букву A=1, B=2...) для удаления:');
-      if (!colIndex) return;
-      const colNum = colIndex.toUpperCase().charCodeAt(0) - 65;
-      if (!confirm(`Удалить столбец ${colIndex.toUpperCase()}?`)) return;
+async function deleteColumn() {
+  const colIndex = prompt('Введите букву столбца (A, B, C...) для удаления:');
+  if (!colIndex) return;
+  const colNum = colIndex.toUpperCase().charCodeAt(0) - 65;
+  if (!confirm(`Удалить столбец ${colIndex.toUpperCase()}?`)) return;
 
-      showLoader(true);
-      try {
-        const course = currentTableType === 'course' ? session.course : '';
-        const params = new URLSearchParams({
-          action: 'teacher_delete_column',
-          tableType: currentTableType,
-          course: course,
-          sheetName: currentSheet,
-          colIndex: colNum
-        });
-        const res = await fetch(`${API_URL}?${params.toString()}`);
-        const data = await res.json();
-        if (data.success) {
-          await loadData(currentSheet);
-          setStatus('Столбец удален');
-        } else {
-          setStatus(data.error, true);
-        }
-      } catch (e) {
-        setStatus('Ошибка', true);
-      } finally {
-        showLoader(false);
-      }
+  showLoader(true);
+  try {
+    const course = currentTableType === 'course' ? session.course : '';
+    const params = new URLSearchParams({
+      action: 'teacher_delete_column',
+      tableType: currentTableType,
+      course: course,
+      sheetName: currentSheet,
+      colIndex: colNum
+    });
+    const res = await fetch(`${API_URL}?${params.toString()}`);
+    const data = await res.json();
+    if (data.success) {
+      await loadData(currentSheet);
+      setStatus('✅ Столбец удален');
+    } else {
+      setStatus(data.error, true);
     }
+  } catch (e) {
+    setStatus('Ошибка при удалении столбца', true);
+  } finally {
+    showLoader(false);
+  }
+}
 
     // --- Search ---
     function searchGrid(query) {
