@@ -77,7 +77,6 @@ body::after {
 }
 .teacher-link {
   position: fixed;
-  display: none;
   top: 25px;
   right: 25px;
   z-index: 1000;
@@ -93,13 +92,19 @@ body::after {
   font-weight: 600;
 
   border: 1px solid rgba(255,255,255,.25);
-  transition: .2s;
+
+  opacity: 0;
+  pointer-events: none;
+  transition: .3s;
 }
 
-.teacher-link:hover {
-  transform: translateY(-2px);
-  background: rgba(255,255,255,.25);
+body[data-on="true"] .teacher-link {
+  opacity: 1;
+  pointer-events: auto;
 }
+  <a href="teacher-login.html" class="teacher-link">
+  ➜ Вход для преподавателей
+</a>
   
 .page-shell {
   position: relative;
@@ -429,7 +434,4 @@ async function enterById() {
 </script>
 
 </body>
-  <a href="teacher-login.html" class="teacher-link">
-  ➜ Вход для преподавателей
-</a>
 </html>
