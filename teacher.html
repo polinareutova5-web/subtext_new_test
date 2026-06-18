@@ -17,47 +17,8 @@
     .header-actions button.primary:hover { background: #1b5e20; }
 
     /* Layout */
-   .main-container{
-  flex:1;
-  overflow:hidden;
-
-  width:100%;
-  max-width:1900px;
-
-  margin:0 auto;
-
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-
-.top-switcher{
-  display:flex;
-  gap:12px;
-
-  padding:12px 20px;
-
-  background:white;
-
-  border-bottom:1px solid var(--border);
-}
-
-.switch-btn{
-  padding:10px 18px;
-
-  border:none;
-
-  border-radius:12px;
-
-  cursor:pointer;
-
-  font-weight:600;
-}
-
-.switch-btn.active{
-  background:#1677ff;
-  color:white;
-}    
+    .main-container { display: flex; flex: 1; overflow: hidden; }
+    
     /* Sidebar */
     .sidebar { width: 220px; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
     .sidebar-title { padding: 1rem; font-size: 0.85rem; text-transform: uppercase; color: #666; font-weight: 600; letter-spacing: 0.5px; }
@@ -78,26 +39,8 @@
     .toolbar button:hover { background: var(--hover); }
 
     /* Grid */
-   .grid-container{
-  flex:1;
-  overflow:auto;
-  position:relative;
-  background:white;
-
-  display:flex;
-  justify-content:center;
-
-  padding:20px;
-}
-
-table.grid{
-  border-collapse:collapse;
-
-  width:auto;
-  min-width:1600px;
-
-  margin:0 auto;
-}
+    .grid-container { flex: 1; overflow: auto; position: relative; background: white; }
+    table.grid { border-collapse: collapse; min-width: 100%; }
     .grid th, .grid td { border: 1px solid var(--border); padding: 4px 8px; font-size: 0.9rem; min-width: 80px; position: relative; }
     .grid th { background: #f8f9fa; font-weight: 600; text-align: center; position: sticky; top: 0; z-index: 10; user-select: none; }
     .grid th.row-header { position: sticky; left: 0; z-index: 11; width: 40px; min-width: 40px; }
@@ -127,18 +70,11 @@ table.grid{
   </div>
 
   <div class="main-container">
-  <div class="top-switcher">
-  <button class="switch-btn active"
-          onclick="selectTable('main', this)">
-          📊 Главная таблица
-  </button>
-
-  <button class="switch-btn"
-          id="course-table-btn"
-          onclick="selectTable('course', this)">
-          📚 Таблица предмета
-  </button>
-</div>
+    <div class="sidebar">
+      <div class="sidebar-title">Таблицы</div>
+      <div class="sidebar-item active" onclick="selectTable('main', this)">📊 Главная таблица</div>
+      <div class="sidebar-item" id="course-table-btn" onclick="selectTable('course', this)">📚 Таблица предмета</div>
+    </div>
 
     <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
       <div class="sheet-tabs" id="sheet-tabs">
