@@ -136,19 +136,40 @@ body::after{
 /* Карточка */
 
 .login-card{
+  position:relative;
+  z-index:10;
 
-transition:.35s;
+  width:100%;
+  max-width:430px;
 
+  padding:40px;
+
+  border-radius:32px;
+
+  background:var(--glass);
+
+  backdrop-filter:blur(24px);
+
+  border:1px solid rgba(255,255,255,.75);
+
+  box-shadow:var(--shadow);
+
+  text-align:center;
 }
 
-.login-card:hover{
+.login-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
 
-transform:translateY(-5px);
+  background:
+    radial-gradient(
+    circle at top left,
+    rgba(255,95,162,.18),
+    transparent 40%);
 
-box-shadow:
-
-0 35px 100px rgba(0,0,0,.35);
-
+  pointer-events:none;
 }
 
 /* Бейдж */
