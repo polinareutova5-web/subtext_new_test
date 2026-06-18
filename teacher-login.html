@@ -162,8 +162,38 @@ body::after{
   position:absolute;
   inset:0;
   border-radius:inherit;
+.login-card::after{
 
-  background:
+content:"";
+
+position:absolute;
+
+left:0;
+
+right:0;
+
+top:0;
+
+height:90px;
+
+border-radius:32px 32px 100px 100px;
+
+background:
+
+linear-gradient(
+
+180deg,
+
+rgba(255,255,255,.35),
+
+transparent
+
+);
+
+pointer-events:none;
+
+}
+ background:
     radial-gradient(
     circle at top left,
     rgba(255,95,162,.18),
