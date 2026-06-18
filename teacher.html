@@ -18,6 +18,25 @@
 
     /* Layout */
     .main-container { display: flex; flex: 1; overflow: hidden; }
+    .content-area {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    padding: 24px;
+    overflow: auto;
+}
+
+.workspace {
+    width: 100%;
+    max-width: 1450px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    overflow: hidden;
+}
     
     /* Sidebar */
     .sidebar { width: 220px; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
@@ -76,7 +95,8 @@
       <div class="sidebar-item" id="course-table-btn" onclick="selectTable('course', this)">📚 Таблица предмета</div>
     </div>
 
-    <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+   <div class="content-area">
+    <div class="workspace">
       <div class="sheet-tabs" id="sheet-tabs">
         <!-- Tabs will be injected here -->
       </div>
@@ -95,9 +115,9 @@
         <table class="grid" id="data-grid">
           <!-- Grid will be injected here -->
         </table>
-      </div>
+           </div>
     </div>
-  </div>
+</div>
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbwGrFXFbV3HFG7uVapM6J8kNjcjmWZP9gjycgHS4rTPdc4WcKBjj4MOvA-kKGHQCNsr/exec"; // Укажите ваш актуальный URL
