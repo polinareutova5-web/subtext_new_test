@@ -136,25 +136,19 @@ body::after{
 /* Карточка */
 
 .login-card{
-  position:relative;
-  z-index:10;
 
-  width:100%;
-  max-width:430px;
+transition:.35s;
 
-  padding:40px;
+}
 
-  border-radius:32px;
+.login-card:hover{
 
-  background:var(--glass);
+transform:translateY(-5px);
 
-  backdrop-filter:blur(24px);
+box-shadow:
 
-  border:1px solid rgba(255,255,255,.75);
+0 35px 100px rgba(0,0,0,.35);
 
-  box-shadow:var(--shadow);
-
-  text-align:center;
 }
 
 .login-card::before{
@@ -359,6 +353,23 @@ body::marker{
         opacity:.7;
 
     }
+
+}
+   .o2{
+
+opacity:.45;
+
+}
+
+.o5{
+
+opacity:.35;
+
+}
+
+.o7{
+
+opacity:.5;
 
 }
 </style>
