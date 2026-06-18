@@ -1,90 +1,37 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Subtext — Вход для преподавателя</title>
-  <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f8; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-    .login-card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 360px; }
-    h2 { text-align: center; color: #2e7d32; margin-bottom: 1.5rem; }
-    input { width: 100%; padding: 10px; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
-    button { width: 100%; padding: 12px; background: #2e7d32; color: white; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
-    button:hover { background: #1b5e20; }
-    .error { color: #d32f2f; text-align: center; margin-bottom: 1rem; font-size: 0.9rem; display: none; }
-    .back-link { display: block; text-align: center; margin-top: 1rem; color: #666; text-decoration: none; font-size: 0.9rem; }
-    .student-link {
-  position: fixed;
-  top: 25px;
-  right: 25px;
+<div class="login-card">
 
-  padding: 10px 18px;
-  border-radius: 999px;
-
-  background: white;
-  color: #2e7d32;
-
-  text-decoration: none;
-  font-weight: 600;
-
-  box-shadow: 0 4px 20px rgba(0,0,0,.08);
-}
-  </style>
-</head>
-<body>
-  <div class="login-card">
-    <h2>👨‍🏫 Subtext Teacher</h2>
-    <div id="error-msg" class="error"></div>
-    <input type="text" id="login" placeholder="Логин" autocomplete="username">
-    <input type="password" id="password" placeholder="Пароль" autocomplete="current-password">
-    <button onclick="handleLogin()">Войти в систему</button>
-    <a href="index.html" class="back-link">← Вернуться к входу для учеников</a>
+  <div class="badge">
+    ПРЕПОДАВАТЕЛЬ
   </div>
 
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwGrFXFbV3HFG7uVapM6J8kNjcjmWZP9gjycgHS4rTPdc4WcKBjj4MOvA-kKGHQCNsr/exec"; // Укажите ваш актуальный URL развертывания
+  <h2>👩‍🏫 Teacher Portal</h2>
 
-    async function handleLogin() {
-      const login = document.getElementById('login').value.trim();
-      const password = document.getElementById('password').value.trim();
-      const errorEl = document.getElementById('error-msg');
-      
-      if (!login || !password) {
-        errorEl.textContent = 'Заполните все поля';
-        errorEl.style.display = 'block';
-        return;
-      }
+  <div class="subtitle">
+    Вход в личный кабинет преподавателя
+  </div>
 
-      errorEl.style.display = 'none';
-      const btn = document.querySelector('button');
-      btn.textContent = 'Проверка...';
-      btn.disabled = true;
+  <div id="error-msg" class="error"></div>
 
-      try {
-        const url = `${API_URL}?action=teacher_login&login=${encodeURIComponent(login)}&password=${encodeURIComponent(password)}`;
-        const res = await fetch(url);
-        const data = await res.json();
+  <input
+    type="text"
+    id="login"
+    placeholder="Логин"
+    autocomplete="username"
+  >
 
-        if (data.success) {
-          localStorage.setItem('teacherSession', JSON.stringify({
-            token: data.token,
-            teacherName: data.teacherName,
-            course: data.course,
-            login: login
-          }));
-          window.location.href = 'teacher.html';
-        } else {
-          errorEl.textContent = data.error || 'Ошибка авторизации';
-          errorEl.style.display = 'block';
-        }
-      } catch (e) {
-        errorEl.textContent = 'Ошибка соединения с сервером';
-        errorEl.style.display = 'block';
-      } finally {
-        btn.textContent = 'Войти в систему';
-        btn.disabled = false;
-      }
-    }
-  </script>
-</body>
-</html>
+  <input
+    type="password"
+    id="password"
+    placeholder="Пароль"
+    autocomplete="current-password"
+  >
+
+  <button onclick="handleLogin()">
+    Войти в систему
+  </button>
+
+  <a href="index.html" class="back-link">
+    ← Вернуться ко входу для учеников
+  </a>
+
+</div>
