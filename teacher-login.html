@@ -233,6 +233,8 @@ h2{
   color:var(--text);
   font-size:30px;
   margin-bottom:8px;
+ text-shadow:
+  0 0 20px rgba(80,180,255,.18);
 }
 
 .subtitle{
@@ -274,6 +276,8 @@ input:focus{
 /* Кнопка */
 
 button{
+ position:relative;
+ overflow:hidden;
   width:100%;
 
   border:none;
@@ -300,6 +304,36 @@ button{
   0 15px 35px rgba(22,119,255,.28);
 
   transition:.25s;
+}
+
+button::after{
+
+content:"";
+
+position:absolute;
+
+top:-60%;
+
+left:-40px;
+
+width:35px;
+
+height:220%;
+
+background:
+
+rgba(255,255,255,.45);
+
+transform:rotate(25deg);
+
+transition:.6s;
+
+}
+
+button:hover::after{
+
+left:120%;
+
 }
 
 button:hover{
