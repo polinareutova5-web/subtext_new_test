@@ -1,4 +1,325 @@
-html> <html lang="ru"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Subtext — Вход для преподавателя</title>
+ <!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subtext — Вход для преподавателя</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+:root{
+  --blue:#1677ff;
+  --blue-dark:#0757c7;
+  --cyan:#35d8ff;
+
+  --pink:#ff5fa2;
+  --pink-light:#ff9ac4;
+
+  --glass:rgba(255,255,255,.82);
+
+  --text:#14324a;
+  --muted:#6b7f92;
+
+  --shadow:
+    0 25px 80px rgba(4,35,74,.25);
+
+  --line:
+    rgba(255,255,255,.35);
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  min-height:100vh;
+  font-family:'Poppins',sans-serif;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  overflow:hidden;
+  position:relative;
+
+  background:
+    radial-gradient(circle at 15% 15%, rgba(255,95,162,.18), transparent 28rem),
+    radial-gradient(circle at 85% 10%, rgba(22,119,255,.18), transparent 28rem),
+    radial-gradient(circle at 80% 90%, rgba(53,216,255,.15), transparent 30rem),
+    linear-gradient(135deg,#061326 0%,#07192f 55%,#0e3a66 100%);
+}
+
+/* Фоновое свечение */
+
+body::before,
+body::after{
+  content:"";
+  position:fixed;
+  border-radius:50%;
+  pointer-events:none;
+}
+
+body::before{
+  width:520px;
+  height:520px;
+  left:-180px;
+  bottom:-180px;
+
+  background:
+  radial-gradient(circle,
+  rgba(255,95,162,.35),
+  transparent 70%);
+}
+
+body::after{
+  width:480px;
+  height:480px;
+  right:-160px;
+  top:-160px;
+
+  background:
+  radial-gradient(circle,
+  rgba(53,216,255,.25),
+  transparent 70%);
+}
+
+/* Орбы */
+
+.orb{
+  position:absolute;
+  border-radius:50%;
+
+  backdrop-filter:blur(14px);
+
+  border:1px solid rgba(255,255,255,.18);
+
+  animation:float 8s ease-in-out infinite;
+}
+
+.blue{
+  background:
+  linear-gradient(
+  135deg,
+  rgba(53,216,255,.25),
+  rgba(255,255,255,.08));
+}
+
+.pink{
+  background:
+  linear-gradient(
+  135deg,
+  rgba(255,95,162,.25),
+  rgba(255,255,255,.08));
+}
+
+.o1{width:140px;height:140px;left:5%;top:15%;}
+.o2{width:90px;height:90px;right:10%;top:18%;animation-delay:-2s;}
+.o3{width:70px;height:70px;left:12%;bottom:15%;animation-delay:-4s;}
+.o4{width:110px;height:110px;right:18%;bottom:10%;animation-delay:-3s;}
+
+.o5{width:55px;height:55px;left:30%;top:10%;animation-delay:-1s;}
+.o6{width:75px;height:75px;right:35%;top:12%;animation-delay:-5s;}
+.o7{width:95px;height:95px;left:25%;bottom:8%;animation-delay:-6s;}
+.o8{width:65px;height:65px;right:30%;bottom:20%;animation-delay:-7s;}
+
+@keyframes float{
+  0%,100%{
+    transform:translateY(0);
+  }
+  50%{
+    transform:translateY(-22px);
+  }
+}
+
+/* Карточка */
+
+.login-card{
+  position:relative;
+  z-index:10;
+
+  width:100%;
+  max-width:430px;
+
+  padding:40px;
+
+  border-radius:32px;
+
+  background:var(--glass);
+
+  backdrop-filter:blur(24px);
+
+  border:1px solid rgba(255,255,255,.75);
+
+  box-shadow:var(--shadow);
+
+  text-align:center;
+}
+
+.login-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+
+  background:
+    radial-gradient(
+    circle at top left,
+    rgba(255,95,162,.18),
+    transparent 40%);
+
+  pointer-events:none;
+}
+
+/* Бейдж */
+
+.badge{
+  display:inline-block;
+
+  padding:8px 14px;
+
+  border-radius:999px;
+
+  background:
+  rgba(255,255,255,.85);
+
+  color:var(--pink);
+
+  font-size:12px;
+  font-weight:700;
+
+  letter-spacing:.12em;
+  text-transform:uppercase;
+
+  margin-bottom:18px;
+
+  border:1px solid rgba(255,95,162,.15);
+}
+
+/* Заголовок */
+
+h2{
+  color:var(--text);
+  font-size:30px;
+  margin-bottom:8px;
+}
+
+.subtitle{
+  color:var(--muted);
+  font-size:14px;
+  margin-bottom:28px;
+}
+
+/* Поля */
+
+input{
+  width:100%;
+
+  padding:15px 18px;
+
+  margin-bottom:14px;
+
+  border-radius:16px;
+
+  border:1px solid rgba(22,119,255,.15);
+
+  background:
+  rgba(255,255,255,.85);
+
+  font-size:15px;
+
+  transition:.25s;
+}
+
+input:focus{
+  outline:none;
+
+  border-color:var(--pink);
+
+  box-shadow:
+  0 0 0 4px rgba(255,95,162,.12);
+}
+
+/* Кнопка */
+
+button{
+  width:100%;
+
+  border:none;
+
+  border-radius:16px;
+
+  padding:15px;
+
+  color:white;
+
+  font-size:15px;
+  font-weight:600;
+
+  cursor:pointer;
+
+  background:
+  linear-gradient(
+  135deg,
+  var(--blue),
+  var(--cyan),
+  var(--pink));
+
+  box-shadow:
+  0 15px 35px rgba(22,119,255,.28);
+
+  transition:.25s;
+}
+
+button:hover{
+  transform:translateY(-3px);
+
+  box-shadow:
+  0 20px 45px rgba(22,119,255,.35);
+}
+
+/* Ошибка */
+
+.error{
+  display:none;
+
+  color:#d32f2f;
+
+  margin-bottom:14px;
+
+  font-size:14px;
+}
+
+/* Ссылка */
+
+.back-link{
+  display:inline-block;
+
+  margin-top:18px;
+
+  color:var(--blue);
+
+  text-decoration:none;
+
+  font-weight:600;
+}
+
+.back-link:hover{
+  color:var(--pink);
+}
+</head>
+<body>
+    <div class="orb blue o1"></div>
+<div class="orb blue o2"></div>
+<div class="orb blue o3"></div>
+<div class="orb blue o4"></div>
+
+<div class="orb pink o5"></div>
+<div class="orb pink o6"></div>
+<div class="orb pink o7"></div>
+<div class="orb pink o8"></div>
+
 <div class="login-card">
 
   <div class="badge">
@@ -36,3 +357,53 @@ html> <html lang="ru"> <head> <meta charset="UTF-8"> <meta name="viewport" conte
   </a>
 
 </div>
+    
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbwGrFXFbV3HFG7uVapM6J8kNjcjmWZP9gjycgHS4rTPdc4WcKBjj4MOvA-kKGHQCNsr/exec"; // Укажите ваш актуальный URL развертывания
+
+    async function handleLogin() {
+      const login = document.getElementById('login').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const errorEl = document.getElementById('error-msg');
+      
+      if (!login || !password) {
+        errorEl.textContent = 'Заполните все поля';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      errorEl.style.display = 'none';
+      const btn = document.querySelector('button');
+      btn.textContent = 'Проверка...';
+      btn.disabled = true;
+
+      try {
+        const url = `${API_URL}?action=teacher_login&login=${encodeURIComponent(login)}&password=${encodeURIComponent(password)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.success) {
+          localStorage.setItem('teacherSession', JSON.stringify({
+            token: data.token,
+            teacherName: data.teacherName,
+            course: data.course,
+            login: login
+          }));
+          window.location.href = 'teacher.html';
+        } else {
+          errorEl.textContent = data.error || 'Ошибка авторизации';
+          errorEl.style.display = 'block';
+        }
+      } catch (e) {
+        errorEl.textContent = 'Ошибка соединения с сервером';
+        errorEl.style.display = 'block';
+      } finally {
+        btn.textContent = 'Войти в систему';
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
+
+    
