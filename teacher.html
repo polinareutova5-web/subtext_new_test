@@ -468,7 +468,7 @@ loadSheets();
       dirtyCells.clear();
       
       try {
-        const course = currentTableType === 'course' ? session.course : '';
+        const course = currentTableType === 'course' ? currentCourse : '';
         const url = `${API_URL}?action=teacher_get_data&tableType=${currentTableType}&course=${encodeURIComponent(course)}&sheetName=${encodeURIComponent(sheetName)}`;
         const res = await fetch(url);
         const data = await res.json();
@@ -504,8 +504,12 @@ loadSheets();
       document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
       el.classList.add('active');
       currentTableType = type;
-      loadSheets();
-    }
+
+if (type === 'main') {
+    currentCourse = '';
+}
+
+loadSheets();
 
     function renderGrid() {
   const table = document.getElementById('data-grid');
@@ -586,7 +590,7 @@ loadSheets();
       changes.push({ row: r, col: c, value: value });
     });
 
-    const course = currentTableType === 'course' ? session.course : '';
+    const course = currentTableType === 'course' ? currentCourse : '';
     const params = new URLSearchParams({
       action: 'teacher_save_sheet',
       tableType: currentTableType,
@@ -625,7 +629,7 @@ loadSheets();
   
   showLoader(true);
   try {
-    const course = currentTableType === 'course' ? session.course : '';
+    const course = currentTableType === 'course' ? currentCourse : '';
     // Если пусто, передаем пустую строку, бэкенд поймет это как "в конец"
     const idx = rowIndex.trim() === '' ? '' : Number(rowIndex) - 1;
     
@@ -661,7 +665,7 @@ async function deleteRow() {
 
   showLoader(true);
   try {
-    const course = currentTableType === 'course' ? session.course : '';
+    const course = currentTableType === 'course' ? currentCourse : '';
     const params = new URLSearchParams({
       action: 'teacher_delete_row',
       tableType: currentTableType,
@@ -690,7 +694,7 @@ async function addColumn() {
   
   showLoader(true);
   try {
-    const course = currentTableType === 'course' ? session.course : '';
+    const course = currentTableType === 'course' ? currentCourse : '';
     // Если пусто, передаем пустую строку
     const idx = colIndex.trim() === '' ? '' : colIndex.toUpperCase().charCodeAt(0) - 65;
     
@@ -726,7 +730,7 @@ async function deleteColumn() {
 
   showLoader(true);
   try {
-    const course = currentTableType === 'course' ? session.course : '';
+    const course = currentTableType === 'course' ? currentCourse : '';
     const params = new URLSearchParams({
       action: 'teacher_delete_column',
       tableType: currentTableType,
