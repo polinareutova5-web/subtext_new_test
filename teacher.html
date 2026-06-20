@@ -439,7 +439,7 @@ loadSheets();
     async function loadSheets() {
       showLoader(true);
       try {
-        const course = currentTableType === 'course' ? session.course : '';
+        const course = currentTableType === 'course' ? currentCourse : '';
         const url = `${API_URL}?action=teacher_get_sheets&tableType=${currentTableType}&course=${encodeURIComponent(course)}`;
         const res = await fetch(url);
         const data = await res.json();
@@ -496,17 +496,26 @@ loadSheets();
       loadData(sheetName);
     }
 
-    function selectTable(type, el) {
-      if (dirtyCells.size > 0 && !confirm('Есть несохраненные изменения. Перейти без сохранения?')) return;
-      document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
-      el.classList.add('active');
-      currentTableType = type;
+   function selectTable(type, el) {
 
-if (type === 'main') {
-    currentCourse = '';
+    if (dirtyCells.size > 0 &&
+        !confirm('Есть несохраненные изменения. Перейти без сохранения?'))
+        return;
+
+    document.querySelectorAll('.sidebar-item')
+        .forEach(i => i.classList.remove('active'));
+
+    el.classList.add('active');
+
+    currentTableType = type;
+
+    if (type === 'main') {
+        currentCourse = '';
+    }
+
+    loadSheets();
+
 }
-
-loadSheets();
 
     function renderGrid() {
   const table = document.getElementById('data-grid');
