@@ -383,13 +383,44 @@
         window.location.href = 'teacher-login.html';
         return;
       }
-      session = JSON.parse(stored);
-      document.getElementById('teacher-name').textContent = session.teacherName;
-     document.getElementById('teacher-course').textContent =
+     session = JSON.parse(stored);
+
+document.getElementById('teacher-name').textContent =
+    session.teacherName;
+
+document.getElementById('teacher-course').textContent =
     session.courses.map(getCourseLabel).join(", ");
 
-      loadSheets();
-    });
+const sidebar = document.querySelector('.sidebar');
+
+session.courses.forEach(course => {
+
+    const btn = document.createElement('div');
+
+    btn.className = 'sidebar-item';
+
+    btn.textContent = '📚 ' + getCourseLabel(course);
+
+    btn.onclick = function () {
+
+        document.querySelectorAll('.sidebar-item')
+            .forEach(i => i.classList.remove('active'));
+
+        btn.classList.add('active');
+
+        currentCourse = course;
+
+        currentTableType = 'course';
+
+        loadSheets();
+
+    };
+
+    sidebar.appendChild(btn);
+
+});
+
+loadSheets();
 
     function getCourseLabel(course) {
       const labels = { english: 'Английский', physics: 'Физика', french: 'Французский', biology: 'Биология' };
