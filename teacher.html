@@ -373,6 +373,7 @@
     let dirtyCells = new Map(); // "row,col" -> newValue
 
     // --- Init ---
+        // --- Init ---
     window.addEventListener('DOMContentLoaded', () => {
       const stored = localStorage.getItem('teacherSession');
       if (!stored) {
@@ -381,9 +382,20 @@
       }
      session = JSON.parse(stored);
 
+    // === ВСТАВКА: нормализация courses и access ===
+    if (typeof session.courses === 'string') {
+      session.courses = session.courses.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    }
+    if (!Array.isArray(session.courses)) {
+      session.courses = session.courses ? [String(session.courses).toLowerCase()] : [];
+    }
+    if (!session.access) {
+      session.access = 'teacher';
+    }
+    // === КОНЕЦ ВСТАВКИ ===
+
 document.getElementById('teacher-name').textContent =
     session.teacherName;
-
 document.getElementById('teacher-course').textContent =
     session.courses.map(getCourseLabel).join(", ");
 
