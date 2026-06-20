@@ -519,11 +519,12 @@ opacity:.5;
 
         if (data.success) {
           localStorage.setItem('teacherSession', JSON.stringify({
-            token: data.token,
-            teacherName: data.teacherName,
-            course: data.course,
-            login: login
-          }));
+    token: data.token,
+    teacherName: data.teacherName,
+    courses: data.courses || [],
+    access: data.access || "teacher",
+    login: login
+}));
           window.location.href = 'teacher.html';
         } else {
           errorEl.textContent = data.error || 'Ошибка авторизации';
