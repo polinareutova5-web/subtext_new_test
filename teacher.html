@@ -332,7 +332,14 @@
     <div class="sidebar">
       <div class="sidebar-title">Таблицы</div>
       <div class="sidebar-item active" onclick="selectTable('main', this)">📊 Главная таблица</div>
-      <div class="sidebar-item" id="course-table-btn" onclick="selectTable('course', this)">📚 Таблица предмета</div>
+      <div class="sidebar">
+    <div class="sidebar-title">Таблицы</div>
+
+    <div class="sidebar-item active"
+         onclick="selectTable('main', this)">
+        📊 Главная таблица
+    </div>
+</div>
     </div>
 
    <div class="content-area">
@@ -364,6 +371,7 @@
     
     let session = null;
     let currentTableType = 'main'; // 'main' or 'course'
+    let currentCourse = '';
     let currentSheet = '';
     let gridData = []; // 2D array
     let dirtyCells = new Map(); // "row,col" -> newValue
