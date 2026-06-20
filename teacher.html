@@ -440,7 +440,8 @@ loadSheets();
       showLoader(true);
       try {
         const course = currentTableType === 'course' ? currentCourse : '';
-        const url = `${API_URL}?action=teacher_get_sheets&tableType=${currentTableType}&course=${encodeURIComponent(course)}`;
+        const url =
+`${API_URL}?action=teacher_get_sheets&tableType=${currentTableType}&course=${encodeURIComponent(course)}&access=${session.access}`;
         const res = await fetch(url);
         const data = await res.json();
         
@@ -466,7 +467,12 @@ loadSheets();
       
       try {
         const course = currentTableType === 'course' ? currentCourse : '';
-        const url = `${API_URL}?action=teacher_get_data&tableType=${currentTableType}&course=${encodeURIComponent(course)}&sheetName=${encodeURIComponent(sheetName)}`;
+       const url =
+`${API_URL}?action=teacher_get_data
+&tableType=${currentTableType}
+&course=${encodeURIComponent(course)}
+&sheetName=${encodeURIComponent(sheetName)}
+&access=${session.access}`;
         const res = await fetch(url);
         const data = await res.json();
         
