@@ -377,13 +377,8 @@
       }
       session = JSON.parse(stored);
       document.getElementById('teacher-name').textContent = session.teacherName;
-      document.getElementById('teacher-course').textContent = session.course === 'all' ? 'Все' : session.course;
-      
-      if (session.course && session.course !== 'all') {
-        document.getElementById('course-table-btn').textContent = `📚 ${getCourseLabel(session.course)}`;
-      } else {
-        document.getElementById('course-table-btn').style.display = 'none';
-      }
+     document.getElementById('teacher-course').textContent =
+    session.courses.map(getCourseLabel).join(", ");
 
       loadSheets();
     });
