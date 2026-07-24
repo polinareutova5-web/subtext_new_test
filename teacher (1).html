@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subtext — Панель преподавателя</title>
+  <style>
+   :root{
+    --primary:#4f8cff;
+    --secondary:#f472b6;
+
+    --bg:#eef8ff;
+
+    --border:rgba(115,175,255,.18);
+
+    --hover:#edf6ff;
+
+    --card:rgba(255,255,255,.72);
+
+    --text:#1d4264;
+
+    --shadow:0 18px 60px rgba(33,82,146,.12);
+}
+   body{
+
+    font-family:'Segoe UI',sans-serif;
+
+    margin:0;
+
+    display:flex;
+
+    flex-direction:column;
+
+    min-height:100vh;
+
+    color:var(--text);
+
+    background:
+
+        radial-gradient(circle at 12% 15%,rgba(120,210,255,.35),transparent 26%),
+
+        radial-gradient(circle at 90% 90%,rgba(255,170,220,.28),transparent 28%),
+
+        linear-gradient(180deg,#fafdff,#edf8ff 55%,#e7f5ff);
+
+}
+    
+    /* Header */
+    .header{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:16px;
+
+    background:rgba(255,255,255,.72);
+
+    backdrop-filter:blur(18px);
+
+    border-bottom:1px solid rgba(255,255,255,.7);
+
+    padding:18px 28px;
+
+    box-shadow:0 8px 30px rgba(0,0,0,.05);
+
+}
+    .header-info { font-weight: 600; color: #333; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .header-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .teacher-meta { display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .logout-btn{
+
+    border:none;
+
+    color:white;
+
+    border-radius:999px;
+
+    padding:10px 20px;
+
+    cursor:pointer;
+
+    font-weight:700;
+
+    background:linear-gradient(135deg,#ff4d6d,#ff8a3d 55%,#ffd166);
+
+    box-shadow:0 14px 28px rgba(255,97,97,.28);
+
+    transition:.25s;
+
+}
+    .logout-btn:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:0 18px 36px rgba(255,97,97,.34);
+
+}
+   .header-actions button,
+.toolbar button{
+
+    border:none;
+
+    color:white;
+
+    border-radius:999px;
+
+    padding:9px 18px;
+
+    cursor:pointer;
+
+    background:
+
+    linear-gradient(
+        135deg,
+        #2d7dff,
+        #66c7ff 55%,
+        #f57bbb
+    );
+
+    box-shadow:
+        0 12px 26px rgba(66,145,255,.22);
+
+    transition:.25s;
+
+}
+  .header-actions button:hover,
+.toolbar button:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+
+    0 18px 36px rgba(245,120,185,.25);
+
+}
+    .header-actions button.primary { background: var(--primary); color: white; border-color: var(--primary); }
+    .header-actions button.primary:hover { background: #1b5e20; }
+
+    /* Layout */
+    .main-container { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+    .content-area {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    padding: 24px;
+    overflow: auto;
+}
+
+.workspace{
+
+    width:100%;
+
+    max-width:1450px;
+
+    height:100%;
+
+    display:flex;
+
+    flex-direction:column;
+
+    background:rgba(255,255,255,.74);
+
+    backdrop-filter:blur(22px);
+
+    border-radius:26px;
+
+    border:1px solid rgba(255,255,255,.75);
+
+    box-shadow:var(--shadow);
+
+    overflow:hidden;
+
+}
+    
+    /* Sidebar */
+    .sidebar{
+
+    width:240px;
+
+    margin:18px;
+
+    border-radius:24px;
+
+    background:rgba(255,255,255,.72);
+
+    backdrop-filter:blur(18px);
+
+    border:1px solid rgba(255,255,255,.7);
+
+    box-shadow:var(--shadow);
+
+    overflow:hidden;
+
+}
+    .sidebar-title { padding: 1rem; font-size: 0.85rem; text-transform: uppercase; color: #666; font-weight: 600; letter-spacing: 0.5px; }
+    .sidebar-item { padding: 10px 1rem; cursor: pointer; border-left: 3px solid transparent; transition: all 0.2s; }
+    .sidebar-item:hover { background: var(--hover); }
+   .sidebar-item.active{
+
+    background:linear-gradient(
+        90deg,
+        rgba(95,170,255,.15),
+        rgba(245,120,185,.14)
+    );
+
+    border-left:4px solid #5daeff;
+
+    color:#2f72e8;
+
+    font-weight:600;
+
+}
+    
+    /* Sheet Tabs */
+   .sheet-tabs{
+
+    background:transparent;
+
+    padding:14px 18px 0;
+
+    display:flex;
+
+    gap:10px;
+
+    border:none;
+
+}
+   .sheet-tab{
+
+    padding:10px 18px;
+
+    border-radius:16px 16px 0 0;
+
+    background:rgba(255,255,255,.5);
+
+    transition:.25s;
+
+}
+    .sheet-tab:hover { background: #e2e6ea; }
+  .sheet-tab.active{
+
+    background:white;
+
+    color:#3b82f6;
+
+    box-shadow:
+
+        0 -3px 20px rgba(70,150,255,.12);
+
+}
+
+    /* Toolbar */
+   .toolbar{
+
+    background:transparent;
+
+    padding:18px;
+
+    display:flex;
+
+    gap:12px;
+
+    align-items:center;
+
+    flex-wrap:wrap;
+
+}
+   .toolbar input{
+
+    width:240px;
+
+    padding:10px 16px;
+
+    border-radius:999px;
+
+    border:1px solid rgba(90,170,255,.25);
+
+    background:rgba(255,255,255,.72);
+
+    backdrop-filter:blur(8px);
+
+    box-shadow:
+
+        inset 0 1px 0 rgba(255,255,255,.8);
+
+}
+
+    /* Grid */
+    .grid-container{
+
+    margin:0 18px 18px;
+
+    border-radius:18px;
+
+    overflow:auto;
+
+    flex:1;
+
+    -webkit-overflow-scrolling:touch;
+
+    background:white;
+
+    box-shadow:
+
+        inset 0 0 0 1px rgba(160,205,255,.3);
+
+}
+    table.grid { border-collapse: collapse; min-width: 100%; }
+    .grid th, .grid td { border: 1px solid var(--border); padding: 6px 10px; font-size: 0.9rem; min-width: 92px; position: relative; }
+    .grid th{
+
+    background:#f7fbff;
+
+    color:#35678d;
+
+    font-weight:600;
+
+}
+    .grid th.row-header { position: sticky; left: 0; z-index: 11; width: 40px; min-width: 40px; }
+    .grid th.col-header { position: sticky; top: 0; z-index: 12; }
+    .grid th.corner { position: sticky; top: 0; left: 0; z-index: 13; }
+    
+    .grid td { background: white; outline: none; }
+    .grid td:focus { border: 2px solid var(--primary); z-index: 5; }
+    .grid td.dirty { background: #fff3cd; } /* Подсветка измененных ячеек */
+    .grid td.highlight { background: #fff59d; } /* Подсветка поиска */
+
+    .loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.8); display: flex; justify-content: center; align-items: center; z-index: 100; display: none; }
+    .loading-overlay.active { display: flex; }
+
+    .grid tbody tr:nth-child(even){
+
+    background:#fbfdff;
+
+}
+
+.grid tbody tr:hover td{
+
+    background:#eef8ff;
+
+    transition:.15s;
+
+}
+
+.grid td:focus{
+
+    border:2px solid #63adff;
+
+    box-shadow:
+
+        0 0 0 3px rgba(99,173,255,.18);
+
+}
+
+
+    @media (max-width: 900px){
+      body{ height:auto; }
+
+      .header{
+        align-items:stretch;
+        flex-direction:column;
+        padding:14px 16px;
+      }
+
+      .header-info,
+      .header-actions{
+        width:100%;
+        justify-content:space-between;
+      }
+
+      .teacher-meta{
+        flex:1 1 210px;
+      }
+
+      .header-actions button,
+      .toolbar button,
+      .logout-btn{
+        min-height:42px;
+        padding:10px 16px;
+      }
+
+      .main-container{
+        flex-direction:column;
+        overflow:visible;
+      }
+
+      .sidebar{
+        width:auto;
+        margin:12px 12px 0;
+        display:flex;
+        align-items:center;
+        overflow-x:auto;
+      }
+
+      .sidebar-title{
+        flex:0 0 auto;
+        padding:12px 14px;
+      }
+
+      .sidebar-item{
+        flex:0 0 auto;
+        border-left:none;
+        border-bottom:3px solid transparent;
+        padding:12px 16px;
+        white-space:nowrap;
+      }
+
+      .sidebar-item.active{
+        border-left:none;
+        border-bottom:3px solid #5daeff;
+      }
+
+      .content-area{
+        padding:12px;
+        min-height:0;
+      }
+
+      .workspace{
+        height:auto;
+        min-height:calc(100vh - 190px);
+        border-radius:20px;
+      }
+
+      .sheet-tabs{
+        overflow-x:auto;
+        padding:12px 12px 0;
+      }
+
+      .sheet-tab{
+        flex:0 0 auto;
+        white-space:nowrap;
+      }
+
+      .toolbar{
+        padding:14px 12px;
+        gap:10px;
+      }
+
+      .toolbar input{
+        width:100%;
+        box-sizing:border-box;
+      }
+
+      .toolbar button{
+        flex:1 1 calc(50% - 10px);
+      }
+
+      #status-msg{
+        flex-basis:100%;
+        margin-left:0 !important;
+      }
+
+      .grid-container{
+        margin:0 12px 12px;
+        max-height:65vh;
+      }
+
+      .grid th,
+      .grid td{
+        min-width:104px;
+        padding:8px 10px;
+        font-size:.85rem;
+      }
+    }
+
+    @media (max-width: 520px){
+      .header-info,
+      .header-actions{
+        justify-content:center;
+      }
+
+      .teacher-meta{
+        flex-basis:100%;
+        justify-content:center;
+        text-align:center;
+      }
+
+      .logout-btn,
+      .header-actions button{
+        width:100%;
+      }
+
+      .toolbar button{
+        flex-basis:100%;
+      }
+
+      .grid-container{
+        max-height:60vh;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-info">
+      <span class="teacher-meta">👨‍🏫 <span id="teacher-name">Загрузка...</span> <span>| Предмет: <span id="teacher-course">...</span></span></span>
+      <button class="logout-btn" onclick="logout()">Выйти</button>
+    </div>
+    <div class="header-actions">
+      <button class="primary" onclick="saveChanges()" id="save-btn">💾 Сохранить изменения</button>
+      <button onclick="refreshData()">🔄 Обновить</button>
+   </div>
+</div>
+
+  <div class="main-container">
+ <div class="sidebar">
+  <div class="sidebar-title">Таблицы</div>
+
+  <div class="sidebar-item active"
+       onclick="selectTable('main', this)">
+      📊 Главная таблица
+  </div>
+</div>
+
+   <div class="content-area">
+    <div class="workspace">
+      <div class="sheet-tabs" id="sheet-tabs">
+        <!-- Tabs will be injected here -->
+      </div>
+
+      <div class="toolbar">
+        <input type="text" id="search-input" placeholder="🔍 Поиск по листу..." oninput="searchGrid(this.value)">
+        <button onclick="addRow()">+ Строка</button>
+        <button onclick="deleteRow()">- Строка</button>
+        <button onclick="addColumn()">+ Столбец</button>
+        <button onclick="deleteColumn()">- Столбец</button>
+        <span id="status-msg" style="margin-left: auto; font-size: 0.85rem; color: #666;"></span>
+      </div>
+
+      <div class="grid-container" id="grid-container">
+        <div class="loading-overlay active" id="loader">Загрузка данных...</div>
+        <table class="grid" id="data-grid">
+          <!-- Grid will be injected here -->
+        </table>
+           </div>
+    </div>
+</div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbyE7pgpBu4-XT0twtoc5vNb2HFFqFHi5xLJIXUIB0tXZ_qmRpEf1p29jKwh3jyiDfnI/exec"; // Укажите ваш актуальный URL
+    
+    let session = null;
+    let currentTableType = 'main'; // 'main' or 'course'
+    let currentCourse = '';
+    let currentSheet = '';
+    let gridData = []; // 2D array
+    let dirtyCells = new Map(); // "row,col" -> newValue
+
+    // --- Init ---
+        // --- Init ---
+    window.addEventListener('DOMContentLoaded', () => {
+      const stored = localStorage.getItem('teacherSession');
+      if (!stored) {
+        window.location.href = 'teacher-login.html';
+        return;
+      }
+     session = JSON.parse(stored);
+
+    // === ВСТАВКА: нормализация courses и access ===
+    if (typeof session.courses === 'string') {
+      session.courses = session.courses.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    }
+    if (!Array.isArray(session.courses)) {
+      session.courses = session.courses ? [String(session.courses).toLowerCase()] : [];
+    }
+    if (!session.access) {
+      session.access = 'teacher';
+    }
+    // === КОНЕЦ ВСТАВКИ ===
+
+document.getElementById('teacher-name').textContent =
+    session.teacherName;
+document.getElementById('teacher-course').textContent =
+    session.courses.map(getCourseLabel).join(", ");
+
+const sidebar = document.querySelector('.sidebar');
+
+session.courses.forEach(course => {
+
+    const btn = document.createElement('div');
+
+    btn.className = 'sidebar-item';
+
+    btn.textContent = '📚 ' + getCourseLabel(course);
+
+    btn.onclick = function () {
+
+        document.querySelectorAll('.sidebar-item')
+            .forEach(i => i.classList.remove('active'));
+
+        btn.classList.add('active');
+
+        currentCourse = course;
+
+        currentTableType = 'course';
+
+        loadSheets();
+
+    };
+
+    sidebar.appendChild(btn);
+
+});
+
+loadSheets();
+    });
+    
+ function getCourseLabel(course) {
+  const labels = {
+    english: 'Английский',
+    physics: 'Физика',
+    french: 'Французский',
+    biology: 'Биология',
+    chemistry: 'Химия',
+    español: 'Испанский'
+  };
+
+  return labels[course] || course;
+}
+
+    function showLoader(show) {
+      document.getElementById('loader').classList.toggle('active', show);
+    }
+
+    function setStatus(msg, isError = false) {
+      const el = document.getElementById('status-msg');
+      el.textContent = msg;
+      el.style.color = isError ? '#d32f2f' : '#2e7d32';
+      setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 3000);
+    }
+
+    // --- Data Loading ---
+    async function loadSheets() {
+      showLoader(true);
+      try {
+        const course = currentTableType === 'course' ? currentCourse : '';
+        const url =
+`${API_URL}?action=teacher_get_sheets&tableType=${currentTableType}&course=${encodeURIComponent(course)}&access=${session.access}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (data.success) {
+          renderTabs(data.sheets);
+          if (data.sheets.length > 0) {
+            await loadData(data.sheets[0]);
+          }
+        } else {
+          setStatus(data.error, true);
+        }
+      } catch (e) {
+        setStatus('Ошибка загрузки листов', true);
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    async function loadData(sheetName) {
+      showLoader(true);
+      currentSheet = sheetName;
+      dirtyCells.clear();
+      
+      try {
+        const course = currentTableType === 'course' ? currentCourse : '';
+       const url =
+`${API_URL}?action=teacher_get_data
+&tableType=${currentTableType}
+&course=${encodeURIComponent(course)}
+&sheetName=${encodeURIComponent(sheetName)}
+&access=${session.access}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (data.success) {
+          gridData = data.data;
+          renderGrid();
+        } else {
+          setStatus(data.error, true);
+        }
+      } catch (e) {
+        setStatus('Ошибка загрузки данных', true);
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    // --- Rendering ---
+    function renderTabs(sheets) {
+      const container = document.getElementById('sheet-tabs');
+      container.innerHTML = sheets.map(s => 
+        `<div class="sheet-tab ${s === currentSheet ? 'active' : ''}" onclick="switchTab('${s}')">${s}</div>`
+      ).join('');
+    }
+
+    function switchTab(sheetName) {
+      if (dirtyCells.size > 0 && !confirm('Есть несохраненные изменения. Перейти без сохранения?')) return;
+      loadData(sheetName);
+    }
+
+   function selectTable(type, el) {
+
+    if (dirtyCells.size > 0 &&
+        !confirm('Есть несохраненные изменения. Перейти без сохранения?'))
+        return;
+
+    document.querySelectorAll('.sidebar-item')
+        .forEach(i => i.classList.remove('active'));
+
+    el.classList.add('active');
+
+    currentTableType = type;
+
+    if (type === 'main') {
+        currentCourse = '';
+    }
+
+    loadSheets();
+
+}
+
+    function renderGrid() {
+  const table = document.getElementById('data-grid');
+  
+  // Если данных нет вообще, показываем пустую таблицу с заголовками
+  if (gridData.length === 0) {
+    table.innerHTML = '<tr><td style="text-align:center;padding:20px;">Лист пуст. Добавьте строки или столбцы.</td></tr>';
+    return;
+  }
+
+  const cols = gridData[0].length;
+  const rows = gridData.length;
+  
+  // Добавляем 5 пустых строк внизу для удобства редактирования
+  const extraEmptyRows = 5;
+  const totalRows = rows + extraEmptyRows;
+  
+  let html = '<thead><tr><th class="corner row-header col-header"></th>';
+  for (let c = 0; c < cols; c++) {
+    html += `<th class="col-header" data-col="${c}">${String.fromCharCode(65 + c)}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  // Рендерим существующие данные
+  for (let r = 0; r < rows; r++) {
+    html += `<tr><th class="row-header" data-row="${r}">${r + 1}</th>`;
+    for (let c = 0; c < cols; c++) {
+      const val = gridData[r][c] !== null && gridData[r][c] !== undefined ? gridData[r][c] : '';
+      const isDirty = dirtyCells.has(`${r},${c}`);
+      html += `<td contenteditable="true" data-row="${r}" data-col="${c}" class="${isDirty ? 'dirty' : ''}" oninput="markDirty(this)" onblur="validateCell(this)">${escapeHtml(val)}</td>`;
+    }
+    html += '</tr>';
+  }
+
+  // Добавляем пустые строки внизу
+  for (let r = rows; r < totalRows; r++) {
+    html += `<tr><th class="row-header" data-row="${r}" style="color:#999;font-style:italic;">${r + 1}</th>`;
+    for (let c = 0; c < cols; c++) {
+      html += `<td contenteditable="true" data-row="${r}" data-col="${c}" style="color:#ccc;" oninput="markDirty(this)" onblur="validateCell(this)"></td>`;
+    }
+    html += '</tr>';
+  }
+
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+    function escapeHtml(text) {
+      return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // --- Editing ---
+    function markDirty(cell) {
+      const r = cell.dataset.row;
+      const c = cell.dataset.col;
+      dirtyCells.set(`${r},${c}`, cell.innerText);
+      cell.classList.add('dirty');
+      document.getElementById('save-btn').textContent = '💾 Сохранить изменения (*)';
+    }
+
+    function validateCell(cell) {
+      // Можно добавить валидацию типов данных здесь
+    }
+
+    async function saveChanges() {
+  if (dirtyCells.size === 0) {
+    setStatus('Нет изменений для сохранения');
+    return;
+  }
+
+  showLoader(true);
+  setStatus('Сохранение...');
+  
+  try {
+    const changes = [];
+    dirtyCells.forEach((value, key) => {
+      const [r, c] = key.split(',').map(Number);
+      changes.push({ row: r, col: c, value: value });
+    });
+
+    const course = currentTableType === 'course' ? currentCourse : '';
+        const params = new URLSearchParams({
+      action: 'teacher_save_sheet',
+      tableType: currentTableType,
+      course: course,
+      sheetName: currentSheet,
+      changes: JSON.stringify(changes),
+      access: session.access || 'teacher'
+    });
+
+    const res = await fetch(`${API_URL}?${params.toString()}`);
+    const data = await res.json();
+
+    if (data.success) {
+      dirtyCells.clear();
+      document.getElementById('save-btn').textContent = '💾 Сохранить изменения';
+      setStatus('✅ Успешно сохранено');
+      await loadData(currentSheet); // Перезагружаем для синхронизации
+    } else {
+      setStatus(data.error, true);
+    }
+  } catch (e) {
+    setStatus('Ошибка сохранения', true);
+  } finally {
+    showLoader(false);
+  }
+}
+    async function refreshData() {
+      if (dirtyCells.size > 0 && !confirm('Есть несохраненные изменения. Обновить без сохранения?')) return;
+      await loadData(currentSheet);
+      setStatus('Данные обновлены');
+    }
+
+    // --- Structural Changes ---
+    async function addRow() {
+  const rowIndex = prompt('Введите номер строки для вставки (оставьте пустым, чтобы добавить в самый конец):');
+  if (rowIndex === null) return; // Пользователь нажал "Отмена"
+  
+  showLoader(true);
+  try {
+    const course = currentTableType === 'course' ? currentCourse : '';
+    // Если пусто, передаем пустую строку, бэкенд поймет это как "в конец"
+    const idx = rowIndex.trim() === '' ? '' : Number(rowIndex) - 1;
+    
+        const params = new URLSearchParams({
+      action: 'teacher_add_row',
+      tableType: currentTableType,
+      course: course,
+      sheetName: currentSheet,
+      rowIndex: idx,
+      rowData: JSON.stringify(['']),
+      access: session.access || 'teacher'
+    });
+    
+    const res = await fetch(`${API_URL}?${params.toString()}`);
+    const data = await res.json();
+    
+    if (data.success) {
+      await loadData(currentSheet);
+      setStatus('✅ Строка добавлена');
+    } else {
+      setStatus(data.error, true);
+    }
+  } catch (e) {
+    setStatus('Ошибка при добавлении строки', true);
+  } finally {
+    showLoader(false);
+  }
+}
+
+async function deleteRow() {
+  const rowIndex = prompt('Введите номер строки для удаления:');
+  if (!rowIndex) return;
+  if (!confirm(`Удалить строку ${rowIndex}?`)) return;
+
+  showLoader(true);
+  try {
+    const course = currentTableType === 'course' ? currentCourse : '';
+       const params = new URLSearchParams({
+      action: 'teacher_delete_row',
+      tableType: currentTableType,
+      course: course,
+      sheetName: currentSheet,
+      rowIndex: Number(rowIndex) - 1,
+      access: session.access || 'teacher'
+    });
+    const res = await fetch(`${API_URL}?${params.toString()}`);
+    const data = await res.json();
+    if (data.success) {
+      await loadData(currentSheet);
+      setStatus('✅ Строка удалена');
+    } else {
+      setStatus(data.error, true);
+    }
+  } catch (e) {
+    setStatus('Ошибка при удалении строки', true);
+  } finally {
+    showLoader(false);
+  }
+}
+
+async function addColumn() {
+  const colIndex = prompt('Введите букву столбца (A, B, C...), ПОСЛЕ которого нужно вставить новый (оставьте пустым, чтобы добавить в самый конец):');
+  if (colIndex === null) return;
+  
+  showLoader(true);
+  try {
+    const course = currentTableType === 'course' ? currentCourse : '';
+    // Если пусто, передаем пустую строку
+    const idx = colIndex.trim() === '' ? '' : colIndex.toUpperCase().charCodeAt(0) - 65;
+    
+       const params = new URLSearchParams({
+      action: 'teacher_add_column',
+      tableType: currentTableType,
+      course: course,
+      sheetName: currentSheet,
+      colIndex: idx,
+      access: session.access || 'teacher'
+    });
+    
+    const res = await fetch(`${API_URL}?${params.toString()}`);
+    const data = await res.json();
+    
+    if (data.success) {
+      await loadData(currentSheet);
+      setStatus('✅ Столбец добавлен');
+    } else {
+      setStatus(data.error, true);
+    }
+  } catch (e) {
+    setStatus('Ошибка при добавлении столбца', true);
+  } finally {
+    showLoader(false);
+  }
+}
+
+async function deleteColumn() {
+  const colIndex = prompt('Введите букву столбца (A, B, C...) для удаления:');
+  if (!colIndex) return;
+  const colNum = colIndex.toUpperCase().charCodeAt(0) - 65;
+  if (!confirm(`Удалить столбец ${colIndex.toUpperCase()}?`)) return;
+
+  showLoader(true);
+  try {
+    const course = currentTableType === 'course' ? currentCourse : '';
+       const params = new URLSearchParams({
+      action: 'teacher_delete_column',
+      tableType: currentTableType,
+      course: course,
+      sheetName: currentSheet,
+      colIndex: colNum,
+      access: session.access || 'teacher'
+    });
+    const res = await fetch(`${API_URL}?${params.toString()}`);
+    const data = await res.json();
+    if (data.success) {
+      await loadData(currentSheet);
+      setStatus('✅ Столбец удален');
+    } else {
+      setStatus(data.error, true);
+    }
+  } catch (e) {
+    setStatus('Ошибка при удалении столбца', true);
+  } finally {
+    showLoader(false);
+  }
+}
+
+    // --- Search ---
+    function searchGrid(query) {
+      const cells = document.querySelectorAll('#data-grid td[data-col]');
+      cells.forEach(cell => cell.classList.remove('highlight'));
+      
+      if (!query) return;
+      const lowerQ = query.toLowerCase();
+      
+      cells.forEach(cell => {
+        if (cell.innerText.toLowerCase().includes(lowerQ)) {
+          cell.classList.add('highlight');
+        }
+      });
+    }
+
+    function logout() {
+      localStorage.removeItem('teacherSession');
+      window.location.href = 'teacher-login.html';
+    }
+  </script>
+</body>
+</html>
