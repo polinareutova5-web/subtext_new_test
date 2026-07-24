@@ -31,7 +31,7 @@
 
     flex-direction:column;
 
-    height:100vh;
+    min-height:100vh;
 
     color:var(--text);
 
@@ -48,6 +48,14 @@
     /* Header */
     .header{
 
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:16px;
+
     background:rgba(255,255,255,.72);
 
     backdrop-filter:blur(18px);
@@ -59,7 +67,37 @@
     box-shadow:0 8px 30px rgba(0,0,0,.05);
 
 }
-    .header-info { font-weight: 600; color: #333; }
+    .header-info { font-weight: 600; color: #333; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .header-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .teacher-meta { display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .logout-btn{
+
+    border:none;
+
+    color:white;
+
+    border-radius:999px;
+
+    padding:10px 20px;
+
+    cursor:pointer;
+
+    font-weight:700;
+
+    background:linear-gradient(135deg,#ff4d6d,#ff8a3d 55%,#ffd166);
+
+    box-shadow:0 14px 28px rgba(255,97,97,.28);
+
+    transition:.25s;
+
+}
+    .logout-btn:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:0 18px 36px rgba(255,97,97,.34);
+
+}
    .header-actions button,
 .toolbar button{
 
@@ -102,7 +140,7 @@
     .header-actions button.primary:hover { background: #1b5e20; }
 
     /* Layout */
-    .main-container { display: flex; flex: 1; overflow: hidden; }
+    .main-container { display: flex; flex: 1; min-height: 0; overflow: hidden; }
     .content-area {
     flex: 1;
     display: flex;
@@ -259,6 +297,10 @@
 
     overflow:auto;
 
+    flex:1;
+
+    -webkit-overflow-scrolling:touch;
+
     background:white;
 
     box-shadow:
@@ -267,7 +309,7 @@
 
 }
     table.grid { border-collapse: collapse; min-width: 100%; }
-    .grid th, .grid td { border: 1px solid var(--border); padding: 4px 8px; font-size: 0.9rem; min-width: 80px; position: relative; }
+    .grid th, .grid td { border: 1px solid var(--border); padding: 6px 10px; font-size: 0.9rem; min-width: 92px; position: relative; }
     .grid th{
 
     background:#f7fbff;
@@ -313,14 +355,151 @@
 
 }
 
+
+    @media (max-width: 900px){
+      body{ height:auto; }
+
+      .header{
+        align-items:stretch;
+        flex-direction:column;
+        padding:14px 16px;
+      }
+
+      .header-info,
+      .header-actions{
+        width:100%;
+        justify-content:space-between;
+      }
+
+      .teacher-meta{
+        flex:1 1 210px;
+      }
+
+      .header-actions button,
+      .toolbar button,
+      .logout-btn{
+        min-height:42px;
+        padding:10px 16px;
+      }
+
+      .main-container{
+        flex-direction:column;
+        overflow:visible;
+      }
+
+      .sidebar{
+        width:auto;
+        margin:12px 12px 0;
+        display:flex;
+        align-items:center;
+        overflow-x:auto;
+      }
+
+      .sidebar-title{
+        flex:0 0 auto;
+        padding:12px 14px;
+      }
+
+      .sidebar-item{
+        flex:0 0 auto;
+        border-left:none;
+        border-bottom:3px solid transparent;
+        padding:12px 16px;
+        white-space:nowrap;
+      }
+
+      .sidebar-item.active{
+        border-left:none;
+        border-bottom:3px solid #5daeff;
+      }
+
+      .content-area{
+        padding:12px;
+        min-height:0;
+      }
+
+      .workspace{
+        height:auto;
+        min-height:calc(100vh - 190px);
+        border-radius:20px;
+      }
+
+      .sheet-tabs{
+        overflow-x:auto;
+        padding:12px 12px 0;
+      }
+
+      .sheet-tab{
+        flex:0 0 auto;
+        white-space:nowrap;
+      }
+
+      .toolbar{
+        padding:14px 12px;
+        gap:10px;
+      }
+
+      .toolbar input{
+        width:100%;
+        box-sizing:border-box;
+      }
+
+      .toolbar button{
+        flex:1 1 calc(50% - 10px);
+      }
+
+      #status-msg{
+        flex-basis:100%;
+        margin-left:0 !important;
+      }
+
+      .grid-container{
+        margin:0 12px 12px;
+        max-height:65vh;
+      }
+
+      .grid th,
+      .grid td{
+        min-width:104px;
+        padding:8px 10px;
+        font-size:.85rem;
+      }
+    }
+
+    @media (max-width: 520px){
+      .header-info,
+      .header-actions{
+        justify-content:center;
+      }
+
+      .teacher-meta{
+        flex-basis:100%;
+        justify-content:center;
+        text-align:center;
+      }
+
+      .logout-btn,
+      .header-actions button{
+        width:100%;
+      }
+
+      .toolbar button{
+        flex-basis:100%;
+      }
+
+      .grid-container{
+        max-height:60vh;
+      }
+    }
+
   </style>
 </head>
 <body>
 
   <div class="header">
     <div class="header-info">
-      👨‍🏫 <span id="teacher-name">Загрузка...</span> | Предмет: <span id="teacher-course">...</span>
-      <button onclick="logout()" style="margin-left: 15px; font-size: 0.8rem; color: #d32f2f; background: none; border: none; cursor: pointer;">Выйти</button>
+      <span class="teacher-meta">👨‍🏫 <span id="teacher-name">Загрузка...</span> <span>| Предмет: <span id="teacher-course">...</span></span></span>
+      <button class="logout-btn" onclick="logout()">Выйти</button>
     </div>
     <div class="header-actions">
       <button class="primary" onclick="saveChanges()" id="save-btn">💾 Сохранить изменения</button>
