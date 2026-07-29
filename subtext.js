@@ -7,6 +7,7 @@ let notificationsCache = [];
 let notificationsLoadedOnce = false;
 let notificationsTimer = null;
 let soundUnlocked = false;
+let lessonCalendar = null;
 
 function setText(id, value) {
   const el = document.getElementById(id);
@@ -384,6 +385,113 @@ async function markNotificationsRead() {
 
 
 
+
+function parseLessonDateTime(item = {}) {
+  const rawStart = item.start || item.datetime || item.dateTime || item.date_time || item.begin || item["Дата и время"] || "";
+  if (rawStart) {
+    const d = new Date(rawStart);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  const rawDate = item.date || item.lessonDate || item["Дата"] || "";
+  const rawTime = item.time || item.lessonTime || item["Время"] || "";
+  if (rawDate || rawTime) {
+    const d = new Date(`${rawDate} ${rawTime}`.trim());
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+
+function collectScheduleItems() {
+  const data = cabinetData || {};
+  const user = data.user || {};
+  const sources = [data.scheduleEvents, data.events, data.calendar, data.scheduleItems, data.lessonsSchedule, user.scheduleEvents, user.events, user.calendar, user.nextLessons];
+  const course = getCurrentCourse();
+  const items = sources.find(source => Array.isArray(source) && source.length) || [];
+
+  return items
+    .filter(item => {
+      const itemCourse = item.course || item.subjectKey || item.subject || item["Предмет"] || "";
+      return !itemCourse || normalizeCourseName(itemCourse) === normalizeCourseName(course) || getCourseLabel(itemCourse) === getCourseLabel(course);
+    })
+    .map((item, index) => {
+      const startDate = parseLessonDateTime(item);
+      const title = item.title || item.subject || item["Предмет"] || getCourseLabel(course);
+      return {
+        id: String(item.id || item.lessonId || index),
+        title: String(title || "Урок"),
+        subject: String(item.subject || item["Предмет"] || title || getCourseLabel(course)),
+        topic: String(item.topic || item.theme || item["Тема"] || "Тема уточняется"),
+        startDate,
+        date: item.date || item["Дата"] || (startDate ? startDate.toISOString() : ""),
+        time: item.time || item["Время"] || (startDate ? startDate.toISOString() : ""),
+        duration: item.duration || item["Продолжительность"] || "60 минут",
+        link: String(item.link || item.url || item.meet || item["Ссылка"] || user.link || "").trim(),
+      };
+    })
+    .filter(item => item.startDate);
+}
+
+function getNextLesson() {
+  const now = new Date();
+  return collectScheduleItems().filter(item => item.startDate >= now).sort((a, b) => a.startDate - b.startDate)[0] || null;
+}
+
+function renderNextLesson() {
+  const container = document.getElementById("next-lesson-card");
+  if (!container) return;
+  const lesson = getNextLesson();
+  if (!lesson) {
+    container.innerHTML = '<p style="color:var(--muted);line-height:1.7">Ближайший урок пока не назначен.</p>';
+    return;
+  }
+  container.innerHTML = `
+    <div class="next-lesson-row"><small>Предмет</small>${escapeHtml(lesson.subject)}</div>
+    <div class="next-lesson-row"><small>Тема</small>${escapeHtml(lesson.topic)}</div>
+    <div class="next-lesson-row"><small>Дата</small>${formatDate(lesson.startDate)}</div>
+    <div class="next-lesson-row"><small>Время</small>${formatTime(lesson.startDate)}</div>
+    <div class="next-lesson-row"><small>Продолжительность</small>${escapeHtml(lesson.duration)}</div>
+    ${lesson.link ? `<a href="${escapeAttr(lesson.link)}" target="_blank" rel="noopener" class="lesson-btn">Перейти к уроку</a>` : '<span style="color:var(--muted)">Ссылка появится позже</span>'}
+  `;
+}
+
+function openLessonCard(eventId) {
+  const lesson = collectScheduleItems().find(item => item.id === String(eventId));
+  if (!lesson) return;
+  alert(`${lesson.subject}\n${lesson.topic}\n${formatDate(lesson.startDate)} ${formatTime(lesson.startDate)}\n${lesson.duration}`);
+}
+
+function renderCalendar() {
+  const calendarEl = document.getElementById("lesson-calendar");
+  const upcomingEl = document.getElementById("upcoming-lessons");
+  if (!calendarEl || !upcomingEl) return;
+  const items = collectScheduleItems().sort((a, b) => a.startDate - b.startDate);
+  const events = items.map((item, index) => ({ id: item.id, title: item.title, start: item.startDate.toISOString(), backgroundColor: index % 2 ? "#35b779" : "#1677ff", borderColor: index % 2 ? "#35b779" : "#1677ff" }));
+
+  if (window.FullCalendar) {
+    if (lessonCalendar) lessonCalendar.destroy();
+    lessonCalendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: "dayGridMonth",
+      height: "auto",
+      locale: "ru",
+      headerToolbar: { left: "prev,next", center: "title", right: "today" },
+      events,
+      eventClick(info) { openLessonCard(info.event.id); },
+    });
+    lessonCalendar.render();
+  } else {
+    calendarEl.innerHTML = '<p style="padding:1rem;color:var(--muted)">Календарь временно недоступен</p>';
+  }
+
+  upcomingEl.innerHTML = items.filter(item => item.startDate >= new Date()).slice(0, 4).map((item, index) => `
+    <button type="button" class="upcoming-item" onclick="openLessonCard('${escapeAttr(item.id)}')">
+      <span class="upcoming-mark" style="background:${index % 2 ? '#35b779' : '#1677ff'}"></span>
+      <span><span class="upcoming-date">${formatDate(item.startDate)}</span><br><span class="upcoming-time">${formatTime(item.startDate)}</span></span>
+      <span class="upcoming-title">${escapeHtml(item.subject)}</span>
+    </button>
+  `).join("") || '<p style="color:var(--muted);line-height:1.7">Ближайших занятий пока нет.</p>';
+}
+
 // ================= UI =================
 function showSection(sectionId) {
   document.querySelectorAll(".section").forEach(el => el.classList.add("hidden"));
@@ -405,6 +513,8 @@ function setCourse(course) {
   renderCourseTabs();
   renderCourseData();
   renderSubmissionFormLink(course);
+  renderNextLesson();
+  renderCalendar();
 }
 
 function renderCourseTabs() {
@@ -499,6 +609,8 @@ if (lessonLinkEl) {
  
     document.getElementById("loading")?.classList.add("hidden");
     document.getElementById("main")?.classList.remove("hidden");
+    renderNextLesson();
+    renderCalendar();
     startNotificationsPolling();
   } catch (e) {
     console.error(e);
