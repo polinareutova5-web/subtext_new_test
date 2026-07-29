@@ -8,6 +8,8 @@ let notificationsLoadedOnce = false;
 let notificationsTimer = null;
 let soundUnlocked = false;
 let lessonCalendar = null;
+let availableSlotsCache = [];
+let groupSlotsCache = [];
 
 function setText(id, value) {
   const el = document.getElementById(id);
@@ -386,18 +388,88 @@ async function markNotificationsRead() {
 
 
 
+
+function parseFlexibleDateTime(dateValue = "", timeValue = "") {
+  if (dateValue instanceof Date && !isNaN(dateValue.getTime())) return dateValue;
+  const dateText = String(dateValue || "").trim();
+  const timeText = String(timeValue || "").trim();
+  const combined = [dateText, timeText].filter(Boolean).join(" ").trim();
+  const candidates = [combined, dateText].filter(Boolean);
+
+  for (const candidate of candidates) {
+    const direct = new Date(candidate);
+    if (!isNaN(direct.getTime())) return direct;
+
+    const match = candidate.match(/(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/);
+    if (match) {
+      const [, dd, mm, yyyy, hh = "0", min = "0"] = match;
+      const year = Number(yyyy.length === 2 ? `20${yyyy}` : yyyy);
+      const parsed = new Date(year, Number(mm) - 1, Number(dd), Number(hh), Number(min));
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+  }
+  return null;
+}
+
+const WEEKDAY_INDEX = {
+  "пн": 1, "понедельник": 1,
+  "вт": 2, "вторник": 2,
+  "ср": 3, "среда": 3,
+  "чт": 4, "четверг": 4,
+  "пт": 5, "пятница": 5,
+  "сб": 6, "суббота": 6,
+  "вс": 0, "воскресенье": 0,
+};
+
+function nextDateForWeekday(weekday, timeText) {
+  const timeMatch = String(timeText || "").match(/(\d{1,2}):(\d{2})/);
+  if (!timeMatch) return null;
+  const now = new Date();
+  const date = new Date(now);
+  const diff = (weekday - now.getDay() + 7) % 7;
+  date.setDate(now.getDate() + diff);
+  date.setHours(Number(timeMatch[1]), Number(timeMatch[2]), 0, 0);
+  if (date < now) date.setDate(date.getDate() + 7);
+  return date;
+}
+
+function scheduleTextToItems(scheduleText = "", course = getCurrentCourse()) {
+  const text = String(scheduleText || "").trim();
+  if (!text) return [];
+  const parts = text.split(/[;\n|]+/).map(part => part.trim()).filter(Boolean);
+  const items = [];
+
+  parts.forEach((part, index) => {
+    const explicit = parseFlexibleDateTime(part);
+    if (explicit) {
+      items.push({ id: `schedule-text-${index}`, title: getCourseLabel(course), subject: getCourseLabel(course), topic: "Урок по расписанию", startDate: explicit, date: explicit.toISOString(), time: explicit.toISOString(), duration: "60 минут", link: String(cabinetData?.user?.link || "").trim() });
+      return;
+    }
+
+    const lower = part.toLowerCase();
+    const dayKey = Object.keys(WEEKDAY_INDEX).find(key => new RegExp(`(^|[^а-яё])${key}([^а-яё]|$)`, "i").test(lower));
+    const timeMatch = part.match(/(\d{1,2}:\d{2})/);
+    if (dayKey && timeMatch) {
+      const startDate = nextDateForWeekday(WEEKDAY_INDEX[dayKey], timeMatch[1]);
+      if (startDate) items.push({ id: `schedule-text-${index}`, title: getCourseLabel(course), subject: getCourseLabel(course), topic: "Урок по расписанию", startDate, date: startDate.toISOString(), time: startDate.toISOString(), duration: "60 минут", link: String(cabinetData?.user?.link || "").trim() });
+    }
+  });
+
+  return items;
+}
+
 function parseLessonDateTime(item = {}) {
   const rawStart = item.start || item.datetime || item.dateTime || item.date_time || item.begin || item["Дата и время"] || "";
   if (rawStart) {
-    const d = new Date(rawStart);
-    if (!isNaN(d.getTime())) return d;
+    const d = parseFlexibleDateTime(rawStart);
+    if (d) return d;
   }
 
   const rawDate = item.date || item.lessonDate || item["Дата"] || "";
   const rawTime = item.time || item.lessonTime || item["Время"] || "";
   if (rawDate || rawTime) {
-    const d = new Date(`${rawDate} ${rawTime}`.trim());
-    if (!isNaN(d.getTime())) return d;
+    const d = parseFlexibleDateTime(rawDate, rawTime);
+    if (d) return d;
   }
   return null;
 }
@@ -408,6 +480,7 @@ function collectScheduleItems() {
   const sources = [data.scheduleEvents, data.events, data.calendar, data.scheduleItems, data.lessonsSchedule, user.scheduleEvents, user.events, user.calendar, user.nextLessons];
   const course = getCurrentCourse();
   const items = sources.find(source => Array.isArray(source) && source.length) || [];
+  const textItems = scheduleTextToItems(user.schedule || user["Расписание"] || "", course);
 
   return items
     .filter(item => {
@@ -429,7 +502,8 @@ function collectScheduleItems() {
         link: String(item.link || item.url || item.meet || item["Ссылка"] || user.link || "").trim(),
       };
     })
-    .filter(item => item.startDate);
+    .filter(item => item.startDate)
+    .concat(textItems);
 }
 
 function getNextLesson() {
@@ -466,7 +540,20 @@ function renderCalendar() {
   const upcomingEl = document.getElementById("upcoming-lessons");
   if (!calendarEl || !upcomingEl) return;
   const items = collectScheduleItems().sort((a, b) => a.startDate - b.startDate);
-  const events = items.map((item, index) => ({ id: item.id, title: item.title, start: item.startDate.toISOString(), backgroundColor: index % 2 ? "#35b779" : "#1677ff", borderColor: index % 2 ? "#35b779" : "#1677ff" }));
+  const lessonEvents = items.map((item, index) => ({ id: item.id, title: item.title, start: item.startDate.toISOString(), backgroundColor: index % 2 ? "#35b779" : "#1677ff", borderColor: index % 2 ? "#35b779" : "#1677ff", extendedProps: { kind: "lesson" } }));
+  const slotEvents = availableSlotsCache.map(slot => {
+    const startDate = parseFlexibleDateTime(slot.date, slot.time);
+    const isFree = slot.status === "free";
+    return startDate ? { id: `slot-${slot.id}`, title: isFree ? "Свободный слот" : "Слот занят", start: startDate.toISOString(), backgroundColor: isFree ? "#ffb020" : "#9aa5b1", borderColor: isFree ? "#ffb020" : "#9aa5b1", extendedProps: { kind: "slot", slotId: slot.id, isFree } } : null;
+  }).filter(Boolean);
+  const groupEvents = groupSlotsCache.map(slot => {
+    const startDate = parseFlexibleDateTime(slot.date, slot.time);
+    const capacity = Number(slot.capacity) || 0;
+    const bookedCount = Number(slot.bookedCount) || 0;
+    const available = capacity - bookedCount > 0;
+    return startDate ? { id: `group-slot-${slot.id}`, title: available ? `Группа: ${slot.title || "занятие"}` : "Группа заполнена", start: startDate.toISOString(), backgroundColor: available ? "#8b5cf6" : "#9aa5b1", borderColor: available ? "#8b5cf6" : "#9aa5b1", extendedProps: { kind: "groupSlot", slotId: slot.id, available } } : null;
+  }).filter(Boolean);
+  const events = lessonEvents.concat(slotEvents, groupEvents);
 
   if (window.FullCalendar) {
     if (lessonCalendar) lessonCalendar.destroy();
@@ -476,7 +563,12 @@ function renderCalendar() {
       locale: "ru",
       headerToolbar: { left: "prev,next", center: "title", right: "today" },
       events,
-      eventClick(info) { openLessonCard(info.event.id); },
+      eventClick(info) {
+        const props = info.event.extendedProps || {};
+        if (props.kind === "slot" && props.isFree) return bookSlot(props.slotId);
+        if (props.kind === "groupSlot" && props.available) return bookGroupSlot(props.slotId);
+        openLessonCard(info.event.id);
+      },
     });
     lessonCalendar.render();
   } else {
@@ -515,6 +607,7 @@ function setCourse(course) {
   renderSubmissionFormLink(course);
   renderNextLesson();
   renderCalendar();
+  loadSlots();
 }
 
 function renderCourseTabs() {
@@ -611,6 +704,7 @@ if (lessonLinkEl) {
     document.getElementById("main")?.classList.remove("hidden");
     renderNextLesson();
     renderCalendar();
+    loadSlots();
     startNotificationsPolling();
   } catch (e) {
     console.error(e);
@@ -749,9 +843,11 @@ async function loadSlots() {
       return;
     }
     const slots = data.slots || [];
+    availableSlotsCache = slots;
     if (!slots.length) {
       container.textContent = "Нет доступных слотов";
       loadGroupSlots();
+      renderCalendar();
       return;
     }
     container.innerHTML = slots.map(slot => {
@@ -762,6 +858,7 @@ async function loadSlots() {
       </div>`;
     }).join("");
     loadGroupSlots();
+    renderCalendar();
   } catch (e) {
     console.error(e);
     container.textContent = "Ошибка соединения";
@@ -796,8 +893,10 @@ async function loadGroupSlots() {
       return;
     }
     const slots = data.slots || [];
+    groupSlotsCache = slots;
     if (!slots.length) {
       container.textContent = "Нет групповых занятий";
+      renderCalendar();
       return;
     }
     container.innerHTML = slots.map(slot => {
@@ -810,6 +909,7 @@ async function loadGroupSlots() {
         ${available ? `<button class="buy-btn" onclick="bookGroupSlot('${escapeAttr(slot.id)}')">Записаться (${bookedCount}/${capacity})</button>` : `<span style="opacity:.6">Мест нет (${capacity}/${capacity})</span>`}
       </div>`;
     }).join("");
+    renderCalendar();
   } catch (e) {
     console.error(e);
     container.textContent = "Ошибка соединения";

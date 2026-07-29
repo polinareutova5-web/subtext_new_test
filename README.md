@@ -311,3 +311,54 @@ function getAchievementsForUser(course, userId) {
 Если отдельный лист пока делать не хочется, можно временно добавить в `Лист1` столбик `notifications` и возвращать его из API как `user.notifications`. Несколько уведомлений в одной ячейке можно разделять символом `|`, но для нормальной работы со статусами прочтения лучше отдельный лист.
 
 Важно: если просто добавить лист/столбик в Google Sheets, но не обновить Apps Script, сайт не сможет увидеть эти данные. Apps Script обязательно должен либо отдавать уведомления в общем ответе кабинета, либо поддерживать `action=get_notifications`.
+
+### Расписание и календарь ученика
+
+Фронтенд теперь умеет показывать ближайший урок и отмечать уроки в календаре из двух источников:
+
+1. `user.schedule` из главной таблицы — подходит для простого текста вроде `Пн 18:00; Ср 17:30` или `29.07.2026 18:00`.
+2. Массив событий `scheduleEvents` / `lessonsSchedule` / `user.scheduleEvents` — лучше для точного календаря с темами, датами, длительностью и ссылками.
+
+Если хотите отдавать календарные уроки из Apps Script, добавьте в JSON кабинета одно из этих полей:
+
+```js
+scheduleEvents: getStudentScheduleEvents(userId)
+```
+
+Пример функции для листа `schedule` в главной таблице:
+
+```js
+function getStudentScheduleEvents(userId) {
+  const ss = SpreadsheetApp.openById(MAIN_SPREADSHEET_ID);
+  const sh = ss.getSheetByName('schedule');
+  if (!sh) return [];
+
+  const values = sh.getDataRange().getValues();
+  const headers = values.shift().map(h => String(h).trim().toLowerCase());
+  const col = name => headers.indexOf(name.toLowerCase());
+
+  const idCol = col('userId');
+  const dateCol = col('date');
+  const timeCol = col('time');
+  const subjectCol = col('subject');
+  const topicCol = col('topic');
+  const durationCol = col('duration');
+  const linkCol = col('link');
+
+  if (idCol < 0 || dateCol < 0 || timeCol < 0) return [];
+
+  return values
+    .filter(row => String(row[idCol]).trim() === String(userId).trim())
+    .map((row, index) => ({
+      id: `schedule-${index + 1}`,
+      date: row[dateCol],
+      time: row[timeCol],
+      subject: subjectCol >= 0 ? row[subjectCol] : '',
+      topic: topicCol >= 0 ? row[topicCol] : '',
+      duration: durationCol >= 0 ? row[durationCol] : '60 минут',
+      link: linkCol >= 0 ? row[linkCol] : '',
+    }));
+}
+```
+
+Рекомендуемые заголовки листа `schedule`: `userId | date | time | subject | topic | duration | link`.
