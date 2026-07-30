@@ -386,20 +386,96 @@ async function markNotificationsRead() {
 
 
 
+function parseDateParts(dateText = "") {
+  const value = String(dateText).trim();
+  const match = value.match(/(\d{1,2})[.\/-](\d{1,2})(?:[.\/-](\d{2,4}))?/);
+  if (!match) return null;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]) - 1;
+  const currentYear = new Date().getFullYear();
+  const year = match[3] ? Number(match[3].length === 2 ? `20${match[3]}` : match[3]) : currentYear;
+  const date = new Date(year, month, day);
+
+  return date.getFullYear() === year && date.getMonth() === month && date.getDate() === day ? date : null;
+}
+
+function parseTimeParts(timeText = "") {
+  const match = String(timeText).match(/(\d{1,2})[:.](\d{2})/);
+  if (!match) return null;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return null;
+  return { hours, minutes };
+}
+
+function combineDateAndTime(date, timeParts) {
+  if (!date || !timeParts) return null;
+  const result = new Date(date);
+  result.setHours(timeParts.hours, timeParts.minutes, 0, 0);
+  return result;
+}
+
 function parseLessonDateTime(item = {}) {
   const rawStart = item.start || item.datetime || item.dateTime || item.date_time || item.begin || item["Дата и время"] || "";
   if (rawStart) {
+    const exactDate = parseDateParts(rawStart);
+    const exactTime = parseTimeParts(rawStart);
+    const combined = combineDateAndTime(exactDate, exactTime);
+    if (combined) return combined;
+
     const d = new Date(rawStart);
-    if (!isNaN(d.getTime())) return d;
+    if (!isNaN(d.getTime()) && !/^\d{1,2}[:.]\d{2}$/.test(String(rawStart).trim())) return d;
   }
 
   const rawDate = item.date || item.lessonDate || item["Дата"] || "";
   const rawTime = item.time || item.lessonTime || item["Время"] || "";
-  if (rawDate || rawTime) {
+  const date = parseDateParts(rawDate);
+  const time = parseTimeParts(rawTime);
+  const combined = combineDateAndTime(date, time);
+  if (combined) return combined;
+
+  if (rawDate && rawTime) {
     const d = new Date(`${rawDate} ${rawTime}`.trim());
     if (!isNaN(d.getTime())) return d;
   }
   return null;
+}
+
+function parseScheduleText(scheduleText = "") {
+  const courseLabel = getCourseLabel(getCurrentCourse());
+
+  return String(scheduleText)
+    .split(/\n|;/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map((line, index) => {
+      const date = parseDateParts(line);
+      const time = parseTimeParts(line);
+      const startDate = combineDateAndTime(date, time);
+      if (!startDate) return null;
+
+      const title = line
+        .replace(/\d{1,2}[.\/-]\d{1,2}(?:[.\/-]\d{2,4})?/, "")
+        .replace(/\d{1,2}[:.]\d{2}/, "")
+        .replace(/[—–-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      return {
+        id: `schedule-${index}-${startDate.getTime()}`,
+        title: title || courseLabel,
+        subject: title || courseLabel,
+        topic: "",
+        startDate,
+        date: line,
+        time: line,
+        duration: "",
+        link: String(cabinetData?.user?.link || "").trim(),
+      };
+    })
+    .filter(Boolean);
 }
 
 function collectScheduleItems() {
@@ -407,7 +483,7 @@ function collectScheduleItems() {
   const user = data.user || {};
   const sources = [data.scheduleEvents, data.events, data.calendar, data.scheduleItems, data.lessonsSchedule, user.scheduleEvents, user.events, user.calendar, user.nextLessons];
   const course = getCurrentCourse();
-  const items = sources.find(source => Array.isArray(source) && source.length) || [];
+  const items = sources.find(source => Array.isArray(source) && source.length) || parseScheduleText(user.schedule);
 
   return items
     .filter(item => {
@@ -446,19 +522,16 @@ function renderNextLesson() {
     return;
   }
   container.innerHTML = `
-    <div class="next-lesson-row"><small>Предмет</small>${escapeHtml(lesson.subject)}</div>
-    <div class="next-lesson-row"><small>Тема</small>${escapeHtml(lesson.topic)}</div>
     <div class="next-lesson-row"><small>Дата</small>${formatDate(lesson.startDate)}</div>
     <div class="next-lesson-row"><small>Время</small>${formatTime(lesson.startDate)}</div>
-    <div class="next-lesson-row"><small>Продолжительность</small>${escapeHtml(lesson.duration)}</div>
-    ${lesson.link ? `<a href="${escapeAttr(lesson.link)}" target="_blank" rel="noopener" class="lesson-btn">Перейти к уроку</a>` : '<span style="color:var(--muted)">Ссылка появится позже</span>'}
+    <div class="next-lesson-row"><small>Предмет</small>${escapeHtml(lesson.subject)}</div>
   `;
 }
 
 function openLessonCard(eventId) {
   const lesson = collectScheduleItems().find(item => item.id === String(eventId));
   if (!lesson) return;
-  alert(`${lesson.subject}\n${lesson.topic}\n${formatDate(lesson.startDate)} ${formatTime(lesson.startDate)}\n${lesson.duration}`);
+  alert(`${lesson.subject}\n${formatDate(lesson.startDate)} ${formatTime(lesson.startDate)}`);
 }
 
 function renderCalendar() {
@@ -472,8 +545,10 @@ function renderCalendar() {
     if (lessonCalendar) lessonCalendar.destroy();
     lessonCalendar = new FullCalendar.Calendar(calendarEl, {
       initialView: "dayGridMonth",
-      height: "auto",
+      height: 330,
+      contentHeight: 280,
       locale: "ru",
+      dayMaxEvents: 2,
       headerToolbar: { left: "prev,next", center: "title", right: "today" },
       events,
       eventClick(info) { openLessonCard(info.event.id); },
@@ -889,6 +964,41 @@ function getAiContext() {
   ].join("\n");
 }
 
+function buildLocalAiAnswer(question = "") {
+  const normalizedQuestion = question.toLowerCase();
+  const nextLesson = getNextLesson();
+  const subject = getCourseLabel(getCurrentCourse());
+
+  if (/когда|ближайш|следующ|расписан|урок/.test(normalizedQuestion)) {
+    return nextLesson
+      ? `Ближайший урок: ${subject}, ${formatDate(nextLesson.startDate)} в ${formatTime(nextLesson.startDate)}.`
+      : `В расписании пока нет будущих уроков по предмету «${subject}». Проверьте раздел «Расписание» или напишите преподавателю в поддержку.`;
+  }
+
+  if (/дз|домаш|задан|сдать/.test(normalizedQuestion)) {
+    const formLink = getSubmissionFormLink(getCurrentCourse());
+    return formLink
+      ? `Домашнее задание по предмету «${subject}» можно сдать в разделе «ДЗ» через кнопку «Открыть форму ДЗ».`
+      : `Форма ДЗ по предмету «${subject}» пока не назначена. Уточните задание у преподавателя через вкладку «Поддержка».`;
+  }
+
+  if (/прогресс|балл|уров|рейтинг|мест/.test(normalizedQuestion)) {
+    const user = cabinetData?.user || {};
+    const level = getCourseMappedValue(user.levels, getCurrentCourse(), "не указан") || "не указан";
+    const rank = getCourseRank(getCurrentCourse()) || "пока не указан";
+    return `По предмету «${subject}»: прогресс ${getCourseProgress(getCurrentCourse())}/100, уровень — ${level}, рейтинг — ${rank}.`;
+  }
+
+  return `Я помогу с навигацией по кабинету: расписанием, ближайшим уроком, ДЗ, прогрессом и материалами. По самому учебному объяснению лучше написать преподавателю во вкладке «Поддержка», если подключенный ИИ-сервис сейчас недоступен.`;
+}
+
+function openAiChatFromNav() {
+  const chat = document.getElementById("support-chat");
+  chat?.classList.remove("hidden");
+  showChatTab("ai");
+  renderAiMessages();
+}
+
 async function sendAiMessage() {
   const input = document.getElementById("ai-input");
   const text = input?.value.trim();
@@ -925,10 +1035,10 @@ async function sendAiMessage() {
 
     aiChatMessages[aiChatMessages.length - 1] = { role: "assistant", text: answer };
   } catch (e) {
-    console.error("AI chat is unavailable", e);
+    console.warn("Remote AI chat is unavailable, using local helper", e);
     aiChatMessages[aiChatMessages.length - 1] = {
       role: "assistant",
-      text: "ИИ-чат сейчас недоступен. Проверьте, что в Apps Script добавлен action=ai_chat, или отправьте вопрос преподавателю во вкладке «Поддержка».",
+      text: buildLocalAiAnswer(text),
     };
   }
 
