@@ -8,7 +8,8 @@ let notificationsLoadedOnce = false;
 let notificationsTimer = null;
 let soundUnlocked = false;
 let lessonCalendar = null;
-const REMOTE_AI_ENABLED = false;
+// true = сначала пробуем Apps Script action=ai_chat, при ошибке остаётся локальный помощник.
+const REMOTE_AI_ENABLED = true;
 
 function setText(id, value) {
   const el = document.getElementById(id);
