@@ -1182,6 +1182,7 @@
       <button onclick="showSection('shop')">Магазин</button>
       <button onclick="showSection('schedule')">Расписание</button>
       <button onclick="showSection('materials')">Материалы</button>
+      <button onclick="showSection('ai-chat')" class="nav-btn">🤖 ИИ-помощник</button>
       <button onclick="showSection('announcements')">Объявления</button>
       <button onclick="showSection('about')">О нас</button>
     </nav>
@@ -1319,6 +1320,22 @@
           </p>
         </div>
       </section>
+
+         <!-- ====================== ИИ ====================== -->
+
+      <div id="ai-chat" class="section hidden">
+  <h2>🤖 ИИ-помощник</h2>
+  <p style="opacity: 0.7; margin-bottom: 20px;">Задай любой вопрос нейросети и получи ответ</p>
+  
+  <div id="chat-messages" style="min-height: 300px; max-height: 500px; overflow-y: auto; background: #f5f5f5; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+    <div style="opacity: 0.6; text-align: center;">Начните диалог, задав вопрос ниже</div>
+  </div>
+  
+  <div style="display: flex; gap: 10px;">
+    <input type="text" id="chat-input" placeholder="Введите ваш вопрос..." style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px;">
+    <button onclick="sendToAI()" class="buy-btn" style="padding: 12px 24px;">Отправить</button>
+  </div>
+</div>
 
       <!-- ====================== РАЗДЕЛ "О НАС" ====================== -->
       <section id="about" class="section hidden">
