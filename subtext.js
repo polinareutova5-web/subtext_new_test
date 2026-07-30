@@ -989,7 +989,7 @@ async function sendSupport() {
 }
 
 // ================= AI CHAT =================
-const AI_API_URL = "https://api.openai.com/v1/chat/completions";
+const AI_API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
 const AI_API_KEY = "sk-ws-H.XPDYDY.ZHWH.MEUCICxR4qL3x76D_zvVOQL8KKtIoaHaip3M8dU5d9PbIX9TAiEAi127LaL4y4dPPmkwUSeNc-0KkIWFmGIrtGbQV7gvQRk"; // Вставь свой API ключ
 
 async function sendToAI() {
@@ -1002,75 +1002,67 @@ async function sendToAI() {
     return;
   }
   
-  // Добавляем сообщение пользователя
+  // 1. Добавляем сообщение пользователя
   const userMsgDiv = document.createElement("div");
   userMsgDiv.style.cssText = "margin-bottom: 12px; padding: 10px; background: #e3f2fd; border-radius: 8px; text-align: right;";
   userMsgDiv.innerHTML = `<strong>Вы:</strong><br>${escapeHtml(userMessage)}`;
   messagesContainer.appendChild(userMsgDiv);
-  
-  // Очищаем поле ввода
   input.value = "";
   
-  // Добавляем индикатор загрузки
+  // 2. Индикатор загрузки
   const loadingDiv = document.createElement("div");
   loadingDiv.id = "ai-loading";
   loadingDiv.style.cssText = "margin-bottom: 12px; padding: 10px; background: #f5f5f5; border-radius: 8px; opacity: 0.7;";
   loadingDiv.innerHTML = "🤖 Нейросеть думает...";
   messagesContainer.appendChild(loadingDiv);
-  
-  // Прокручиваем вниз
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
   
   try {
-    const response = await fetch(AI_API_URL, {
+    // 3. Запрос через публичный CORS-прокси, чтобы браузер не блокировал его
+    const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(QWEN_API_URL);
+    
+    const response = await fetch(proxyUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${AI_API_KEY}`
+        "Authorization": `Bearer ${QWEN_API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo", // Замени на нужную модель
+        model: "qwen-turbo", // Можно заменить на 'qwen-plus' или 'qwen-max', если доступно
         messages: [
-          {
-            role: "system",
-            content: "Ты - дружелюбный ИИ-помощник образовательной платформы Subtext. Отвечай кратко, понятно и по существу на вопросы учеников."
+          { 
+            role: "system", 
+            content: "Ты — дружелюбный и полезный ИИ-помощник образовательной платформы Subtext. Отвечай кратко, понятно и по существу на вопросы учеников." 
           },
-          {
-            role: "user",
-            content: userMessage
+          { 
+            role: "user", 
+            content: userMessage 
           }
-        ],
-        temperature: 0.7,
-        max_tokens: 500
+        ]
       })
     });
     
     const data = await response.json();
-    
-    // Удаляем индикатор загрузки
     document.getElementById("ai-loading")?.remove();
     
-    if (data.choices && data.choices[0]) {
-      const aiMessage = data.choices[0].message.content;
-      
-      // Добавляем ответ нейросети
+    if (data.choices && data.choices[0] && data.choices[0].message) {
       const aiMsgDiv = document.createElement("div");
       aiMsgDiv.style.cssText = "margin-bottom: 12px; padding: 10px; background: #e8f5e9; border-radius: 8px;";
-      aiMsgDiv.innerHTML = `<strong>🤖 ИИ-помощник:</strong><br>${escapeHtml(aiMessage)}`;
+      // Заменяем переносы строк на <br> для красивого отображения
+      const formattedReply = data.choices[0].message.content.replace(/\n/g, '<br>');
+      aiMsgDiv.innerHTML = `<strong>🤖 ИИ-помощник:</strong><br>${formattedReply}`;
       messagesContainer.appendChild(aiMsgDiv);
     } else {
-      throw new Error(data.error?.message || "Не удалось получить ответ");
+      throw new Error(data.error?.message || "Не удалось получить ответ от нейросети");
     }
   } catch (error) {
     document.getElementById("ai-loading")?.remove();
-    
     const errorDiv = document.createElement("div");
     errorDiv.style.cssText = "margin-bottom: 12px; padding: 10px; background: #ffebee; border-radius: 8px; color: #c62828;";
     errorDiv.innerHTML = `❌ Ошибка: ${escapeHtml(error.message)}`;
     messagesContainer.appendChild(errorDiv);
   }
   
-  // Прокручиваем вниз
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
@@ -1079,13 +1071,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatInput = document.getElementById("chat-input");
   if (chatInput) {
     chatInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        sendToAI();
-      }
+      if (e.key === "Enter") sendToAI();
     });
   }
 });
-
 // ================= INIT =================
 window.addEventListener("DOMContentLoaded", () => {
    document.addEventListener("click", unlockNotificationSound, { once: true });
