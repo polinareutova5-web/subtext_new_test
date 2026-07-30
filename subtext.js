@@ -848,10 +848,101 @@ async function buyItem(index) {
   }
 }
 
+
+// ===== AI CHAT =====
+const aiChatMessages = [];
+
+function showChatTab(tab = "ai") {
+  const isAi = tab === "ai";
+  document.getElementById("ai-chat-pane")?.classList.toggle("hidden", !isAi);
+  document.getElementById("support-chat-pane")?.classList.toggle("hidden", isAi);
+  document.getElementById("ai-chat-tab")?.classList.toggle("active", isAi);
+  document.getElementById("support-chat-tab")?.classList.toggle("active", !isAi);
+
+  if (!isAi) loadSupport();
+}
+
+function renderAiMessages() {
+  const container = document.getElementById("ai-messages");
+  if (!container) return;
+
+  container.innerHTML = aiChatMessages.length
+    ? aiChatMessages.map(message => `
+      <div class="ai-message ${message.role === "user" ? "user" : "assistant"}">
+        <strong>${message.role === "user" ? "Вы" : "ИИ-помощник"}:</strong><br>
+        ${escapeHtml(message.text)}
+      </div>
+    `).join("")
+    : '<div style="opacity:.6">ИИ-чат готов помочь с учебными вопросами.</div>';
+
+  container.scrollTop = container.scrollHeight;
+}
+
+function getAiContext() {
+  const user = cabinetData?.user || {};
+  return [
+    `Ученик: ${username || user.username || "не указан"}`,
+    `Предмет: ${getCourseLabel(getCurrentCourse())}`,
+    `Уровень: ${getCourseMappedValue(user.levels, getCurrentCourse(), "не указан") || "не указан"}`,
+    `Прогресс: ${getCourseProgress(getCurrentCourse())}/100`,
+    `Расписание: ${user.schedule || "не указано"}`,
+  ].join("\n");
+}
+
+async function sendAiMessage() {
+  const input = document.getElementById("ai-input");
+  const text = input?.value.trim();
+  if (!text || !userId) return;
+
+  aiChatMessages.push({ role: "user", text });
+  aiChatMessages.push({ role: "assistant", text: "Думаю над ответом..." });
+  renderAiMessages();
+  input.value = "";
+
+  try {
+    const recentMessages = aiChatMessages
+      .filter(message => message.text !== "Думаю над ответом...")
+      .slice(-8)
+      .map(message => `${message.role}: ${message.text}`)
+      .join("\n");
+
+    const res = await fetch(buildUrl({
+      action: "ai_chat",
+      userId,
+      course: getCurrentCourse(),
+      message: text,
+      context: getAiContext(),
+      history: recentMessages,
+    }));
+    const data = await res.json();
+
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || `HTTP ${res.status}`);
+    }
+
+    const answer = data.answer || data.message || data.text || data.reply;
+    if (!answer) throw new Error("API не вернул ответ ИИ");
+
+    aiChatMessages[aiChatMessages.length - 1] = { role: "assistant", text: answer };
+  } catch (e) {
+    console.error("AI chat is unavailable", e);
+    aiChatMessages[aiChatMessages.length - 1] = {
+      role: "assistant",
+      text: "ИИ-чат сейчас недоступен. Проверьте, что в Apps Script добавлен action=ai_chat, или отправьте вопрос преподавателю во вкладке «Поддержка».",
+    };
+  }
+
+  renderAiMessages();
+}
+
 // ===== SUPPORT =====
 function toggleSupport() {
-  document.getElementById("support-chat")?.classList.toggle("hidden");
-  loadSupport();
+  const chat = document.getElementById("support-chat");
+  chat?.classList.toggle("hidden");
+  if (!chat?.classList.contains("hidden")) {
+    showChatTab("ai");
+    renderAiMessages();
+  }
 }
 
 async function loadSupport() {
