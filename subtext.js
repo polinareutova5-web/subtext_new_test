@@ -988,8 +988,108 @@ async function sendSupport() {
   }
 }
 
+// ================= AI CHAT =================
+const AI_API_URL = "https://api.openai.com/v1/chat/completions";
+const AI_API_KEY = "sk-ws-H.XPDYDY.ZHWH.MEUCICxR4qL3x76D_zvVOQL8KKtIoaHaip3M8dU5d9PbIX9TAiEAi127LaL4y4dPPmkwUSeNc-0KkIWFmGIrtGbQV7gvQRk"; // Вставь свой API ключ
+
+async function sendToAI() {
+  const input = document.getElementById("chat-input");
+  const messagesContainer = document.getElementById("chat-messages");
+  const userMessage = input.value.trim();
+  
+  if (!userMessage) {
+    alert("Введите вопрос");
+    return;
+  }
+  
+  // Добавляем сообщение пользователя
+  const userMsgDiv = document.createElement("div");
+  userMsgDiv.style.cssText = "margin-bottom: 12px; padding: 10px; background: #e3f2fd; border-radius: 8px; text-align: right;";
+  userMsgDiv.innerHTML = `<strong>Вы:</strong><br>${escapeHtml(userMessage)}`;
+  messagesContainer.appendChild(userMsgDiv);
+  
+  // Очищаем поле ввода
+  input.value = "";
+  
+  // Добавляем индикатор загрузки
+  const loadingDiv = document.createElement("div");
+  loadingDiv.id = "ai-loading";
+  loadingDiv.style.cssText = "margin-bottom: 12px; padding: 10px; background: #f5f5f5; border-radius: 8px; opacity: 0.7;";
+  loadingDiv.innerHTML = "🤖 Нейросеть думает...";
+  messagesContainer.appendChild(loadingDiv);
+  
+  // Прокручиваем вниз
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  
+  try {
+    const response = await fetch(AI_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${AI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo", // Замени на нужную модель
+        messages: [
+          {
+            role: "system",
+            content: "Ты - дружелюбный ИИ-помощник образовательной платформы Subtext. Отвечай кратко, понятно и по существу на вопросы учеников."
+          },
+          {
+            role: "user",
+            content: userMessage
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      })
+    });
+    
+    const data = await response.json();
+    
+    // Удаляем индикатор загрузки
+    document.getElementById("ai-loading")?.remove();
+    
+    if (data.choices && data.choices[0]) {
+      const aiMessage = data.choices[0].message.content;
+      
+      // Добавляем ответ нейросети
+      const aiMsgDiv = document.createElement("div");
+      aiMsgDiv.style.cssText = "margin-bottom: 12px; padding: 10px; background: #e8f5e9; border-radius: 8px;";
+      aiMsgDiv.innerHTML = `<strong>🤖 ИИ-помощник:</strong><br>${escapeHtml(aiMessage)}`;
+      messagesContainer.appendChild(aiMsgDiv);
+    } else {
+      throw new Error(data.error?.message || "Не удалось получить ответ");
+    }
+  } catch (error) {
+    document.getElementById("ai-loading")?.remove();
+    
+    const errorDiv = document.createElement("div");
+    errorDiv.style.cssText = "margin-bottom: 12px; padding: 10px; background: #ffebee; border-radius: 8px; color: #c62828;";
+    errorDiv.innerHTML = `❌ Ошибка: ${escapeHtml(error.message)}`;
+    messagesContainer.appendChild(errorDiv);
+  }
+  
+  // Прокручиваем вниз
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Обработка нажатия Enter в поле ввода
+document.addEventListener("DOMContentLoaded", () => {
+  const chatInput = document.getElementById("chat-input");
+  if (chatInput) {
+    chatInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        sendToAI();
+      }
+    });
+  }
+});
+
 // ================= INIT =================
 window.addEventListener("DOMContentLoaded", () => {
    document.addEventListener("click", unlockNotificationSound, { once: true });
    loadData();
  });
+
+
