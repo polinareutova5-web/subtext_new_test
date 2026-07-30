@@ -104,8 +104,9 @@
       border-bottom-left-radius: 54px;
       border-bottom-right-radius: 54px;
       background:
-        linear-gradient(135deg, rgba(4, 22, 49, 0.78), rgba(22, 119, 255, 0.48)),
-        url('https://cdn.qwenlm.ai/output/26e59e0c-c12d-470e-9e9d-ead84f166378/t2i/a16a1240-e568-4c39-8993-f9b94b1f3ad3/1769081334.png?key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXNvdXJjZV91c2VyX2lkIjoiMjZlNTllMGMtYzEyZC00NzBlLTllOWQtZWFkODRmMTY2Mzc4IiwicmVzb3VyY2VfaWQiOiIxNzY5MDgxMzM0IiwicmVzb3VyY2VfY2hhdF9pZCI6Ijk0MzFhMmUwLTc5MjYtNGE3Yy04NDhhLWJkZDU2ZmIwMzhmYSJ9.99OvyFwOVuUt-Lmt0WvMKvo17gVGjdeEWDEEEpa8Jf0') center/cover no-repeat;
+        radial-gradient(circle at 20% 18%, rgba(53, 216, 255, 0.34), transparent 28rem),
+        radial-gradient(circle at 82% 8%, rgba(110, 231, 255, 0.24), transparent 24rem),
+        linear-gradient(135deg, rgba(4, 22, 49, 0.96), rgba(22, 119, 255, 0.58));
       box-shadow: 0 34px 80px rgba(4, 44, 86, 0.25);
     }
 
@@ -1244,13 +1245,13 @@
 
   <main id="main" class="hidden">
     <nav class="nav-container" aria-label="Навигация по кабинету">
-      <button onclick="openAiChatFromNav()">ИИ-чат</button>
       <button onclick="showSection('profile')">Профиль</button>
       <button onclick="showSection('lessons')">Уроки</button>
       <button onclick="showSection('submission')">ДЗ</button>
       <button onclick="showSection('shop')">Магазин</button>
       <button onclick="showSection('schedule')">Расписание</button>
       <button onclick="showSection('materials')">Материалы</button>
+      <button onclick="openAiChatFromNav()">ИИ-чат</button>
       <button onclick="showSection('announcements')">Объявления</button>
       <button onclick="showSection('about')">О нас</button>
     </nav>
@@ -1533,7 +1534,7 @@
   </div>
 
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
-    <script src="subtext.js?v=20260730-schedule-ai-local-fix"></script>
+    <script src="subtext.js?v=20260730-ai-chat-post-fix"></script>
 
   <div class="hearts-container" id="hearts"></div>
 
