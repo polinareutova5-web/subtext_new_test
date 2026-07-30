@@ -989,9 +989,6 @@ async function sendSupport() {
 }
 
 // ================= AI CHAT =================
-const AI_API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
-const AI_API_KEY = "sk-ws-H.XPDYDY.ZHWH.MEUCICxR4qL3x76D_zvVOQL8KKtIoaHaip3M8dU5d9PbIX9TAiEAi127LaL4y4dPPmkwUSeNc-0KkIWFmGIrtGbQV7gvQRk"; // Вставь свой API ключ
-
 async function sendToAI() {
   const input = document.getElementById("chat-input");
   const messagesContainer = document.getElementById("chat-messages");
@@ -1018,42 +1015,23 @@ async function sendToAI() {
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
   
   try {
-    // 3. Запрос через публичный CORS-прокси, чтобы браузер не блокировал его
-    const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(QWEN_API_URL);
-    
-    const response = await fetch(proxyUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${QWEN_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "qwen-turbo", // Можно заменить на 'qwen-plus' или 'qwen-max', если доступно
-        messages: [
-          { 
-            role: "system", 
-            content: "Ты — дружелюбный и полезный ИИ-помощник образовательной платформы Subtext. Отвечай кратко, понятно и по существу на вопросы учеников." 
-          },
-          { 
-            role: "user", 
-            content: userMessage 
-          }
-        ]
-      })
-    });
+    // 3. Запрос идет через Google Apps Script (твой API_URL)
+    const response = await fetch(buildUrl({ 
+      action: "qwen_chat", 
+      message: userMessage 
+    }));
     
     const data = await response.json();
     document.getElementById("ai-loading")?.remove();
     
-    if (data.choices && data.choices[0] && data.choices[0].message) {
+    if (data.success && data.reply) {
       const aiMsgDiv = document.createElement("div");
       aiMsgDiv.style.cssText = "margin-bottom: 12px; padding: 10px; background: #e8f5e9; border-radius: 8px;";
-      // Заменяем переносы строк на <br> для красивого отображения
-      const formattedReply = data.choices[0].message.content.replace(/\n/g, '<br>');
+      const formattedReply = data.reply.replace(/\n/g, '<br>');
       aiMsgDiv.innerHTML = `<strong>🤖 ИИ-помощник:</strong><br>${formattedReply}`;
       messagesContainer.appendChild(aiMsgDiv);
     } else {
-      throw new Error(data.error?.message || "Не удалось получить ответ от нейросети");
+      throw new Error(data.error || "Не удалось получить ответ");
     }
   } catch (error) {
     document.getElementById("ai-loading")?.remove();
