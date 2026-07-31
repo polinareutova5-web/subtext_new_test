@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbyE7pgpBu4-XT0twtoc5vNb2HFFqFHi5xLJIXUIB0tXZ_qmRpEf1p29jKwh3jyiDfnI/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwCUAPCCaerf8wfQVO9Sll4soVAVrGFlvlV4EZXtNi9Pd15TqpxfgYx6HLwzWWcHNds/exec";
 let userId = "";
 let username = "";
 let currentCourse = "";
@@ -1092,14 +1092,18 @@ async function sendAiMessage() {
       .map(message => `${message.role}: ${message.text}`)
       .join("\n");
 
-    const res = await fetch(buildUrl({
-      action: "ai_chat",
-      userId,
-      course: getCurrentCourse(),
-      message: text,
-      context: getAiContext(),
-      history: recentMessages,
-    }));
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "ai_chat",
+        userId,
+        course: getCurrentCourse(),
+        message: text,
+        context: getAiContext(),
+        history: recentMessages,
+      }),
+    });
     const data = await res.json();
 
     if (!res.ok || data.success === false) {
@@ -1114,7 +1118,7 @@ async function sendAiMessage() {
     console.warn("Remote AI chat is unavailable, using local helper", e);
     aiChatMessages[aiChatMessages.length - 1] = {
       role: "assistant",
-      text: buildLocalAiAnswer(text),
+      text: `${buildLocalAiAnswer(text)}\n\n⚠️ Нейросеть Qwen сейчас не ответила: ${e.message}. Если это повторяется, попросите администратора открыть Apps Script URL с action=ai_diagnostics и проверить разрешения/ключ.`,
     };
   }
 
