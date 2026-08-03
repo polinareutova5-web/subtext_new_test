@@ -605,14 +605,17 @@
 
     #lesson-calendar {
       overflow: hidden;
-      border-radius: 20px;
+      border-radius: 18px;
       background: rgba(255, 255, 255, 0.72);
     }
 
-    #lesson-calendar .fc { font-family: 'Poppins', sans-serif; font-size: 0.82rem; }
-    #lesson-calendar .fc-toolbar-title { color: var(--ink); font-size: 1rem; }
-    #lesson-calendar .fc-button-primary { border: 0; background: var(--blue); }
-    #lesson-calendar .fc-daygrid-event { border-radius: 999px; padding: 1px 4px; cursor: pointer; }
+    #lesson-calendar .fc { font-family: 'Poppins', sans-serif; font-size: 0.72rem; }
+    #lesson-calendar .fc .fc-toolbar.fc-header-toolbar { margin-bottom: 0.35rem; padding: 0.45rem 0.45rem 0; }
+    #lesson-calendar .fc-toolbar-title { color: var(--ink); font-size: 0.82rem; }
+    #lesson-calendar .fc-button-primary { border: 0; padding: 0.25rem 0.45rem; font-size: 0.72rem; background: var(--blue); }
+    #lesson-calendar .fc-daygrid-day-number { padding: 2px 4px; }
+    #lesson-calendar .fc-daygrid-day-frame { min-height: 38px; }
+    #lesson-calendar .fc-daygrid-event { border-radius: 999px; padding: 0 3px; cursor: pointer; font-size: 0.68rem; }
 
     /* ===== GRIDS / CARDS ===== */
     .lessons-grid,
@@ -1096,9 +1099,74 @@
       backdrop-filter: blur(20px);
     }
 
-    #support-messages {
+    #support-messages,
+    #ai-messages {
       scrollbar-width: thin;
       scrollbar-color: rgba(22, 119, 255, 0.42) transparent;
+    }
+
+    .chat-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .chat-tab {
+      flex: 1;
+      border: 0;
+      border-radius: 999px;
+      padding: 0.55rem 0.7rem;
+      color: var(--muted);
+      font-weight: 800;
+      cursor: pointer;
+      background: rgba(22, 119, 255, 0.08);
+    }
+
+    .chat-tab.active {
+      color: white;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      box-shadow: 0 10px 24px rgba(22, 119, 255, 0.22);
+    }
+
+    .chat-pane textarea {
+      width: 100%;
+      min-height: 74px;
+      padding: 0.75rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      resize: vertical;
+      font: inherit;
+    }
+
+    .chat-pane button:not(.chat-tab) {
+      width: 100%;
+      margin-top: 0.55rem;
+      border: 0;
+      border-radius: 999px;
+      padding: 0.7rem 1rem;
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+    }
+
+    .ai-message {
+      margin-bottom: 10px;
+      padding: 8px;
+      border-radius: 12px;
+      line-height: 1.5;
+      background: #eef8ff;
+    }
+
+    .ai-message.user {
+      background: #f1f8e9;
+    }
+
+    .ai-note {
+      margin: 0 0 0.75rem;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.45;
     }
 
     /* ===== 14 FEB HEARTS ===== */
@@ -1176,14 +1244,15 @@
 
   <main id="main" class="hidden">
     <nav class="nav-container" aria-label="Навигация по кабинету">
-      <button onclick="showSection('profile')">👤 Профиль</button>
-      <button onclick="showSection('lessons')">📚 Уроки</button>
-      <button onclick="showSection('submission')">📝 ДЗ</button>
-      <button onclick="showSection('shop')">🛒 Магазин</button>
-      <button onclick="showSection('schedule')">📅 Расписание</button>
-      <button onclick="showSection('materials')">📂 Материалы</button>
-      <button onclick="showSection('announcements')">📢 Объявления</button>
-      <button onclick="showSection('about')">ℹ️ О нас</button>
+      <button onclick="openAiChatFromNav()">ИИ-чат</button>
+      <button onclick="showSection('profile')">Профиль</button>
+      <button onclick="showSection('lessons')">Уроки</button>
+      <button onclick="showSection('submission')">ДЗ</button>
+      <button onclick="showSection('shop')">Магазин</button>
+      <button onclick="showSection('schedule')">Расписание</button>
+      <button onclick="showSection('materials')">Материалы</button>
+      <button onclick="showSection('announcements')">Объявления</button>
+      <button onclick="showSection('about')">О нас</button>
     </nav>
 
     <div class="cabinet-shell">
@@ -1444,13 +1513,27 @@
   <div id="support-btn" onclick="toggleSupport()">?</div>
 
   <div id="support-chat" class="hidden">
-    <div id="support-messages" style="max-height:200px;overflow-y:auto;margin-bottom:10px"></div>
-    <textarea id="support-input" placeholder="Ваш вопрос..." style="margin-bottom:8px"></textarea>
-    <button onclick="sendSupport()">Отправить</button>
+    <div class="chat-tabs" role="tablist" aria-label="Чаты Subtext">
+      <button id="ai-chat-tab" class="chat-tab active" type="button" onclick="showChatTab('ai')">ИИ</button>
+      <button id="support-chat-tab" class="chat-tab" type="button" onclick="showChatTab('support')">Поддержка</button>
+    </div>
+
+    <div id="ai-chat-pane" class="chat-pane">
+      <p class="ai-note">Задайте вопрос по урокам, домашке или расписанию. Если ИИ недоступен, сообщение можно отправить преподавателю во вкладке «Поддержка».</p>
+      <div id="ai-messages" style="max-height:220px;overflow-y:auto;margin-bottom:10px"></div>
+      <textarea id="ai-input" placeholder="Например: объясни тему урока простыми словами..."></textarea>
+      <button type="button" onclick="sendAiMessage()">Спросить ИИ</button>
+    </div>
+
+    <div id="support-chat-pane" class="chat-pane hidden">
+      <div id="support-messages" style="max-height:200px;overflow-y:auto;margin-bottom:10px"></div>
+      <textarea id="support-input" placeholder="Ваш вопрос..."></textarea>
+      <button type="button" onclick="sendSupport()">Отправить</button>
+    </div>
   </div>
 
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
-    <script src="subtext.js?v=20260729-dashboard-calendar"></script>
+    <script src="subtext.js?v=20260730-schedule-ai-local-fix"></script>
 
   <div class="hearts-container" id="hearts"></div>
 

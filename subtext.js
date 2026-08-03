@@ -8,6 +8,8 @@ let notificationsLoadedOnce = false;
 let notificationsTimer = null;
 let soundUnlocked = false;
 let lessonCalendar = null;
+// true = сначала пробуем Apps Script action=ai_chat, при ошибке остаётся локальный помощник.
+const REMOTE_AI_ENABLED = true;
 
 function setText(id, value) {
   const el = document.getElementById(id);
@@ -65,6 +67,11 @@ function getCourseLabel(course = "") {
   const labels = {
     english: "Английский",
     physics: "Физика",
+    math: "Математика",
+    biology: "Биология",
+    chemistry: "Химия",
+    french: "Французский",
+    spanish: "Испанский",
   };
   const normalized = normalizeCourseName(course);
   return labels[normalized] || String(course || "Предмет").trim();
@@ -386,20 +393,158 @@ async function markNotificationsRead() {
 
 
 
+
+const WEEKDAY_ALIASES = {
+  0: ["воскресенье", "воскресеньям", "вс", "воск"],
+  1: ["понедельник", "понедельникам", "пн"],
+  2: ["вторник", "вторникам", "вт"],
+  3: ["среда", "среду", "средам", "ср"],
+  4: ["четверг", "четвергам", "чт"],
+  5: ["пятница", "пятницу", "пятницам", "пт"],
+  6: ["суббота", "субботу", "субботам", "сб"],
+};
+
+function parseWeekday(text = "") {
+  const normalized = String(text).toLowerCase();
+  for (const [day, aliases] of Object.entries(WEEKDAY_ALIASES)) {
+    if (aliases.some(alias => new RegExp(`(^|[^а-яё])${alias}([^а-яё]|$)`, "i").test(normalized))) {
+      return Number(day);
+    }
+  }
+  return null;
+}
+
+function nextDateForWeekday(dayOfWeek) {
+  const now = new Date();
+  const result = new Date(now);
+  result.setHours(0, 0, 0, 0);
+  const daysAhead = (dayOfWeek - result.getDay() + 7) % 7;
+  result.setDate(result.getDate() + daysAhead);
+  return result;
+}
+
+function parseDateParts(dateText = "") {
+  const value = String(dateText).trim();
+  const match = value.match(/(\d{1,2})[.\/-](\d{1,2})(?:[.\/-](\d{2,4}))?/);
+  if (!match) return null;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]) - 1;
+  const currentYear = new Date().getFullYear();
+  const year = match[3] ? Number(match[3].length === 2 ? `20${match[3]}` : match[3]) : currentYear;
+  const date = new Date(year, month, day);
+
+  return date.getFullYear() === year && date.getMonth() === month && date.getDate() === day ? date : null;
+}
+
+function parseTimeParts(timeText = "") {
+  const match = String(timeText).match(/(?:^|[^\d.\/-])(\d{1,2})[:.](\d{2})(?![.\/-]\d)/);
+  if (!match) return null;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return null;
+  return { hours, minutes };
+}
+
+function combineDateAndTime(date, timeParts) {
+  if (!date || !timeParts) return null;
+  const result = new Date(date);
+  result.setHours(timeParts.hours, timeParts.minutes, 0, 0);
+  return result;
+}
+
 function parseLessonDateTime(item = {}) {
+  if (item.startDate instanceof Date && !isNaN(item.startDate.getTime())) return item.startDate;
+
   const rawStart = item.start || item.datetime || item.dateTime || item.date_time || item.begin || item["Дата и время"] || "";
   if (rawStart) {
+    const exactDate = parseDateParts(rawStart);
+    const exactTime = parseTimeParts(String(rawStart).replace(/\d{1,2}[.\/-]\d{1,2}(?:[.\/-]\d{2,4})?/, ""));
+    const combined = combineDateAndTime(exactDate, exactTime);
+    if (combined) return combined;
+
     const d = new Date(rawStart);
-    if (!isNaN(d.getTime())) return d;
+    if (!isNaN(d.getTime()) && !/^\d{1,2}[:.]\d{2}$/.test(String(rawStart).trim())) return d;
   }
 
   const rawDate = item.date || item.lessonDate || item["Дата"] || "";
   const rawTime = item.time || item.lessonTime || item["Время"] || "";
-  if (rawDate || rawTime) {
+  const date = parseDateParts(rawDate);
+  const time = parseTimeParts(rawTime);
+  const combined = combineDateAndTime(date, time);
+  if (combined) return combined;
+
+  if (rawDate && rawTime) {
     const d = new Date(`${rawDate} ${rawTime}`.trim());
     if (!isNaN(d.getTime())) return d;
   }
   return null;
+}
+
+
+function inferScheduleSubject(line = "", fallback = getCourseLabel(getCurrentCourse())) {
+  const subjects = [
+    ["english", ["английский", "англ", "english"]],
+    ["physics", ["физика", "физику", "physics"]],
+    ["math", ["математика", "математику", "math"]],
+    ["biology", ["биология", "биологию", "biology"]],
+    ["chemistry", ["химия", "химию", "chemistry"]],
+    ["french", ["французский", "французскому", "french"]],
+    ["spanish", ["испанский", "испанскому", "spanish"]],
+  ];
+  const normalized = String(line).toLowerCase();
+  const found = subjects.find(([, aliases]) => aliases.some(alias => normalized.includes(alias)));
+  return found ? getCourseLabel(found[0]) : fallback;
+}
+
+function parseScheduleText(scheduleText = "") {
+  const courseLabel = getCourseLabel(getCurrentCourse());
+
+  return String(scheduleText)
+    .split(/\n|;|,(?=\s*(?:\d{1,2}[.\/-]|пн|вт|ср|чт|пт|сб|вс|понедельник|вторник|среда|четверг|пятница|суббота|воскресенье))/i)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map((line, index) => {
+      const explicitDate = parseDateParts(line);
+      const time = parseTimeParts(line.replace(/\d{1,2}[.\/-]\d{1,2}(?:[.\/-]\d{2,4})?/, ""));
+      const weekday = parseWeekday(line);
+      const date = explicitDate || (weekday === null ? null : nextDateForWeekday(weekday));
+      const startDate = combineDateAndTime(date, time);
+      if (!startDate) return null;
+
+      const now = new Date();
+      if (startDate < now && weekday !== null) {
+        startDate.setDate(startDate.getDate() + 7);
+      } else if (startDate < now && explicitDate && !/\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}/.test(line)) {
+        startDate.setFullYear(startDate.getFullYear() + 1);
+      }
+
+      const title = line
+        .replace(/\d{1,2}[.\/-]\d{1,2}(?:[.\/-]\d{2,4})?/, "")
+        .replace(/\d{1,2}[:.]\d{2}/, "")
+        .replace(/понедельник(?:ам)?|вторник(?:ам)?|сред[ауам]*|четверг(?:ам)?|пятниц[ауам]*|суббот[ауам]*|воскресенье|воскресеньям|пн|вт|ср|чт|пт|сб|вс/gi, "")
+        .replace(/[—–-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const subject = inferScheduleSubject(line, courseLabel);
+
+      return {
+        id: `schedule-${index}-${startDate.getTime()}`,
+        title: title || subject,
+        subject,
+        course: getCurrentCourse(),
+        fromScheduleText: true,
+        topic: title,
+        startDate,
+        date: line,
+        time: line,
+        duration: "",
+        link: String(cabinetData?.user?.link || "").trim(),
+      };
+    })
+    .filter(Boolean);
 }
 
 function collectScheduleItems() {
@@ -407,11 +552,12 @@ function collectScheduleItems() {
   const user = data.user || {};
   const sources = [data.scheduleEvents, data.events, data.calendar, data.scheduleItems, data.lessonsSchedule, user.scheduleEvents, user.events, user.calendar, user.nextLessons];
   const course = getCurrentCourse();
-  const items = sources.find(source => Array.isArray(source) && source.length) || [];
+  const items = sources.find(source => Array.isArray(source) && source.length) || parseScheduleText(user.schedule);
 
   return items
     .filter(item => {
-      const itemCourse = item.course || item.subjectKey || item.subject || item["Предмет"] || "";
+      if (item.fromScheduleText) return true;
+      const itemCourse = item.course || item.subjectKey || item["Предмет"] || "";
       return !itemCourse || normalizeCourseName(itemCourse) === normalizeCourseName(course) || getCourseLabel(itemCourse) === getCourseLabel(course);
     })
     .map((item, index) => {
@@ -420,7 +566,7 @@ function collectScheduleItems() {
       return {
         id: String(item.id || item.lessonId || index),
         title: String(title || "Урок"),
-        subject: String(item.subject || item["Предмет"] || title || getCourseLabel(course)),
+        subject: String(item.subject || item["Предмет"] || getCourseLabel(course)),
         topic: String(item.topic || item.theme || item["Тема"] || "Тема уточняется"),
         startDate,
         date: item.date || item["Дата"] || (startDate ? startDate.toISOString() : ""),
@@ -446,19 +592,16 @@ function renderNextLesson() {
     return;
   }
   container.innerHTML = `
-    <div class="next-lesson-row"><small>Предмет</small>${escapeHtml(lesson.subject)}</div>
-    <div class="next-lesson-row"><small>Тема</small>${escapeHtml(lesson.topic)}</div>
     <div class="next-lesson-row"><small>Дата</small>${formatDate(lesson.startDate)}</div>
     <div class="next-lesson-row"><small>Время</small>${formatTime(lesson.startDate)}</div>
-    <div class="next-lesson-row"><small>Продолжительность</small>${escapeHtml(lesson.duration)}</div>
-    ${lesson.link ? `<a href="${escapeAttr(lesson.link)}" target="_blank" rel="noopener" class="lesson-btn">Перейти к уроку</a>` : '<span style="color:var(--muted)">Ссылка появится позже</span>'}
+    <div class="next-lesson-row"><small>Предмет</small>${escapeHtml(lesson.subject)}</div>
   `;
 }
 
 function openLessonCard(eventId) {
   const lesson = collectScheduleItems().find(item => item.id === String(eventId));
   if (!lesson) return;
-  alert(`${lesson.subject}\n${lesson.topic}\n${formatDate(lesson.startDate)} ${formatTime(lesson.startDate)}\n${lesson.duration}`);
+  alert(`${lesson.subject}\n${formatDate(lesson.startDate)} ${formatTime(lesson.startDate)}`);
 }
 
 function renderCalendar() {
@@ -472,8 +615,10 @@ function renderCalendar() {
     if (lessonCalendar) lessonCalendar.destroy();
     lessonCalendar = new FullCalendar.Calendar(calendarEl, {
       initialView: "dayGridMonth",
-      height: "auto",
+      height: 330,
+      contentHeight: 280,
       locale: "ru",
+      dayMaxEvents: 2,
       headerToolbar: { left: "prev,next", center: "title", right: "today" },
       events,
       eventClick(info) { openLessonCard(info.event.id); },
@@ -848,10 +993,142 @@ async function buyItem(index) {
   }
 }
 
+
+// ===== AI CHAT =====
+const aiChatMessages = [];
+
+function showChatTab(tab = "ai") {
+  const isAi = tab === "ai";
+  document.getElementById("ai-chat-pane")?.classList.toggle("hidden", !isAi);
+  document.getElementById("support-chat-pane")?.classList.toggle("hidden", isAi);
+  document.getElementById("ai-chat-tab")?.classList.toggle("active", isAi);
+  document.getElementById("support-chat-tab")?.classList.toggle("active", !isAi);
+
+  if (!isAi) loadSupport();
+}
+
+function renderAiMessages() {
+  const container = document.getElementById("ai-messages");
+  if (!container) return;
+
+  container.innerHTML = aiChatMessages.length
+    ? aiChatMessages.map(message => `
+      <div class="ai-message ${message.role === "user" ? "user" : "assistant"}">
+        <strong>${message.role === "user" ? "Вы" : "ИИ-помощник"}:</strong><br>
+        ${escapeHtml(message.text)}
+      </div>
+    `).join("")
+    : '<div style="opacity:.6">ИИ-чат готов помочь с учебными вопросами.</div>';
+
+  container.scrollTop = container.scrollHeight;
+}
+
+function getAiContext() {
+  const user = cabinetData?.user || {};
+  return [
+    `Ученик: ${username || user.username || "не указан"}`,
+    `Предмет: ${getCourseLabel(getCurrentCourse())}`,
+    `Уровень: ${getCourseMappedValue(user.levels, getCurrentCourse(), "не указан") || "не указан"}`,
+    `Прогресс: ${getCourseProgress(getCurrentCourse())}/100`,
+    `Расписание: ${user.schedule || "не указано"}`,
+  ].join("\n");
+}
+
+function buildLocalAiAnswer(question = "") {
+  const normalizedQuestion = question.toLowerCase();
+  const nextLesson = getNextLesson();
+  const subject = getCourseLabel(getCurrentCourse());
+
+  if (/когда|ближайш|следующ|расписан|урок/.test(normalizedQuestion)) {
+    return nextLesson
+      ? `Ближайший урок: ${subject}, ${formatDate(nextLesson.startDate)} в ${formatTime(nextLesson.startDate)}.`
+      : `В расписании пока нет будущих уроков по предмету «${subject}». Проверьте раздел «Расписание» или напишите преподавателю в поддержку.`;
+  }
+
+  if (/дз|домаш|задан|сдать/.test(normalizedQuestion)) {
+    const formLink = getSubmissionFormLink(getCurrentCourse());
+    return formLink
+      ? `Домашнее задание по предмету «${subject}» можно сдать в разделе «ДЗ» через кнопку «Открыть форму ДЗ».`
+      : `Форма ДЗ по предмету «${subject}» пока не назначена. Уточните задание у преподавателя через вкладку «Поддержка».`;
+  }
+
+  if (/прогресс|балл|уров|рейтинг|мест/.test(normalizedQuestion)) {
+    const user = cabinetData?.user || {};
+    const level = getCourseMappedValue(user.levels, getCurrentCourse(), "не указан") || "не указан";
+    const rank = getCourseRank(getCurrentCourse()) || "пока не указан";
+    return `По предмету «${subject}»: прогресс ${getCourseProgress(getCurrentCourse())}/100, уровень — ${level}, рейтинг — ${rank}.`;
+  }
+
+  return `Я помогу с навигацией по кабинету: расписанием, ближайшим уроком, ДЗ, прогрессом и материалами. По самому учебному объяснению лучше написать преподавателю во вкладке «Поддержка», если подключенный ИИ-сервис сейчас недоступен.`;
+}
+
+function openAiChatFromNav() {
+  const chat = document.getElementById("support-chat");
+  chat?.classList.remove("hidden");
+  showChatTab("ai");
+  renderAiMessages();
+}
+
+async function sendAiMessage() {
+  const input = document.getElementById("ai-input");
+  const text = input?.value.trim();
+  if (!text || !userId) return;
+
+  aiChatMessages.push({ role: "user", text });
+  aiChatMessages.push({ role: "assistant", text: "Думаю над ответом..." });
+  renderAiMessages();
+  input.value = "";
+
+  if (!REMOTE_AI_ENABLED) {
+    aiChatMessages[aiChatMessages.length - 1] = { role: "assistant", text: buildLocalAiAnswer(text) };
+    renderAiMessages();
+    return;
+  }
+
+  try {
+    const recentMessages = aiChatMessages
+      .filter(message => message.text !== "Думаю над ответом...")
+      .slice(-8)
+      .map(message => `${message.role}: ${message.text}`)
+      .join("\n");
+
+    const res = await fetch(buildUrl({
+      action: "ai_chat",
+      userId,
+      course: getCurrentCourse(),
+      message: text,
+      context: getAiContext(),
+      history: recentMessages,
+    }));
+    const data = await res.json();
+
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || `HTTP ${res.status}`);
+    }
+
+    const answer = data.answer || data.message || data.text || data.reply;
+    if (!answer) throw new Error("API не вернул ответ ИИ");
+
+    aiChatMessages[aiChatMessages.length - 1] = { role: "assistant", text: answer };
+  } catch (e) {
+    console.warn("Remote AI chat is unavailable, using local helper", e);
+    aiChatMessages[aiChatMessages.length - 1] = {
+      role: "assistant",
+      text: buildLocalAiAnswer(text),
+    };
+  }
+
+  renderAiMessages();
+}
+
 // ===== SUPPORT =====
 function toggleSupport() {
-  document.getElementById("support-chat")?.classList.toggle("hidden");
-  loadSupport();
+  const chat = document.getElementById("support-chat");
+  chat?.classList.toggle("hidden");
+  if (!chat?.classList.contains("hidden")) {
+    showChatTab("ai");
+    renderAiMessages();
+  }
 }
 
 async function loadSupport() {

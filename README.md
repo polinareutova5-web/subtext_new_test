@@ -147,6 +147,132 @@ const COURSE_TABLES = {
 
 Важно: если добавляете новый предмет только в Google Sheets, но не добавляете его в `COURSE_TABLES`, Apps Script вернет ошибку `Курс "..." не найден`.
 
+## ИИ-чат
+
+В личном кабинете есть вкладка «ИИ» в плавающем чате. Фронтенд отправляет запрос в Apps Script с такими параметрами:
+
+| Параметр | Что передается |
+| --- | --- |
+| `action` | Всегда `ai_chat` |
+| `userId` | ID текущего ученика |
+| `course` | Текущий предмет, например `english` |
+| `message` | Новый вопрос ученика |
+| `context` | Краткий контекст: имя, предмет, уровень, прогресс и расписание |
+| `history` | Последние сообщения текущего диалога |
+
+Apps Script должен вернуть JSON в одном из этих форматов:
+
+```json
+{ "success": true, "answer": "Короткий ответ ИИ" }
+```
+
+или
+
+```json
+{ "success": true, "reply": "Короткий ответ ИИ" }
+```
+
+Фронтенд сначала пробует вызвать `ai_chat` в Apps Script. Если этот action не добавлен или OpenAI недоступен, включается локальный помощник по расписанию, ближайшему уроку, ДЗ и прогрессу.
+
+### Что точно добавить в Apps Script для рабочего ИИ-чата
+
+1. В **Project Settings → Script properties** добавьте свойство `OPENAI_API_KEY` со значением вашего OpenAI API key. Не вставляйте ключ во фронтенд или в Google Sheet.
+2. В обработчике `doGet(e)` добавьте ветку:
+
+```js
+if (action === 'ai_chat') {
+  return jsonResponse(handleAiChat(e.parameter));
+}
+```
+
+3. Добавьте в Apps Script функции ниже. Если у вас уже есть `jsonResponse`, оставьте свою версию и не дублируйте ее.
+
+```js
+function jsonResponse(payload) {
+  return ContentService
+    .createTextOutput(JSON.stringify(payload))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleAiChat(params) {
+  const message = String(params.message || '').trim();
+  if (!message) {
+    return { success: false, error: 'Пустой вопрос' };
+  }
+
+  const apiKey = PropertiesService.getScriptProperties().getProperty('OPENAI_API_KEY');
+  if (!apiKey) {
+    return { success: false, error: 'OPENAI_API_KEY не задан в Script properties' };
+  }
+
+  const context = String(params.context || '');
+  const history = String(params.history || '');
+  const course = String(params.course || '');
+
+  const payload = {
+    model: 'gpt-5.6',
+    input: [
+      {
+        role: 'system',
+        content: [
+          'Ты учебный помощник Subtext для школьников.',
+          'Отвечай на русском, коротко, дружелюбно и по делу.',
+          'Если вопрос про расписание, ДЗ, прогресс или ближайший урок — используй контекст ученика.',
+          'Если данных не хватает, попроси уточнить или обратиться к преподавателю.',
+        ].join(' ')
+      },
+      {
+        role: 'user',
+        content: [
+          'Контекст ученика:', context,
+          'Текущий предмет:', course,
+          'История диалога:', history,
+          'Новый вопрос:', message,
+        ].join('\n')
+      }
+    ]
+  };
+
+  const response = UrlFetchApp.fetch('https://api.openai.com/v1/responses', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { Authorization: 'Bearer ' + apiKey },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true,
+  });
+
+  const status = response.getResponseCode();
+  const raw = response.getContentText();
+  const data = JSON.parse(raw);
+
+  if (status < 200 || status >= 300) {
+    return {
+      success: false,
+      error: data.error && data.error.message ? data.error.message : 'OpenAI API error ' + status,
+    };
+  }
+
+  return {
+    success: true,
+    answer: data.output_text || extractOpenAiText(data) || 'Не получилось сформировать ответ. Попробуйте переформулировать вопрос.',
+  };
+}
+
+function extractOpenAiText(data) {
+  const output = data && data.output;
+  if (!Array.isArray(output)) return '';
+
+  return output
+    .flatMap(function(item) { return Array.isArray(item.content) ? item.content : []; })
+    .map(function(part) { return part.text || ''; })
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+}
+```
+
+После деплоя Apps Script обновите Web App deployment. Фронтенд уже отправляет `action=ai_chat`, `userId`, `course`, `message`, `context` и `history`, поэтому больше менять HTML не нужно.
+
 ## Поддержка
 
 Создайте в главной таблице лист `Поддержка` с заголовками в первой строке:
