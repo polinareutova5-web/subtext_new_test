@@ -34,18 +34,16 @@ function doGet(e) {
     if (action === 'teacher_add_column') return teacherAddColumn(p.tableType, p.course, p.sheetName, p.colIndex, p.access);
     if (action === 'teacher_delete_column') return teacherDeleteColumn(p.tableType, p.course, p.sheetName, p.colIndex, p.access);
     if (action === 'teacher_save_sheet') return teacherSaveSheet(p.tableType, p.course, p.sheetName, JSON.parse(p.changes), p.access);
-    if (action === "qwen_chat") {
-    const message = e.parameter.message;
-    if (!message) {
-      return ContentService.createTextOutput(JSON.stringify({
-        success: false,
-        error: "Сообщение не указано"
-      })).setMimeType(ContentService.MimeType.JSON);
+    if (action === "ai_chat" || action === "qwen_chat") {
+      const message = p.message;
+      if (!message) return error("Сообщение не указано");
+
+      return json(handleQwenChat({
+        message,
+        context: p.context || "",
+        history: p.history || ""
+      }));
     }
-    
-    const result = handleQwenChat(message);
-    return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
-  }
 
     // 2. ДЕЙСТВИЯ УЧЕНИКА (требуют userId)
     const userId = p.userId;
@@ -680,53 +678,75 @@ function canAccessSheet(sheetName, access) {
 }
 
 // ================= QWEN AI CHAT =================
-function handleQwenChat(message) {
+function getQwenApiKey() {
+  const scriptKey = PropertiesService.getScriptProperties().getProperty('QWEN_API_KEY');
+  const fallbackKey = "sk-ws-H.XPDYDY.ZHWH.MEUCICxR4qL3x76D_zvVOQL8KKtIoaHaip3M8dU5d9PbIX9TAiEAi127LaL4y4dPPmkwUSeNc-0KkIWFmGIrtGbQV7gvQRk";
+  return (scriptKey || fallbackKey || '').trim();
+}
+
+function handleQwenChat(request) {
   const QWEN_API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
-  const QWEN_API_KEY = "sk-ws-H.XPDYDY.ZHWH.MEUCICxR4qL3x76D_zvVOQL8KKtIoaHaip3M8dU5d9PbIX9TAiEAi127LaL4y4dPPmkwUSeNc-0KkIWFmGIrtGbQV7gvQRk"; // ВСТАВЬ СЮДА СВОЙ ПОЛНЫЙ КЛЮЧ
-  
+  const QWEN_API_KEY = getQwenApiKey();
+  const message = String(request && request.message || '').trim();
+  const context = String(request && request.context || '').trim();
+  const history = String(request && request.history || '').trim();
+
+  if (!message) {
+    return { success: false, error: "Сообщение не указано" };
+  }
+
+  if (!QWEN_API_KEY) {
+    return { success: false, error: "QWEN_API_KEY не задан в Script Properties" };
+  }
+
   try {
+    const systemPrompt = [
+      "Ты — дружелюбный и полезный ИИ-помощник образовательной платформы Subtext.",
+      "Отвечай ученику кратко, понятно и по существу.",
+      "Если вопрос касается личного кабинета, учитывай переданный контекст ученика.",
+      "Если данных недостаточно, честно скажи, что нужно уточнить у преподавателя или в поддержке."
+    ].join(' ');
+
+    const userContent = [
+      context ? "Контекст ученика:\n" + context : "",
+      history ? "Последние сообщения:\n" + history : "",
+      "Вопрос ученика:\n" + message
+    ].filter(Boolean).join("\n\n");
+
     const payload = {
       model: "qwen-turbo",
       messages: [
-        { 
-          role: "system", 
-          content: "Ты — дружелюбный и полезный ИИ-помощник образовательной платформы Subtext. Отвечай кратко, понятно и по существу на вопросы учеников." 
-        },
-        { 
-          role: "user", 
-          content: message 
-        }
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent }
       ]
     };
-    
-    const options = {
+
+    const response = UrlFetchApp.fetch(QWEN_API_URL, {
       method: "post",
       contentType: "application/json",
-      headers: {
-        "Authorization": "Bearer " + QWEN_API_KEY
-      },
+      headers: { Authorization: "Bearer " + QWEN_API_KEY },
       payload: JSON.stringify(payload),
       muteHttpExceptions: true
-    };
-    
-    const response = UrlFetchApp.fetch(QWEN_API_URL, options);
-    const data = JSON.parse(response.getContentText());
-    
-    if (data.choices && data.choices[0] && data.choices[0].message) {
-      return {
-        success: true,
-        reply: data.choices[0].message.content
-      };
-    } else {
+    });
+
+    const status = response.getResponseCode();
+    const body = response.getContentText();
+    const data = JSON.parse(body || '{}');
+
+    if (status < 200 || status >= 300) {
       return {
         success: false,
-        error: data.error?.message || "Не удалось получить ответ от нейросети"
+        error: (data.error && (data.error.message || data.error.code)) || ("Qwen вернул HTTP " + status)
       };
     }
+
+    const answer = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    if (!answer) {
+      return { success: false, error: "Qwen не вернул текст ответа" };
+    }
+
+    return { success: true, answer: answer, reply: answer };
   } catch (error) {
-    return {
-      success: false,
-      error: error.toString()
-    };
+    return { success: false, error: error && error.message ? error.message : String(error) };
   }
 }
