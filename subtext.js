@@ -106,6 +106,12 @@ function getCourseProgress(course = getCurrentCourse()) {
   return Math.max(0, Math.min(Number(getCourseMappedValue(progressSource, course, 0)) || 0, 100));
 }
 
+function getLessonsRemainingText() {
+  const user = cabinetData?.user || {};
+  const value = user.lessonsRemaining ?? user.paidLessons ?? user.remainingLessons ?? user.lessons_left ?? user['осталось уроков'];
+  return value === undefined || value === null || value === '' ? '—' : value;
+}
+
 function getCourseRank(course = getCurrentCourse()) {
   const user = cabinetData?.user || {};
   const normalized = normalizeCourseName(course);
@@ -725,6 +731,7 @@ async function loadCabinet() {
     setText("username", u.username || "—");
     setText("level", getCourseMappedValue(u.levels, currentCourse, "—") || "—");
     setText("coins", u.coins || 0);
+    setText("lessons-remaining", getLessonsRemainingText());
     renderCourseProgressMeta(currentCourse);
     const lessonLinkEl = document.getElementById("lesson-link");
 
