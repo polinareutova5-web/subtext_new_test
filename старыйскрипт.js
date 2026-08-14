@@ -11,7 +11,7 @@ const COURSE_TABLES = {
 };
 const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
 const QWEN_API_KEY = 'sk-ws-H.XPDYDY.ZHWH.MEUCICxR4qL3x76D_zvVOQL8KKtIoaHaip3M8dU5d9PbIX9TAiEAi127LaL4y4dPPmkwUSeNc-0KkIWFmGIrtGbQV7gvQRk';
-const API_VERSION = '2026-07-30-ai-chat-post-diagnostics';
+const API_VERSION = '2026-08-14-lessons-remaining-fix';
 const COURSE_FORM_LINKS = {
   english: 'https://docs.google.com/forms/d/e/1FAIpQLSdyaEIut7zciiAfhbNexWHxXLy6eE1IoEwpprm-x8I-penPrw/viewform',
   physics: 'https://docs.google.com/forms/d/e/ССЫЛКА_НА_ФОРМУ_ФИЗИКИ/viewform',
@@ -113,6 +113,9 @@ function doGet(e) {
         coins: user.coins,
         link: user.link,
         schedule: user.schedule,
+        lessonsRemaining: user.lessonsRemaining,
+        paidLessons: user.paidLessons,
+        remainingLessons: user.lessonsRemaining,
         levels: user.levels,
         ranks: user.ranks,
         avatarUrl: user.avatarUrl,
@@ -184,9 +187,16 @@ function openUsersSheet(sheetName) {
   return sheet;
 }
 
+function normalizeHeaderName(value) {
+  return String(value || '').trim().toLowerCase().replace(/[^a-zа-яё0-9]/g, '');
+}
+
 function findHeaderIndex(headers, aliases, fallbackIndex) {
-  const normalizedAliases = aliases.map(a => String(a).trim().toLowerCase());
-  const index = headers.findIndex(h => normalizedAliases.includes(String(h).trim().toLowerCase()));
+  const normalizedAliases = aliases.map(normalizeHeaderName).filter(Boolean);
+  const index = headers.findIndex(header => {
+    const normalizedHeader = normalizeHeaderName(header);
+    return normalizedAliases.some(alias => normalizedHeader === alias || normalizedHeader.includes(alias));
+  });
   return index >= 0 ? index : fallbackIndex;
 }
 
@@ -206,9 +216,17 @@ function getUser(userId) {
     'lessons_remaining',
     'remaining_lessons',
     'paid_lessons',
+    'lessons_left',
+    'lessonsleft',
+    'lessons paid',
     'оплаченные уроки',
     'оплачено уроков',
+    'оплаченных уроков',
+    'остаток уроков',
     'осталось уроков',
+    'количество уроков',
+    'уроков осталось',
+    'уроки осталось',
   ], 2);
   const progressCol = findHeaderIndex(headers, ['progress'], -1);
   const coinsCol = findHeaderIndex(headers, ['coins', 'монеты'], 3);

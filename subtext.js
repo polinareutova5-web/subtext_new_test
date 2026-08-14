@@ -108,7 +108,13 @@ function getCourseProgress(course = getCurrentCourse()) {
 
 function getLessonsRemainingText() {
   const user = cabinetData?.user || {};
-  const value = user.lessonsRemaining ?? user.paidLessons ?? user.remainingLessons ?? user.lessons_left ?? user['осталось уроков'];
+  const value = user.lessonsRemaining
+    ?? user.paidLessons
+    ?? user.remainingLessons
+    ?? user.lessons_left
+    ?? user.lessonsLeft
+    ?? user['осталось уроков']
+    ?? user['оплаченные уроки'];
   return value === undefined || value === null || value === '' ? '—' : value;
 }
 
