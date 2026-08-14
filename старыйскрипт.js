@@ -184,25 +184,58 @@ function openUsersSheet(sheetName) {
   return sheet;
 }
 
+function findHeaderIndex(headers, aliases, fallbackIndex) {
+  const normalizedAliases = aliases.map(a => String(a).trim().toLowerCase());
+  const index = headers.findIndex(h => normalizedAliases.includes(String(h).trim().toLowerCase()));
+  return index >= 0 ? index : fallbackIndex;
+}
+
+function getCell(row, index, fallback = '') {
+  return index >= 0 ? row[index] : fallback;
+}
+
 function getUser(userId) {
   const sheet = openUsersSheet('Лист1');
   const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return null;
+
+  const headers = rows[0].map(h => String(h).trim());
+  const userIdCol = findHeaderIndex(headers, ['userId', 'user_id', 'id'], 0);
+  const usernameCol = findHeaderIndex(headers, ['username', 'name', 'имя'], 1);
+  const lessonsRemainingCol = findHeaderIndex(headers, [
+    'lessons_remaining',
+    'remaining_lessons',
+    'paid_lessons',
+    'оплаченные уроки',
+    'оплачено уроков',
+    'осталось уроков',
+  ], 2);
+  const progressCol = findHeaderIndex(headers, ['progress'], -1);
+  const coinsCol = findHeaderIndex(headers, ['coins', 'монеты'], 3);
+  const linkCol = findHeaderIndex(headers, ['lesson_link', 'link', 'ссылка'], 5);
+  const scheduleCol = findHeaderIndex(headers, ['schedule', 'расписание'], 6);
+  const subjectCol = findHeaderIndex(headers, ['subject', 'subjects', 'course', 'courses', 'предмет'], 7);
+  const avatarCol = findHeaderIndex(headers, ['аватар', 'avatar', 'avatarUrl', 'avatar_url'], 8);
+
   for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]).trim() === String(userId).trim()) {
-      const coursesStr = String(rows[i][9] || '').toLowerCase();
+    const row = rows[i];
+    if (String(getCell(row, userIdCol)).trim() === String(userId).trim()) {
+      const coursesStr = String(getCell(row, subjectCol) || '').toLowerCase();
       const courses = coursesStr.split(',').map(c => normalizeCourse(c)).filter(Boolean);
       const stats = getUserCourseStats(userId);
-      const fallbackLevels = { english: rows[i][7] || '', physics: rows[i][8] || '' };
+      const progressFallback = progressCol >= 0 && progressCol !== lessonsRemainingCol ? getCell(row, progressCol, 0) : 0;
       return {
-        id: rows[i][0],
-        username: rows[i][1],
-        progress: Object.keys(stats.progress).length ? stats.progress : (rows[i][2] || 0),
-        coins: rows[i][3] || 0,
-        link: rows[i][5] || '',
-        schedule: rows[i][6] || '',
-        levels: Object.keys(stats.levels).length ? stats.levels : fallbackLevels,
+        id: getCell(row, userIdCol),
+        username: getCell(row, usernameCol),
+        progress: Object.keys(stats.progress).length ? stats.progress : progressFallback,
+        coins: getCell(row, coinsCol, 0) || 0,
+        link: getCell(row, linkCol) || '',
+        schedule: getCell(row, scheduleCol) || '',
+        lessonsRemaining: getCell(row, lessonsRemainingCol, ''),
+        paidLessons: getCell(row, lessonsRemainingCol, ''),
+        levels: stats.levels,
         ranks: stats.ranks,
-        avatarUrl: rows[i][10] || null,
+        avatarUrl: getCell(row, avatarCol) || null,
         courses,
       };
     }
