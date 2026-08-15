@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Subtext — Личный кабинет</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --ink: #0b2341;
+      --muted: #5f7f9a;
+      --deep: #06142b;
+      --night: #09244a;
+      --blue: #1677ff;
+      --blue-2: #4aa3ff;
+      --cyan: #35d8ff;
+      --ice: #eefaff;
+      --glass: rgba(255, 255, 255, 0.74);
+      --glass-strong: rgba(255, 255, 255, 0.9);
+      --line: rgba(91, 190, 255, 0.28);
+      --shadow: 0 24px 70px rgba(6, 35, 75, 0.18);
+      --shadow-strong: 0 34px 90px rgba(5, 32, 72, 0.28);
+      --radius-xl: 34px;
+      --radius-lg: 26px;
+      --radius-md: 18px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      min-height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(53, 216, 255, 0.34), transparent 28rem),
+        radial-gradient(circle at 90% 12%, rgba(22, 119, 255, 0.22), transparent 30rem),
+        radial-gradient(circle at 70% 92%, rgba(74, 163, 255, 0.18), transparent 34rem),
+        linear-gradient(180deg, #f9fdff 0%, #eaf8ff 43%, #dcefff 100%);
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      pointer-events: none;
+      z-index: -1;
+      border-radius: 999px;
+      filter: blur(5px);
+    }
+
+    body::before {
+      width: 520px;
+      height: 520px;
+      left: -190px;
+      bottom: -130px;
+      background: radial-gradient(circle, rgba(53, 216, 255, 0.32), transparent 68%);
+    }
+
+    body::after {
+      width: 440px;
+      height: 440px;
+      right: -160px;
+      top: 260px;
+      background: radial-gradient(circle, rgba(22, 119, 255, 0.2), transparent 70%);
+    }
+
+    .hidden { display: none !important; }
+    a { color: var(--blue); }
+
+    hr {
+      height: 1px;
+      margin: 1.5rem 0;
+      border: 0;
+      background: linear-gradient(90deg, transparent, rgba(22, 119, 255, 0.24), transparent);
+    }
+
+    #loading {
+      width: min(420px, calc(100% - 32px));
+      margin: 2rem auto;
+      padding: 1.25rem 1.5rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      color: var(--blue);
+      text-align: center;
+      font-weight: 700;
+      background: var(--glass-strong);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    /* ===== HEADER / AURORA ===== */
+    .hero {
+      position: relative;
+      isolation: isolate;
+      min-height: 370px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border-bottom-left-radius: 54px;
+      border-bottom-right-radius: 54px;
+      background:
+        radial-gradient(circle at 20% 18%, rgba(53, 216, 255, 0.34), transparent 28rem),
+        radial-gradient(circle at 82% 8%, rgba(110, 231, 255, 0.24), transparent 24rem),
+        linear-gradient(135deg, rgba(4, 22, 49, 0.96), rgba(22, 119, 255, 0.58));
+      box-shadow: 0 34px 80px rgba(4, 44, 86, 0.25);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: -28%;
+      z-index: -1;
+      background:
+        conic-gradient(from 130deg at 50% 50%, transparent, rgba(53, 216, 255, 0.46), transparent, rgba(22, 119, 255, 0.36), transparent),
+        radial-gradient(circle at 24% 28%, rgba(255, 255, 255, 0.28), transparent 26rem);
+      animation: aurora 14s ease-in-out infinite alternate;
+      filter: blur(10px);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.22)),
+        radial-gradient(circle at 78% 72%, rgba(255, 255, 255, 0.22), transparent 22rem);
+    }
+
+    @keyframes aurora {
+      from { transform: translate3d(-2%, -1%, 0) rotate(0deg) scale(1); }
+      to { transform: translate3d(2%, 2%, 0) rotate(16deg) scale(1.08); }
+    }
+
+    .channel-badge {
+      position: absolute;
+      top: 24px;
+      right: 30px;
+      z-index: 2;
+      padding: 0.58rem 0.95rem;
+      border: 1px solid rgba(255, 255, 255, 0.42);
+      border-radius: 999px;
+      color: #eaf9ff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: rgba(3, 35, 74, 0.34);
+      box-shadow: 0 14px 34px rgba(2, 18, 45, 0.25);
+      backdrop-filter: blur(16px);
+    }
+
+    .hero-content {
+      position: relative;
+      width: min(980px, calc(100% - 32px));
+      display: grid;
+      justify-items: center;
+      gap: 1.25rem;
+      padding: 2rem 0;
+      text-align: center;
+    }
+
+    .eyebrow {
+      padding: 0.5rem 0.9rem;
+      border: 1px solid rgba(255, 255, 255, 0.36);
+      border-radius: 999px;
+      color: rgba(235, 249, 255, 0.92);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(14px);
+    }
+
+    .big-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(4rem, 12vw, 8rem);
+      color: rgba(255, 255, 255, 0.96);
+      letter-spacing: 0.1em;
+      line-height: 0.9;
+      text-transform: uppercase;
+      text-shadow:
+        0 5px 0 rgba(5, 54, 111, 0.72),
+        0 24px 52px rgba(0, 20, 52, 0.36),
+        0 0 44px rgba(53, 216, 255, 0.46);
+    }
+
+    .hero-subtitle {
+      max-width: 620px;
+      color: rgba(242, 251, 255, 0.88);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    .hero-orb {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(53, 216, 255, 0.08));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 20px 50px rgba(2, 28, 68, 0.18);
+      backdrop-filter: blur(12px);
+      animation: float 9s ease-in-out infinite;
+    }
+
+    .hero-orb.one { width: 115px; height: 115px; left: 8%; bottom: 52px; }
+    .hero-orb.two { width: 76px; height: 76px; right: 11%; top: 88px; animation-delay: -3.5s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-18px); }
+    }
+
+    /* ===== NAV ===== */
+    .nav-container {
+      position: sticky;
+      top: 14px;
+      z-index: 30;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.55rem;
+      width: min(960px, calc(100% - 28px));
+      margin: -1.55rem auto 1.8rem;
+      padding: 0.62rem;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+    }
+
+    .nav-container button {
+      position: relative;
+      min-width: 106px;
+      min-height: 44px;
+      overflow: hidden;
+      border: 1px solid rgba(22, 119, 255, 0.14);
+      border-radius: 999px;
+      color: var(--blue);
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(224, 246, 255, 0.84));
+      box-shadow: 0 10px 22px rgba(10, 91, 180, 0.1);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+    }
+
+    .nav-container button::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      opacity: 0;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      transition: opacity 0.25s ease;
+    }
+
+    .nav-container button::after {
+      content: "";
+      position: absolute;
+      top: -85%;
+      left: -45%;
+      width: 42px;
+      height: 240%;
+      background: rgba(255, 255, 255, 0.52);
+      transform: rotate(24deg) translateX(-120px);
+      transition: transform 0.56s ease;
+    }
+
+    .nav-container button:hover,
+    .nav-container button:focus-visible {
+      transform: translateY(-4px);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.64);
+      box-shadow: 0 18px 36px rgba(22, 119, 255, 0.3), 0 0 0 6px rgba(53, 216, 255, 0.12);
+      outline: none;
+    }
+
+    .nav-container button:hover::before,
+    .nav-container button:focus-visible::before { opacity: 1; }
+
+    .nav-container button:hover::after,
+    .nav-container button:focus-visible::after { transform: rotate(24deg) translateX(260px); }
+
+    .logout-btn {
+      position: fixed;
+      top: 28px;
+      right: 28px;
+      z-index: 10000;
+      min-width: 112px;
+      min-height: 42px;
+      padding: 0.62rem 1.05rem;
+      border: 1px solid rgba(217, 45, 32, 0.42);
+      border-radius: 999px;
+      color: #d92d20;
+      font-weight: 800;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.62);
+      box-shadow: 0 14px 30px rgba(2, 28, 68, 0.12);
+      backdrop-filter: blur(18px);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, color 0.22s ease, border-color 0.22s ease;
+    }
+
+    .logout-btn:hover,
+    .logout-btn:focus-visible {
+      transform: translateY(-2px);
+      color: #fff;
+      border-color: rgba(217, 45, 32, 0.76);
+      background: linear-gradient(135deg, #d92d20, #ff6b5f);
+      box-shadow: 0 18px 36px rgba(217, 45, 32, 0.28), 0 0 0 6px rgba(255, 107, 95, 0.12);
+      outline: none;
+    }
+
+    /* ===== LAYOUT ===== */
+    .cabinet-shell {
+      width: min(1140px, calc(100% - 28px));
+      margin: 0 auto;
+    }
+
+    .section {
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.6rem 0 2.6rem;
+      animation: fadeIn 0.35s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-title,
+    #about h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.1rem, 5vw, 3rem);
+      color: var(--blue);
+      text-align: center;
+      margin-bottom: 1.4rem;
+      text-shadow: 0 14px 32px rgba(22, 119, 255, 0.22);
+    }
+
+    .section-title::after,
+    #about h2::after {
+      content: "";
+      display: block;
+      width: 92px;
+      height: 4px;
+      margin: 0.7rem auto 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--blue), var(--cyan));
+      box-shadow: 0 0 24px rgba(53, 216, 255, 0.58);
+    }
+
+    .glass-panel,
+    .profile-section {
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      border-radius: var(--radius-xl);
+      background: var(--glass);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+    }
+
+    /* ===== PROFILE ===== */
+    .profile-section {
+      position: relative;
+      width: min(360px, 100%);
+      overflow: hidden;
+      margin: 0;
+      padding: 1.35rem;
+      text-align: center;
+    }
+
+    .profile-section::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(53, 216, 255, 0.24), transparent 22rem),
+        radial-gradient(circle at 88% 0%, rgba(22, 119, 255, 0.16), transparent 20rem);
+      pointer-events: none;
+    }
+
+    .profile-main,
+    .achievements-box {
+      position: relative;
+      z-index: 1;
+    }
+
+    .profile-main {
+      display: grid;
+     grid-template-columns: 1fr;
+      gap: 1.1rem;
+      align-items: center;
+      grid-template-columns: 1fr;
+      gap: 1.1rem;
+    }
+
+    .avatar-wrap {
+      position: relative;
+      justify-self: center;
+      margin: 0 auto;
+      width: 126px;
+      height: 126px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: conic-gradient(from 180deg, var(--cyan), var(--blue), #9bdfff, var(--cyan));
+      box-shadow: 0 20px 48px rgba(22, 119, 255, 0.24), 0 0 0 8px rgba(255, 255, 255, 0.42);
+    }
+
+    .avatar-img {
+      width: 112px;
+      height: 112px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 5px solid rgba(255, 255, 255, 0.92);
+      background: #dff3ff;
+    }
+
+    .profile-copy {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .welcome {
+      margin-bottom: 0.45rem;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .welcome strong {
+      display: block;
+      color: var(--ink);
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      line-height: 1.05;
+    }
+
+    .stats-grid {
+      display: grid;
+     grid-template-columns: 1fr;
+      gap: 0.65rem;
+      width: min(520px, 100%);
+      margin: 1rem auto 0;
+    }
+
+    .stat-card {
+       padding: 0.7rem 0.85rem;
+      border: 1px solid rgba(22, 119, 255, 0.13);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.66);
+      box-shadow: 0 10px 22px rgba(7, 42, 83, 0.08);
+    }
+
+    .stat-label {
+      display: block;
+      margin-bottom: 0.16rem;
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .stat-card span:last-child,
+    .stat-card strong {
+      color: var(--blue);
+      font-size: 1.02rem;
+      font-weight: 800;
+    }
+
+    .xp-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+        width: min(520px, 100%);
+      margin: 0.9rem auto 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .xp-bar {
+      width: min(520px, 100%);
+      height: 24px;
+       margin: 0.55rem auto 0;
+      padding: 3px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(210, 235, 250, 0.95), rgba(168, 217, 244, 0.88));
+      box-shadow: inset 0 2px 8px rgba(4, 35, 74, 0.15), 0 10px 22px rgba(22, 119, 255, 0.12);
+    }
+
+    .course-rank {
+      width: min(520px, 100%);
+      margin: 0.7rem auto 0;
+      padding: 0.72rem 1rem;
+      border: 1px solid rgba(22, 119, 255, 0.16);
+      border-radius: 18px;
+      color: var(--ink);
+      font-size: 0.92rem;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: 0 10px 22px rgba(7, 42, 83, 0.08);
+    }
+
+    .course-rank strong {
+      color: var(--blue);
+    }
+    
+    .xp-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--blue), var(--cyan));
+      box-shadow: 0 0 16px rgba(53, 216, 255, 0.66), inset 0 2px 6px rgba(255, 255, 255, 0.38);
+      transition: width 1s ease, background 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .achievements-box {
+      margin-top: 1.5rem;
+      padding-top: 1.4rem;
+      border-top: 1px solid rgba(22, 119, 255, 0.14);
+      text-align: center;
+    }
+
+    .achievements-box h3 {
+      margin-bottom: 1rem;
+      color: var(--ink);
+      font-size: 1.1rem;
+    }
+
+    #course-tabs {
+      position: relative;
+      z-index: 2;
+    }
+
+
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.85fr) minmax(320px, 1.15fr) minmax(300px, 0.95fr);
+      gap: 1.2rem;
+      align-items: start;
+    }
+
+    .dashboard-column {
+      display: grid;
+      gap: 1.2rem;
+      min-width: 0;
+    }
+
+    .next-lesson-card,
+    .progress-panel,
+    .calendar-panel {
+      padding: 1.45rem;
+    }
+
+    .card-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .mini-title {
+      color: var(--blue);
+      font-size: 0.84rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .next-lesson-details {
+      display: grid;
+      gap: 0.6rem;
+      text-align: left;
+    }
+
+    .next-lesson-row {
+      padding: 0.72rem 0.85rem;
+      border: 1px solid rgba(22, 119, 255, 0.12);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.68);
+    }
+
+    .next-lesson-row small {
+      display: block;
+      color: var(--muted);
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .upcoming-list {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .upcoming-item {
+      display: grid;
+      grid-template-columns: 10px 74px 1fr;
+      gap: 0.7rem;
+      align-items: center;
+      padding: 0.78rem;
+      border: 1px solid rgba(22, 119, 255, 0.12);
+      border-radius: 18px;
+      text-align: left;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.72);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .upcoming-item:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(7, 42, 83, 0.1); }
+    .upcoming-mark { width: 10px; height: 48px; border-radius: 999px; background: var(--blue); }
+    .upcoming-date { color: var(--ink); font-weight: 800; }
+    .upcoming-time { color: var(--blue); font-weight: 800; }
+    .upcoming-title { color: var(--muted); font-weight: 700; }
+
+    #lesson-calendar {
+      overflow: hidden;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    #lesson-calendar .fc { font-family: 'Poppins', sans-serif; font-size: 0.72rem; }
+    #lesson-calendar .fc .fc-toolbar.fc-header-toolbar { margin-bottom: 0.35rem; padding: 0.45rem 0.45rem 0; }
+    #lesson-calendar .fc-toolbar-title { color: var(--ink); font-size: 0.82rem; }
+    #lesson-calendar .fc-button-primary { border: 0; padding: 0.25rem 0.45rem; font-size: 0.72rem; background: var(--blue); }
+    #lesson-calendar .fc-daygrid-day-number { padding: 2px 4px; }
+    #lesson-calendar .fc-daygrid-day-frame { min-height: 38px; }
+    #lesson-calendar .fc-daygrid-event { border-radius: 999px; padding: 0 3px; cursor: pointer; font-size: 0.68rem; }
+
+    /* ===== GRIDS / CARDS ===== */
+    .lessons-grid,
+    .shop-grid {
+      display: grid;
+      gap: 1.15rem;
+    }
+
+    .lessons-grid { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+    .shop-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+    .lesson-card,
+    .shop-item {
+      position: relative;
+      overflow: hidden;
+      min-height: 138px;
+      padding: 1.45rem;
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      border-radius: var(--radius-lg);
+      text-align: center;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(225, 246, 255, 0.68));
+      box-shadow: 0 16px 42px rgba(7, 42, 83, 0.12);
+      backdrop-filter: blur(18px);
+      transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+    }
+
+    .lesson-card::before,
+    .shop-item::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      background: radial-gradient(circle at top left, rgba(53, 216, 255, 0.3), transparent 48%);
+      pointer-events: none;
+      transition: opacity 0.28s ease;
+    }
+
+    .lesson-card:hover,
+    .shop-item:hover {
+      transform: translateY(-7px);
+      border-color: rgba(53, 216, 255, 0.58);
+      box-shadow: var(--shadow-strong);
+    }
+
+    .lesson-card:hover::before,
+    .shop-item:hover::before { opacity: 1; }
+
+    .price { color: var(--blue); font-weight: 800; }
+
+    .coins-pill {
+      width: fit-content;
+      margin: 0 auto 1.25rem;
+      padding: 0.75rem 1.15rem;
+      border: 1px solid rgba(22, 119, 255, 0.16);
+      border-radius: 999px;
+      color: var(--blue);
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.76);
+      box-shadow: 0 12px 28px rgba(22, 119, 255, 0.12);
+      backdrop-filter: blur(14px);
+    }
+
+    /* ===== BUTTONS ===== */
+    .lesson-btn,
+    .buy-btn,
+    .big-form-btn,
+    #support-chat button {
+      position: relative;
+      display: inline-block;
+      overflow: hidden;
+      margin-top: 0.65rem;
+      padding: 0.78rem 1.6rem;
+      border: 0;
+      border-radius: 999px;
+      color: #fff;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--blue), var(--blue-2) 54%, var(--cyan));
+      box-shadow: 0 14px 32px rgba(22, 119, 255, 0.28);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+    }
+
+    .lesson-btn:hover,
+    .buy-btn:hover,
+    .big-form-btn:hover,
+    #support-chat button:hover {
+      transform: translateY(-3px) scale(1.025);
+      box-shadow: 0 20px 48px rgba(22, 119, 255, 0.36), 0 0 0 6px rgba(53, 216, 255, 0.12);
+      filter: saturate(1.08);
+    }
+
+    .lesson-actions {
+      display: flex;
+     flex-direction: column;
+      align-items: center;
+      justify-content: center;
+       gap: 0.42rem;
+      width: 100%;
+     margin: 0.68rem auto 0;
+      text-align: center;
+    }
+
+    .lesson-card .lesson-actions .lesson-action-btn {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+        min-width: 92px !important;
+      margin: 0 !important;
+      padding: 0.38rem 0.82rem !important;
+      border-radius: 16px !important;
+      font-size: 0.76rem !important;
+      font-weight: 650 !important;
+      letter-spacing: 0.01em;
+       line-height: 1.08 !important;
+      text-align: center;
+      background: linear-gradient(135deg, #2f8df2, #35b7df) !important;
+        box-shadow: 0 5px 12px rgba(22, 119, 255, 0.15) !important;
+    }
+
+    .lesson-card .lesson-actions .lesson-action-btn:hover {
+      transform: translateY(-1px) scale(1.005);
+      box-shadow: 0 5px 10px rgba(22, 119, 255, 0.16), 0 0 0 2px rgba(53, 216, 255, 0.05) !important;
+    }
+
+    .materials-search {
+      position: relative;
+      display: block;
+      width: min(520px, 100%);
+      margin: -0.45rem auto 1.35rem;
+    }
+
+    .materials-search-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--blue);
+      font-size: 1rem;
+      pointer-events: none;
+    }
+
+    .materials-search input {
+      width: 100%;
+      min-height: 48px;
+      padding: 0.85rem 1rem 0.85rem 2.75rem;
+      border: 1px solid rgba(22, 119, 255, 0.18);
+      border-radius: 999px;
+      color: var(--ink);
+      font: inherit;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: 0 14px 32px rgba(10, 91, 180, 0.12);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .materials-search input:focus {
+      border-color: rgba(22, 119, 255, 0.46);
+      box-shadow: 0 16px 36px rgba(22, 119, 255, 0.18), 0 0 0 5px rgba(53, 216, 255, 0.14);
+    }
+
+    .materials-sort-chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.65rem;
+      margin: -0.55rem auto 1.35rem;
+    }
+
+    .materials-sort-chip {
+      padding: 0.68rem 1.12rem;
+      border: 1px solid rgba(22, 119, 255, 0.16);
+      border-radius: 999px;
+      color: var(--blue);
+      font: inherit;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.76);
+      box-shadow: 0 12px 28px rgba(22, 119, 255, 0.12);
+      backdrop-filter: blur(14px);
+      cursor: pointer;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, color 0.22s ease, background 0.22s ease;
+    }
+
+    .materials-sort-chip:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 34px rgba(22, 119, 255, 0.18);
+    }
+
+    .materials-sort-chip.active {
+      color: #fff;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--blue), var(--blue-2) 54%, var(--cyan));
+      box-shadow: 0 14px 32px rgba(22, 119, 255, 0.28);
+    }
+
+
+    .big-hw-btn {
+      padding: 1.15rem 2.35rem;
+      font-size: 1.05rem;
+    }
+
+    textarea,
+    input[type="file"] {
+      width: 100%;
+      padding: 0.9rem;
+      border: 1px solid rgba(22, 119, 255, 0.22);
+      border-radius: var(--radius-md);
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.84);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    textarea:focus,
+    input[type="file"]:focus {
+      border-color: rgba(22, 119, 255, 0.62);
+      box-shadow: 0 0 0 5px rgba(53, 216, 255, 0.14);
+    }
+
+    /* ===== SPECIAL SECTIONS ===== */
+    .center-panel {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .announcement-list p { margin: 0.5rem 0; color: var(--muted); line-height: 1.7; }
+    .announcement-list strong { color: var(--blue); }
+
+    .about-panel {
+      max-width: 940px;
+      margin: 0 auto;
+      padding: 2.2rem;
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      border-radius: var(--radius-xl);
+      background: var(--glass);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+    }
+
+    .about-intro {
+      max-width: 760px;
+      margin: 0 auto 2rem;
+      padding: 1rem 1.2rem;
+      border-radius: var(--radius-lg);
+      color: #333;
+      font-size: 1.06rem;
+      line-height: 1.8;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.56);
+      border: 1px solid rgba(22, 119, 255, 0.1);
+    }
+
+    .about-teachers-title {
+      margin: 2.2rem 0 1.4rem;
+      color: var(--blue);
+      font-size: 1.4rem;
+      text-align: center;
+    }
+
+    .teacher-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.15rem;
+    }
+
+    .teacher-card {
+      position: relative;
+      overflow: hidden;
+      padding: 1.25rem 1rem;
+      border: 1px solid rgba(22, 119, 255, 0.16);
+      border-radius: var(--radius-lg);
+      text-align: center;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(235, 248, 255, 0.62));
+      box-shadow: 0 12px 26px rgba(7, 42, 83, 0.09);
+    }
+
+    .teacher-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 5px;
+      background: linear-gradient(90deg, var(--blue), var(--cyan));
+      opacity: 0.78;
+    }
+
+    .teacher-photo {
+      width: 128px;
+      height: 128px;
+      margin: 0 auto 0.9rem;
+      border: 4px solid rgba(255, 255, 255, 0.92);
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 8px 22px rgba(7, 42, 83, 0.16);
+    }
+
+    .teacher-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .teacher-name {
+      display: block;
+      color: var(--ink);
+      font-size: 1rem;
+      line-height: 1.3;
+    }
+
+    .teacher-subject {
+      display: inline-block;
+      margin-top: 0.45rem;
+      padding: 0.28rem 0.65rem;
+      border-radius: 999px;
+      color: var(--blue);
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: rgba(22, 119, 255, 0.08);
+    }
+
+    .teacher-bio {
+      margin-top: 0.85rem;
+      color: #5f6f7d;
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
+    .schedule-panel {
+      width: min(760px, 100%);
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 2rem;
+      text-align: center;
+    }
+    #schedule {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #schedule.hidden { display: none !important; }
+
+    .schedule-block-title {
+      color: var(--blue);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    #lesson-link,
+    #lesson-schedule {
+      margin-top: 0.45rem;
+      color: var(--muted);
+      line-height: 1.7;
+      word-break: break-word;
+    }
+
+    /* ===== NOTIFICATIONS ===== */
+    #notify-btn {
+      position: fixed;
+      top: 86px;
+      right: 28px;
+      z-index: 9999;
+      min-width: 178px;
+      min-height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      padding: 0.72rem 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 999px;
+      color: #eaf9ff;
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      background: linear-gradient(135deg, rgba(5, 34, 70, 0.58), rgba(22, 119, 255, 0.48));
+      box-shadow: 0 16px 38px rgba(2, 28, 68, 0.24);
+      backdrop-filter: blur(18px);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    }
+
+    .notify-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32);
+    }
+
+
+    #notify-btn:hover {
+      transform: translateY(-3px);
+      background: linear-gradient(135deg, rgba(22, 119, 255, 0.7), rgba(53, 216, 255, 0.55));
+      box-shadow: 0 22px 54px rgba(22, 119, 255, 0.34), 0 0 0 7px rgba(53, 216, 255, 0.12);
+      }
+
+    #notify-count {
+      position: absolute;
+      top: -7px;
+      right: -7px;
+      min-width: 22px;
+      height: 22px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+      border: 2px solid white;
+      border-radius: 999px;
+      color: white;
+      font-size: 0.72rem;
+      background: #ff4d7d;
+      box-shadow: 0 8px 18px rgba(255, 77, 125, 0.35);
+    }
+
+    #notify-panel {
+      position: fixed;
+      top: 144px;
+      right: 28px;
+      z-index: 9998;
+      width: min(380px, calc(100vw - 34px));
+      max-height: min(520px, calc(100vh - 170px));
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.74);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow-strong);
+      backdrop-filter: blur(20px);
+    }
+
+    .notify-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1rem 0.8rem;
+      border-bottom: 1px solid rgba(22, 119, 255, 0.12);
+    }
+
+    .notify-head strong { color: var(--blue); }
+
+    .notify-head button {
+      border: 0;
+      color: var(--blue);
+      font-weight: 800;
+      cursor: pointer;
+      background: transparent;
+    }
+
+    #notify-list {
+      max-height: 390px;
+      overflow-y: auto;
+      padding: 0.85rem;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(22, 119, 255, 0.42) transparent;
+    }
+
+    .notify-empty {
+      padding: 1.2rem 0.8rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .notify-item {
+      position: relative;
+      padding: 0.9rem 0.95rem;
+      border: 1px solid rgba(22, 119, 255, 0.12);
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(231,247,255,0.72));
+      box-shadow: 0 10px 24px rgba(7, 42, 83, 0.08);
+    }
+
+    .notify-item + .notify-item { margin-top: 0.75rem; }
+
+    .notify-item.unread::before {
+      content: "";
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #ff4d7d;
+      box-shadow: 0 0 14px rgba(255, 77, 125, 0.55);
+    }
+
+    .notify-title {
+      padding-right: 1.2rem;
+      color: var(--ink);
+      font-weight: 800;
+    }
+
+    .notify-text {
+      margin-top: 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+
+    .notify-date {
+      margin-top: 0.5rem;
+      color: rgba(95, 127, 154, 0.78);
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+
+    
+    /* ===== SUPPORT ===== */
+    #support-btn {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 9999;
+      width: 62px;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      color: white;
+      font-size: 28px;
+      font-weight: 800;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      box-shadow: 0 18px 42px rgba(22, 119, 255, 0.38);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    #support-btn:hover {
+      transform: translateY(-4px) rotate(6deg);
+      box-shadow: 0 22px 54px rgba(22, 119, 255, 0.46), 0 0 0 7px rgba(53, 216, 255, 0.13);
+    }
+
+    #support-chat {
+      position: fixed;
+      right: 22px;
+      bottom: 98px;
+      z-index: 9999;
+      width: min(340px, calc(100vw - 34px));
+      padding: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.74);
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: var(--shadow-strong);
+      backdrop-filter: blur(20px);
+    }
+
+    #support-messages,
+    #ai-messages {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(22, 119, 255, 0.42) transparent;
+    }
+
+    .chat-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .chat-tab {
+      flex: 1;
+      border: 0;
+      border-radius: 999px;
+      padding: 0.55rem 0.7rem;
+      color: var(--muted);
+      font-weight: 800;
+      cursor: pointer;
+      background: rgba(22, 119, 255, 0.08);
+    }
+
+    .chat-tab.active {
+      color: white;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      box-shadow: 0 10px 24px rgba(22, 119, 255, 0.22);
+    }
+
+    .chat-pane textarea {
+      width: 100%;
+      min-height: 74px;
+      padding: 0.75rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      resize: vertical;
+      font: inherit;
+    }
+
+    .chat-pane button:not(.chat-tab) {
+      width: 100%;
+      margin-top: 0.55rem;
+      border: 0;
+      border-radius: 999px;
+      padding: 0.7rem 1rem;
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+    }
+
+    .ai-message {
+      margin-bottom: 10px;
+      padding: 8px;
+      border-radius: 12px;
+      line-height: 1.5;
+      background: #eef8ff;
+    }
+
+    .ai-message.user {
+      background: #f1f8e9;
+    }
+
+    .ai-note {
+      margin: 0 0 0.75rem;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    /* ===== 14 FEB HEARTS ===== */
+    .hearts-container {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .heart {
+      position: absolute;
+      top: -20px;
+      font-size: 20px;
+      opacity: 0.8;
+      animation: fall linear forwards;
+      filter: drop-shadow(0 8px 12px rgba(22, 119, 255, 0.2));
+    }
+
+    @keyframes fall {
+      to { transform: translateY(110vh) rotate(16deg); opacity: 0.9; }
+    }
+
+    @media (max-width: 1024px) {
+      .shop-grid { grid-template-columns: repeat(3, 1fr); }
+      .hero-orb.one { left: 3%; }
+      .hero-orb.two { right: 4%; }
+    }
+
+    @media (max-width: 768px) {
+      .hero { min-height: 280px; border-bottom-left-radius: 34px; border-bottom-right-radius: 34px; }
+      .channel-badge { top: 16px; right: 16px; font-size: 0.68rem; }
+      .hero-subtitle { font-size: 0.92rem; }
+      .hero-orb { display: none; }
+      .nav-container { position: relative; top: auto; margin-top: 1rem; border-radius: 28px; }
+      .nav-container button { min-width: calc(50% - 0.5rem); }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .profile-section { width: 100%; margin: 0 auto; }
+      .profile-main { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .shop-grid { grid-template-columns: repeat(2, 1fr); }
+      .profile-section, .center-panel, .schedule-panel, .next-lesson-card, .progress-panel, .calendar-panel { padding: 1.25rem; }
+    }
+
+    @media (max-width: 480px) {
+      .big-title { letter-spacing: 0.05em; }
+      .nav-container button { min-width: 100%; }
+      .shop-grid { grid-template-columns: 1fr; }
+      .section-title { font-size: 1.85rem; }
+      #notify-btn { top: 72px; right: 16px; min-width: 54px; min-height: 46px; padding: 0.6rem; }
+      .notify-label { display: none; }
+      #notify-panel { top: 128px; right: 16px; bottom: auto; }
+      .logout-btn { top: 22px; right: 16px; min-width: 82px; min-height: 38px; padding: 0.5rem 0.78rem; font-size: 0.82rem; }
+      #support-btn { right: 16px; bottom: 16px; }
+      #support-chat { right: 16px; bottom: 90px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <button class="logout-btn" type="button" onclick="logoutCabinet()">Выйти</button>
+
+  <header class="hero">
+    <div class="hero-orb one"></div>
+    <div class="hero-orb two"></div>
+
+    <div class="hero-content">
+      <div class="eyebrow">student's space</div>
+      <div class="big-title">Subtext</div>
+      <p class="hero-subtitle">Твой личный учебный космос: уроки, прогресс, расписание, материалы и награды в одном месте.</p>
+    </div>
+  </header>
+
+  <div id="loading">Загрузка...</div>
+
+  <main id="main" class="hidden">
+    <nav class="nav-container" aria-label="Навигация по кабинету">
+      <button onclick="showSection('profile')">Профиль</button>
+      <button onclick="showSection('lessons')">Уроки</button>
+      <button onclick="showSection('submission')">ДЗ</button>
+      <button onclick="showSection('shop')">Магазин</button>
+      <button onclick="showSection('schedule')">Расписание</button>
+      <button onclick="showSection('materials')">Материалы</button>
+      <button onclick="showSection('announcements')">Объявления</button>
+      <button onclick="showSection('about')">О нас</button>
+    </nav>
+
+    <div class="cabinet-shell">
+      <!-- ===== ПРОФИЛЬ ===== -->
+      <section id="profile" class="section">
+        <div class="dashboard-grid">
+        <div class="profile-section">
+        <div class="profile-main">
+          <div class="avatar-wrap">
+            <img id="avatar-img" class="avatar-img" alt="Аватар ученика">
+          </div>
+
+          <div class="profile-copy">
+            <p class="welcome">Привет, <strong id="username"></strong></p>
+
+            <div class="stats-grid">
+              <div class="stat-card">
+                <span class="stat-label">Уровень</span>
+                <span id="level"></span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Монеты</span>
+                <span id="coins"></span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Осталось уроков</span>
+                <span id="lessons-remaining">—</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Баллы</span>
+                <span><span id="progress"></span> / 100</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        </div>
+
+        <div class="dashboard-column">
+          <div class="glass-panel next-lesson-card">
+            <div class="card-title-row"><h2 class="mini-title">Ближайший урок</h2></div>
+            <div id="next-lesson-card" class="next-lesson-details"></div>
+          </div>
+
+          <div class="glass-panel progress-panel">
+            <div class="card-title-row">
+              <h2 class="mini-title">Прогресс</h2>
+            </div>
+            <div class="xp-label">
+              <span>Прогресс обучения</span>
+              <span>XP</span>
+            </div>
+            <div class="xp-bar" aria-label="Прогресс по выбранному предмету">
+              <div class="xp-fill" id="xp-fill"></div>
+            </div>
+            <div class="course-rank" id="course-rank">Рейтинг по предмету пока не указан</div>
+            <div class="achievements-box">
+              <h3>🏆 Достижения</h3>
+              <div id="achievements-list" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center"></div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="dashboard-column">
+          <div class="glass-panel calendar-panel">
+            <div class="card-title-row"><h2 class="mini-title">Календарь</h2></div>
+            <div id="lesson-calendar"></div>
+            <div id="upcoming-lessons" class="upcoming-list"></div>
+          </div>
+        </aside>
+        </div>
+      </section>
+
+      <!-- ===== УРОКИ ===== -->
+      <section id="lessons" class="section hidden">
+        <div class="section-title">Уроки</div>
+        <div id="lessons-list" class="lessons-grid"></div>
+      </section>
+
+      <!-- ===== ДЗ ===== -->
+         <section id="submission" class="section hidden">
+        <div class="section-title">Сдать домашнее задание</div>
+        <div class="glass-panel center-panel">
+          <p style="margin-bottom:1.5rem;color:var(--muted);line-height:1.7">
+            Нажмите кнопку ниже, чтобы открыть форму для отправки ДЗ.
+          </p>
+          <a
+             id="submission-form-link"
+            href="#"
+            target="_blank"
+             rel="noopener"
+            class="big-form-btn hidden">
+            📄 Открыть форму ДЗ
+          </a>
+           <p id="submission-form-empty" style="color:var(--muted);line-height:1.7">
+            Форма для выбранного предмета пока не назначена.
+          </p>
+        </div>
+      </section>
+
+      <!-- ===== МАГАЗИН ===== -->
+      <section id="shop" class="section hidden">
+        <div class="section-title">Магазин</div>
+        <p class="coins-pill">💰 Монеты: <span id="shop-coins">0</span></p>
+        <div id="shop-items" class="shop-grid"></div>
+      </section>
+
+      <!-- ===== ОБЪЯВЛЕНИЯ ===== -->
+      <section id="announcements" class="section hidden">
+        <div class="section-title">Объявления</div>
+        <div class="glass-panel center-panel announcement-list">
+          <p><strong>31 июля</strong></p>
+          <p>
+            ⚙️ 31 июля вышло обновление платформы, поэтому первое время она может работать некорректно.
+Если вы заметили ошибку в работе или у вас есть замечания, сообщите своему преподавателю или напишите в чат поддержки. Давайте улучшим платформу вместе!
+          </p>
+          <hr>
+
+        
+          <p><strong>04 июня - 14 июня</strong></p>
+          <p>
+            ⚙️ С 4 июня по 14 июня на платформе ведутся технические работы. В это время некоторые разделы сайта могут быть недоступны или работать некорректно. Дополнительно сообщать об этом в тех.поддержку или преподавателю не нужно. Приносим извинения за доставленные неудобства!
+          </p>
+          <hr>
+
+          <p><strong>19 февраля</strong></p>
+          <p>
+            ⚙️ С 13:00 до 15:00 возможны технические работы на сайте.
+            В это время некоторые разделы могут временно не работать.
+          </p>
+          <hr>
+
+          <p><strong>14 февраля</strong></p>
+          <p>
+            Happy Valentine’s Day! 💗<br>
+            Collect love, spread kindness, and level up your happiness today.
+          </p>
+          <hr>
+
+          <p><strong>4 февраля</strong></p>
+          <p>
+            🎉 Запуск образовательной платформы Subtext!
+            Теперь все материалы, расписание, домашние задания и прогресс доступны в личном кабинете.
+          </p>
+        </div>
+      </section>
+
+      <!-- ====================== РАЗДЕЛ "О НАС" ====================== -->
+      <section id="about" class="section hidden">
+       <h2>О нас</h2>
+
+       <div class="about-panel">
+          <div class="about-intro">
+            Мы — Subtext, современная образовательная платформа, которая помогает ученикам уверенно осваивать английский, французский, испанские языки, биологию, химию и физику. Скоро будут и другие предметы!<br><br>
+            Работаем с 2025 года и помогаем ученикам достичь своих целей.
+          </div>
+
+           <h3 class="about-teachers-title">Наши преподаватели</h3>
+
+          <div class="teacher-grid">
+            <article class="teacher-card">
+              <div class="teacher-photo">
+                <img src="https://i.imgur.com/3rk6gSA.jpeg" alt="Реутова Полина Дмитриевна">
+              </div>
+             <strong class="teacher-name">Реутова Полина Дмитриевна</strong>
+              <span class="teacher-subject">Английский язык</span>
+              <p class="teacher-bio">
+                Провожу занятия с учениками любого возраста. Помогаю детям учиться с интересом, а взрослым — уверенно достигать поставленных целей. Готовлю к ОГЭ. Образование - РУДН имени Патриса Лумумбы. Уровень владения языком подтвержден: https://cert.efset.org/RC44aC
+              </p>
+           </article>
+            <article class="teacher-card">
+              <div class="teacher-photo">
+                <img src="https://i.imgur.com/cH16EwE.jpeg" alt="Селезнева Татьяна Николаевна">
+              </div>
+            <strong class="teacher-name">Селезнева Татьяна Николаевна</strong>
+              <span class="teacher-subject">Физика</span>
+              <p class="teacher-bio">
+               Стаж преподавательской деятельности 35 лет. Учитель высшей категории по физике. Готовлю учеников к ОГЭ. Мы разбираем задачи пошагово, учимся оформлять решения по критериям проверяющих и превращаем «непонятно» в «ясно с первого раза».
+              </p>
+           </article>
+            
+             <article class="teacher-card">
+              <div class="teacher-photo">
+                <img src="https://i.imgur.com/3rQWe6G.jpeg" alt="Думчева Аделаида Андреевна">
+              </div>
+            <strong class="teacher-name">Думчева Аделаида Андреевна</strong>
+              <span class="teacher-subject">Биология</span>
+              <p class="teacher-bio">
+                Биолог по призванию и по состоянию души. Закончила МПГУ по педагогическому образованию с профилями «Биология» и «Английский язык». Имею опыт подготовки школьников к ОГЭ и ЕГЭ, помогаю повышать успеваемость. 
+              </p>
+           </article>
+            
+           <article class="teacher-card">
+              <div class="teacher-photo">
+                <img src="https://i.imgur.com/AEAZQeU.jpeg" alt="Кимель Наталья Борисовна">
+              </div>
+               <strong class="teacher-name">Кимель Наталья Борисовна</strong>
+              <span class="teacher-subject">Французский и испанский</span>
+              <p class="teacher-bio">
+                Обучаю французскому и испанскому языкам через практику и погружение в культуру страны! Провожу занятия с учениками любого возраста. Помогаю детям школьного возраста повысить успеваемость и легче справляться с домашней работой. Готовлю к ОГЭ. Закончила МГЛУ (МГПИИЯ им. Мориса Тореза) с красным дипломом.
+            </p>
+              </article>
+
+             <article class="teacher-card">
+              <div class="teacher-photo">
+                <img src="https://i.imgur.com/z5PWeqU.jpeg" alt="Несмеянова Анна Денисовна">
+              </div>
+            <strong class="teacher-name">Несмеянова Анна Денисовна</strong>
+              <span class="teacher-subject">Химия</span>
+              <p class="teacher-bio">
+                Студентка 5 курса педагогического вуза с двойным профилем: биология и химия. Уже есть практический опыт преподавания в школах и детских лагерях. Мой главный принцип — объяснять сложные вещи просто, четко и на понятных примерах. Помогаю ученикам не просто заучивать параграфы, а понимать суть процессов. Готовлю к ОГЭ и помогаю подтянуть школьную программу без стресса и зубрёжки.
+              </p>
+           </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== МАТЕРИАЛЫ ===== -->
+      <section id="materials" class="section hidden">
+        <div class="section-title">Материалы</div>
+        <label class="materials-search" for="materials-search">
+          <span class="materials-search-icon" aria-hidden="true">🔎</span>
+          <input id="materials-search" type="search" placeholder="Поиск материалов по названию" autocomplete="off" oninput="renderCourseData()">
+        </label>
+        <div id="materials-sort-chips" class="materials-sort-chips hidden"></div>
+        <div id="materials-list" class="lessons-grid"></div>
+      </section>
+
+      <!-- ===== РАСПИСАНИЕ ===== -->
+      <section id="schedule" class="section hidden">
+        <div class="section-title">Расписание</div>
+
+        <div class="glass-panel schedule-panel">
+          <p class="schedule-block-title">Ссылка</p>
+          <p id="lesson-link">—</p>
+
+          <hr>
+
+          <p class="schedule-block-title">Расписание на неделю</p>
+          <p id="lesson-schedule">—</p>
+
+          <hr>
+
+          <p class="schedule-block-title">Доступные слоты</p>
+          <div id="slots-container"></div>
+
+          <hr>
+
+          <p class="schedule-block-title">Групповые занятия</p>
+          <div id="group-slots-container"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+   <!-- ===== NOTIFICATIONS ===== -->
+  <div id="notify-btn" onclick="toggleNotifications()" title="Уведомления">
+    <span class="notify-icon">🔔</span>
+    <span class="notify-label">Уведомления</span>
+    <span id="notify-count">0</span>
+  </div>
+
+  <div id="notify-panel" class="hidden">
+    <div class="notify-head">
+      <strong>Уведомления</strong>
+      <button type="button" onclick="markNotificationsRead()">прочитано</button>
+    </div>
+    <div id="notify-list">
+      <div class="notify-empty">Пока нет уведомлений</div>
+    </div>
+  </div>
+  
+  <!-- ===== SUPPORT BUTTON ===== -->
+  <div id="support-btn" role="button" aria-label="Открыть чат" aria-expanded="false" onclick="toggleSupport()">?</div>
+
+  <div id="support-chat" class="hidden">
+    <div class="chat-tabs" role="tablist" aria-label="Чаты Subtext">
+      <button id="ai-chat-tab" class="chat-tab active" type="button" onclick="showChatTab('ai')">ИИ</button>
+      <button id="support-chat-tab" class="chat-tab" type="button" onclick="showChatTab('support')">Поддержка</button>
+    </div>
+
+    <div id="ai-chat-pane" class="chat-pane">
+      <p class="ai-note">Задайте вопрос по урокам, домашке или расписанию. Если ИИ недоступен, сообщение можно отправить преподавателю во вкладке «Поддержка».</p>
+      <div id="ai-messages" style="max-height:220px;overflow-y:auto;margin-bottom:10px"></div>
+      <textarea id="ai-input" placeholder="Например: объясни тему урока простыми словами..."></textarea>
+      <button type="button" onclick="sendAiMessage()">Спросить ИИ</button>
+    </div>
+
+    <div id="support-chat-pane" class="chat-pane hidden">
+      <div id="support-messages" style="max-height:200px;overflow-y:auto;margin-bottom:10px"></div>
+      <textarea id="support-input" placeholder="Ваш вопрос..."></textarea>
+      <button type="button" onclick="sendSupport()">Отправить</button>
+    </div>
+  </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
+    <script src="subtext.js?v=20260815-logout-right-no-progress-link"></script>
+
+  <div class="hearts-container" id="hearts"></div>
+
+  <script>
+  function startHearts() {
+    const container = document.getElementById("hearts");
+
+    setInterval(() => {
+      const heart = document.createElement("div");
+      heart.className = "heart";
+      heart.innerHTML = "💗";
+
+      heart.style.left = Math.random() * 100 + "vw";
+      heart.style.fontSize = (16 + Math.random() * 20) + "px";
+      heart.style.animationDuration = (4 + Math.random() * 4) + "s";
+
+      container.appendChild(heart);
+
+      setTimeout(() => heart.remove(), 8000);
+    }, 300);
+  }
+
+  // ===== Включаем сердечки ТОЛЬКО 13-15 февраля =====
+  const today = new Date();
+  const day = today.getDate();
+  const month = today.getMonth();
+  if (month === 1 && day >= 13 && day <= 15) {
+    startHearts();
+  }
+  </script>
+</body>
+</html>
