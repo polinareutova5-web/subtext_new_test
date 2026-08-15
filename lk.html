@@ -801,6 +801,41 @@
       box-shadow: 0 16px 36px rgba(22, 119, 255, 0.18), 0 0 0 5px rgba(53, 216, 255, 0.14);
     }
 
+    .materials-sort-chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.65rem;
+      margin: -0.55rem auto 1.35rem;
+    }
+
+    .materials-sort-chip {
+      padding: 0.68rem 1.12rem;
+      border: 1px solid rgba(22, 119, 255, 0.16);
+      border-radius: 999px;
+      color: var(--blue);
+      font: inherit;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.76);
+      box-shadow: 0 12px 28px rgba(22, 119, 255, 0.12);
+      backdrop-filter: blur(14px);
+      cursor: pointer;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, color 0.22s ease, background 0.22s ease;
+    }
+
+    .materials-sort-chip:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 34px rgba(22, 119, 255, 0.18);
+    }
+
+    .materials-sort-chip.active {
+      color: #fff;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--blue), var(--blue-2) 54%, var(--cyan));
+      box-shadow: 0 14px 32px rgba(22, 119, 255, 0.28);
+    }
+
+
     .big-hw-btn {
       padding: 1.15rem 2.35rem;
       font-size: 1.05rem;
@@ -1537,6 +1572,7 @@
           <span class="materials-search-icon" aria-hidden="true">🔎</span>
           <input id="materials-search" type="search" placeholder="Поиск материалов по названию" autocomplete="off" oninput="renderCourseData()">
         </label>
+        <div id="materials-sort-chips" class="materials-sort-chips hidden"></div>
         <div id="materials-list" class="lessons-grid"></div>
       </section>
 

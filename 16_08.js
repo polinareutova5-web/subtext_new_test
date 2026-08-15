@@ -11,7 +11,7 @@ const COURSE_TABLES = {
 };
 const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
 const QWEN_API_KEY = 'sk-ws-H.XPDYDY.ZHWH.MEUCICxR4qL3x76D_zvVOQL8KKtIoaHaip3M8dU5d9PbIX9TAiEAi127LaL4y4dPPmkwUSeNc-0KkIWFmGIrtGbQV7gvQRk';
-const API_VERSION = '2026-08-14-lessons-remaining-fix';
+const API_VERSION = '2026-08-16-materials-sorting';
 const COURSE_FORM_LINKS = {
   english: 'https://docs.google.com/forms/d/e/1FAIpQLSdyaEIut7zciiAfhbNexWHxXLy6eE1IoEwpprm-x8I-penPrw/viewform',
   physics: 'https://docs.google.com/forms/d/e/ССЫЛКА_НА_ФОРМУ_ФИЗИКИ/viewform',
@@ -307,7 +307,12 @@ function getLessonsByUser(userId, course) {
 
 function getMaterialsByUser(course) {
   const rows = openCourseSheet(course, 'Материалы').getDataRange().getValues();
-  return rows.slice(1).filter(r => r[0] || r[1]).map(r => ({ title: r[0] || 'Без названия', link: r[1] || '', course }));
+  return rows.slice(1).filter(r => r[0] || r[1] || r[2]).map(r => ({
+    title: r[0] || 'Без названия',
+    link: r[1] || '',
+    sort: r[2] || '',
+    course
+  }));
 }
 
 function getShopItems(course) {

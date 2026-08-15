@@ -8,6 +8,8 @@ let notificationsLoadedOnce = false;
 let notificationsTimer = null;
 let soundUnlocked = false;
 let lessonCalendar = null;
+const OTHER_MATERIALS_GROUP = "Другое";
+const selectedMaterialsSort = {};
 // true = сначала пробуем Apps Script action=ai_chat, при ошибке остаётся локальный помощник.
 const REMOTE_AI_ENABLED = true;
 
@@ -61,6 +63,10 @@ function normalizeNotification(raw = {}, index = 0) {
 }
 function normalizeCourseName(course = "") {
   return String(course || "").trim().toLowerCase();
+}
+
+function normalizeMaterialsSort(value = "") {
+  return String(value || "").trim().toLowerCase();
 }
 
 function getCourseLabel(course = "") {
@@ -819,6 +825,50 @@ function getLessonHomeworkLink(lesson = {}) {
   ).trim();
 }
 
+function buildMaterialGroups(materials = []) {
+  const filledGroups = [];
+  const otherItems = [];
+  const groupsByKey = new Map();
+
+  materials.forEach(material => {
+    const rawValue = material.sort || material.sorting || material.group || material.category || material["Сортировка"] || "";
+    const trimmedValue = String(rawValue || "").trim();
+
+    if (!trimmedValue) {
+      otherItems.push(material);
+      return;
+    }
+
+    const key = normalizeMaterialsSort(trimmedValue);
+    if (!groupsByKey.has(key)) {
+      const group = { key, label: trimmedValue, items: [] };
+      groupsByKey.set(key, group);
+      filledGroups.push(group);
+    }
+
+    groupsByKey.get(key).items.push(material);
+  });
+
+  if (otherItems.length) {
+    filledGroups.push({ key: "__other", label: OTHER_MATERIALS_GROUP, items: otherItems });
+  }
+
+  return filledGroups;
+}
+
+function setMaterialsSortFilter(course, key) {
+  selectedMaterialsSort[course] = key;
+  renderCourseData();
+}
+window.setMaterialsSortFilter = setMaterialsSortFilter;
+
+function renderMaterialCard(material) {
+  return `<div class="lesson-card">
+    <strong>${escapeHtml(material.title)}</strong><br>
+    <a href="${escapeAttr(material.link)}" target="_blank" rel="noopener" class="lesson-btn">Открыть</a>
+  </div>`;
+}
+
 function renderCourseData() {
   if (!cabinetData) return;
   const course = getCurrentCourse();
@@ -858,17 +908,48 @@ function renderCourseData() {
 
   const materials = document.getElementById("materials-list");
   if (materials) {
+    const chips = document.getElementById("materials-sort-chips");
     const searchInput = document.getElementById("materials-search");
     const query = normalizeCourseName(searchInput?.value || "");
     const allMaterials = (cabinetData.materials || []).filter(m => m.course === course);
+    const hasSorting = allMaterials.some(m => normalizeMaterialsSort(m.sort || m.sorting || m.group || m.category || m["Сортировка"] || ""));
+    const groups = buildMaterialGroups(allMaterials);
+    const availableKeys = groups.map(group => group.key);
+    const selectedKey = availableKeys.includes(selectedMaterialsSort[course]) ? selectedMaterialsSort[course] : "all";
+    selectedMaterialsSort[course] = selectedKey;
+
+    if (chips) {
+      chips.innerHTML = hasSorting
+        ? [{ key: "all", label: "Все" }, ...groups].map(group => `
+            <button
+              type="button"
+              class="materials-sort-chip${selectedKey === group.key ? " active" : ""}"
+              onclick="setMaterialsSortFilter(decodeURIComponent('${encodeURIComponent(course)}'), decodeURIComponent('${encodeURIComponent(group.key)}'))"
+            >${escapeHtml(group.label)}</button>`).join("")
+        : "";
+      chips.classList.toggle("hidden", !hasSorting);
+    }
+
+    if (!hasSorting) {
+      const list = query
+        ? allMaterials.filter(m => normalizeCourseName(m.title).includes(query))
+        : allMaterials;
+      materials.classList.add("lessons-grid");
+      materials.innerHTML = list.length
+        ? list.map(renderMaterialCard).join("")
+        : `<p>${query ? "По этому запросу материалы не найдены." : "Материалы пока не добавлены."}</p>`;
+      return;
+    }
+
+    const selectedGroup = groups.find(group => group.key === selectedKey);
+    const visibleMaterials = selectedKey === "all" ? allMaterials : (selectedGroup?.items || []);
     const list = query
-      ? allMaterials.filter(m => normalizeCourseName(m.title).includes(query))
-      : allMaterials;
+      ? visibleMaterials.filter(m => normalizeCourseName(m.title).includes(query))
+      : visibleMaterials;
+
+    materials.classList.add("lessons-grid");
     materials.innerHTML = list.length
-      ? list.map(m => `<div class="lesson-card">
-          <strong>${escapeHtml(m.title)}</strong><br>
-          <a href="${escapeAttr(m.link)}" target="_blank" rel="noopener" class="lesson-btn">Открыть</a>
-        </div>`).join("")
+      ? list.map(renderMaterialCard).join("")
       : `<p>${query ? "По этому запросу материалы не найдены." : "Материалы пока не добавлены."}</p>`;
   }
 
