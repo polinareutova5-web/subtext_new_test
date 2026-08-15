@@ -290,26 +290,30 @@
 
     .logout-btn {
       position: fixed;
-      top: 18px;
-      left: 18px;
+      top: 28px;
+      right: 28px;
       z-index: 10000;
-      min-width: 92px;
+      min-width: 112px;
       min-height: 42px;
-      padding: 0.65rem 1.05rem;
-      border: 1px solid rgba(217, 45, 32, 0.22);
+      padding: 0.62rem 1.05rem;
+      border: 1px solid rgba(217, 45, 32, 0.42);
       border-radius: 999px;
-      color: #fff;
+      color: #d92d20;
       font-weight: 800;
       cursor: pointer;
-      background: linear-gradient(135deg, #d92d20, #ff6b5f);
-      box-shadow: 0 14px 30px rgba(217, 45, 32, 0.24);
-      transition: transform 0.22s ease, box-shadow 0.22s ease;
+      background: rgba(255, 255, 255, 0.62);
+      box-shadow: 0 14px 30px rgba(2, 28, 68, 0.12);
+      backdrop-filter: blur(18px);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, color 0.22s ease, border-color 0.22s ease;
     }
 
     .logout-btn:hover,
     .logout-btn:focus-visible {
       transform: translateY(-2px);
-      box-shadow: 0 18px 36px rgba(217, 45, 32, 0.32), 0 0 0 6px rgba(255, 107, 95, 0.14);
+      color: #fff;
+      border-color: rgba(217, 45, 32, 0.76);
+      background: linear-gradient(135deg, #d92d20, #ff6b5f);
+      box-shadow: 0 18px 36px rgba(217, 45, 32, 0.28), 0 0 0 6px rgba(255, 107, 95, 0.12);
       outline: none;
     }
 
@@ -572,13 +576,6 @@
       font-weight: 800;
       letter-spacing: 0.09em;
       text-transform: uppercase;
-    }
-
-    .see-all-link {
-      color: var(--blue);
-      font-size: 0.86rem;
-      font-weight: 800;
-      text-decoration: none;
     }
 
     .next-lesson-details {
@@ -1282,7 +1279,7 @@
       #notify-btn { top: 72px; right: 16px; min-width: 54px; min-height: 46px; padding: 0.6rem; }
       .notify-label { display: none; }
       #notify-panel { top: 128px; right: 16px; bottom: auto; }
-      .logout-btn { top: 12px; left: 12px; min-width: 78px; min-height: 38px; padding: 0.55rem 0.82rem; font-size: 0.82rem; }
+      .logout-btn { top: 22px; right: 16px; min-width: 82px; min-height: 38px; padding: 0.5rem 0.78rem; font-size: 0.82rem; }
       #support-btn { right: 16px; bottom: 16px; }
       #support-chat { right: 16px; bottom: 90px; }
     }
@@ -1363,7 +1360,6 @@
           <div class="glass-panel progress-panel">
             <div class="card-title-row">
               <h2 class="mini-title">Прогресс</h2>
-              <a href="#lessons" class="see-all-link" onclick="showSection('lessons')">Смотреть все</a>
             </div>
             <div class="xp-label">
               <span>Прогресс обучения</span>
@@ -1612,7 +1608,7 @@
   </div>
 
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
-    <script src="subtext.js?v=20260815-chat-close-logout-position"></script>
+    <script src="subtext.js?v=20260815-logout-right-no-progress-link"></script>
 
   <div class="hearts-container" id="hearts"></div>
 
