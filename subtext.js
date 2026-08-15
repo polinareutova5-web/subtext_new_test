@@ -630,6 +630,7 @@ function renderCalendar() {
       height: 330,
       contentHeight: 280,
       locale: "ru",
+      firstDay: 1,
       dayMaxEvents: 2,
       headerToolbar: { left: "prev,next", center: "title", right: "today" },
       events,
@@ -650,6 +651,10 @@ function renderCalendar() {
 }
 
 // ================= UI =================
+function logoutCabinet() {
+  window.location.href = "index.html";
+}
+
 function showSection(sectionId) {
   document.querySelectorAll(".section").forEach(el => el.classList.add("hidden"));
   const el = document.getElementById(sectionId);
@@ -853,13 +858,18 @@ function renderCourseData() {
 
   const materials = document.getElementById("materials-list");
   if (materials) {
-    const list = (cabinetData.materials || []).filter(m => m.course === course);
+    const searchInput = document.getElementById("materials-search");
+    const query = normalizeCourseName(searchInput?.value || "");
+    const allMaterials = (cabinetData.materials || []).filter(m => m.course === course);
+    const list = query
+      ? allMaterials.filter(m => normalizeCourseName(m.title).includes(query))
+      : allMaterials;
     materials.innerHTML = list.length
       ? list.map(m => `<div class="lesson-card">
           <strong>${escapeHtml(m.title)}</strong><br>
           <a href="${escapeAttr(m.link)}" target="_blank" rel="noopener" class="lesson-btn">Открыть</a>
         </div>`).join("")
-      : "<p>Материалы пока не добавлены.</p>";
+      : `<p>${query ? "По этому запросу материалы не найдены." : "Материалы пока не добавлены."}</p>`;
   }
 
   const shop = document.getElementById("shop-items");
