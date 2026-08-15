@@ -1088,6 +1088,7 @@ function buildLocalAiAnswer(question = "") {
 function openAiChatFromNav() {
   const chat = document.getElementById("support-chat");
   chat?.classList.remove("hidden");
+  updateSupportButtonState(true);
   showChatTab("ai");
   renderAiMessages();
 }
@@ -1149,10 +1150,20 @@ async function sendAiMessage() {
 }
 
 // ===== SUPPORT =====
+function updateSupportButtonState(isOpen) {
+  const button = document.getElementById("support-btn");
+  if (!button) return;
+  button.textContent = isOpen ? "×" : "?";
+  button.setAttribute("aria-label", isOpen ? "Закрыть чат" : "Открыть чат");
+  button.setAttribute("aria-expanded", String(isOpen));
+}
+
 function toggleSupport() {
   const chat = document.getElementById("support-chat");
   chat?.classList.toggle("hidden");
-  if (!chat?.classList.contains("hidden")) {
+  const isOpen = !chat?.classList.contains("hidden");
+  updateSupportButtonState(Boolean(isOpen));
+  if (isOpen) {
     showChatTab("ai");
     renderAiMessages();
   }
