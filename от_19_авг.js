@@ -326,13 +326,31 @@ function getAchievements(userId, course) {
 }
 
 function getSlots(course) {
-  const rows = openCourseSheet(course, 'Слоты').getDataRange().getValues();
-  return rows.slice(1).map(r => ({ id: r[0], date: r[1], time: r[2], status: r[3], userId: r[4], username: r[5], contact: r[6], bookingDate: r[7] }));
+  const rows = openCourseSheet(course, 'Слоты').getDataRange().getDisplayValues();
+  return rows.slice(1).map(r => ({
+    id: r[0],
+    date: r[1],
+    time: r[2],
+    status: r[3],
+    userId: r[4],
+    username: r[5],
+    contact: r[6],
+    bookingDate: r[7]
+  }));
 }
 
 function getGroupSlots(course) {
-  const rows = openCourseSheet(course, 'Группы').getDataRange().getValues();
-  return rows.slice(1).map(r => ({ id: r[0], date: r[1], time: r[2], title: r[3], capacity: Number(r[4]) || 1, bookedCount: Number(r[5]) || 0, userIds: r[6] || '', usernames: r[7] || '' }));
+  const rows = openCourseSheet(course, 'Группы').getDataRange().getDisplayValues();
+  return rows.slice(1).map(r => ({
+    id: r[0],
+    date: r[1],
+    time: r[2],
+    title: r[3],
+    capacity: Number(r[4]) || 1,
+    bookedCount: Number(r[5]) || 0,
+    userIds: r[6] || '',
+    usernames: r[7] || ''
+  }));
 }
 
 function handleHomework(data, course) {
@@ -364,7 +382,8 @@ function bookSlot(userId, slotId, course) {
       sheet.getRange(i + 1, 5).setValue(userId);
       sheet.getRange(i + 1, 6).setValue(user.username);
       sheet.getRange(i + 1, 8).setValue(new Date());
-      addSchedule(userId, rows[i][1], rows[i][2]);
+      const displayRows = sheet.getDataRange().getDisplayValues();
+      addSchedule(userId, displayRows[i][1], displayRows[i][2]);
       return json({ success: true });
     }
   }
@@ -387,7 +406,8 @@ function bookGroupSlot(userId, slotId, course) {
       sheet.getRange(i + 1, 6).setValue(booked + 1);
       sheet.getRange(i + 1, 7).setValue(rows[i][6] ? rows[i][6] + ',' + userId : userId);
       sheet.getRange(i + 1, 8).setValue(rows[i][7] ? rows[i][7] + ', ' + user.username : user.username);
-      addSchedule(userId, rows[i][1], rows[i][2]);
+      const displayRows = sheet.getDataRange().getDisplayValues();
+      addSchedule(userId, displayRows[i][1], displayRows[i][2]);
       return json({ success: true });
     }
   }
@@ -421,8 +441,9 @@ function updateUserCoins(userId, newCoins) {
 }
 
 function addSchedule(userId, date, time) {
-  const fmt = Utilities.formatDate(new Date(date), Session.getScriptTimeZone(), 'dd.MM.yyyy') + ' в ' +
-              Utilities.formatDate(new Date(time), Session.getScriptTimeZone(), 'HH:mm');
+  const dateText = String(date || '').trim();
+  const timeText = String(time || '').trim();
+  const fmt = [dateText, timeText].filter(Boolean).join(' в ');
   const sheet = openUsersSheet('Лист1');
   const rows = sheet.getDataRange().getValues();
   for (let i = 1; i < rows.length; i++) {
