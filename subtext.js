@@ -975,14 +975,30 @@ function renderCourseData() {
 
 // ================= СЛОТЫ =================
 function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return escapeHtml(dateStr || "");
+  if (dateStr instanceof Date) {
+    return `${dateStr.getFullYear()}-${String(dateStr.getMonth() + 1).padStart(2, "0")}-${String(dateStr.getDate()).padStart(2, "0")}`;
+  }
+
+  const value = String(dateStr || "").trim();
+  if (!value) return "";
+  if (/^\d{1,2}[.\/-]\d{1,2}(?:[.\/-]\d{2,4})?$/.test(value)) return escapeHtml(value);
+
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return escapeHtml(value);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function formatTime(timeStr) {
-  const d = new Date(timeStr);
-  if (isNaN(d.getTime())) return escapeHtml(timeStr || "");
+  if (timeStr instanceof Date) {
+    return `${String(timeStr.getHours()).padStart(2, "0")}:${String(timeStr.getMinutes()).padStart(2, "0")}`;
+  }
+
+  const value = String(timeStr || "").trim();
+  if (!value) return "";
+  if (/^\d{1,2}[:.]\d{2}$/.test(value)) return escapeHtml(value);
+
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return escapeHtml(value);
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
