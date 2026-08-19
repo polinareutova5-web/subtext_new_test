@@ -988,12 +988,16 @@ function formatDate(dateStr) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+function stripDisplaySeconds(value = "") {
+  return String(value || "").trim().replace(/(\b\d{1,2}[:.]\d{2})[:.]\d{2}(\b)/g, "$1");
+}
+
 function formatTime(timeStr) {
   if (timeStr instanceof Date) {
     return `${String(timeStr.getHours()).padStart(2, "0")}:${String(timeStr.getMinutes()).padStart(2, "0")}`;
   }
 
-  const value = String(timeStr || "").trim();
+  const value = stripDisplaySeconds(timeStr);
   if (!value) return "";
   if (/^\d{1,2}[:.]\d{2}$/.test(value)) return escapeHtml(value);
 

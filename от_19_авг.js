@@ -325,12 +325,16 @@ function getAchievements(userId, course) {
   return rows.slice(1).filter(r => String(r[0] || '').split(',').map(id => id.trim()).includes(String(userId))).map(r => ({ title: r[1] || 'Ачивка', image: r[2] || '', course }));
 }
 
+function stripDisplaySeconds(value) {
+  return String(value || '').trim().replace(/(\b\d{1,2}[:.]\d{2})[:.]\d{2}(\b)/g, '$1');
+}
+
 function getSlots(course) {
   const rows = openCourseSheet(course, 'Слоты').getDataRange().getDisplayValues();
   return rows.slice(1).map(r => ({
     id: r[0],
     date: r[1],
-    time: r[2],
+    time: stripDisplaySeconds(r[2]),
     status: r[3],
     userId: r[4],
     username: r[5],
@@ -344,7 +348,7 @@ function getGroupSlots(course) {
   return rows.slice(1).map(r => ({
     id: r[0],
     date: r[1],
-    time: r[2],
+    time: stripDisplaySeconds(r[2]),
     title: r[3],
     capacity: Number(r[4]) || 1,
     bookedCount: Number(r[5]) || 0,
@@ -383,7 +387,7 @@ function bookSlot(userId, slotId, course) {
       sheet.getRange(i + 1, 6).setValue(user.username);
       sheet.getRange(i + 1, 8).setValue(new Date());
       const displayRows = sheet.getDataRange().getDisplayValues();
-      addSchedule(userId, displayRows[i][1], displayRows[i][2]);
+      addSchedule(userId, displayRows[i][1], stripDisplaySeconds(displayRows[i][2]));
       return json({ success: true });
     }
   }
@@ -407,7 +411,7 @@ function bookGroupSlot(userId, slotId, course) {
       sheet.getRange(i + 1, 7).setValue(rows[i][6] ? rows[i][6] + ',' + userId : userId);
       sheet.getRange(i + 1, 8).setValue(rows[i][7] ? rows[i][7] + ', ' + user.username : user.username);
       const displayRows = sheet.getDataRange().getDisplayValues();
-      addSchedule(userId, displayRows[i][1], displayRows[i][2]);
+      addSchedule(userId, displayRows[i][1], stripDisplaySeconds(displayRows[i][2]));
       return json({ success: true });
     }
   }
@@ -442,7 +446,7 @@ function updateUserCoins(userId, newCoins) {
 
 function addSchedule(userId, date, time) {
   const dateText = String(date || '').trim();
-  const timeText = String(time || '').trim();
+  const timeText = stripDisplaySeconds(time);
   const fmt = [dateText, timeText].filter(Boolean).join(' в ');
   const sheet = openUsersSheet('Лист1');
   const rows = sheet.getDataRange().getValues();
