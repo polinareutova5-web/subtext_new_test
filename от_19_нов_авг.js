@@ -170,6 +170,41 @@ function normalizeCourse(course) {
   return String(course || '').trim().toLowerCase();
 }
 
+const COURSE_ALIASES = {
+  english: ['english', 'английский', 'англ', 'английский язык'],
+  physics: ['physics', 'физика', 'физику'],
+  math: ['math', 'математика', 'математику'],
+  biology: ['biology', 'биология', 'биологию'],
+  chemistry: ['chemistry', 'химия', 'химию'],
+  french: ['french', 'французский', 'французский язык', 'французскому'],
+  español: ['español', 'spanish', 'испанский', 'испанский язык', 'испанскому'],
+};
+
+function normalizeSubjectValue(value) {
+  return String(value || '').trim().toLowerCase().replace(/ё/g, 'е');
+}
+
+function splitSubjectList(value) {
+  return String(value || '')
+    .split(/[\n,;|]+/)
+    .map(normalizeSubjectValue)
+    .filter(Boolean);
+}
+
+function getCourseAliases(course) {
+  const normalizedCourse = normalizeSubjectValue(course);
+  return [normalizedCourse, ...(COURSE_ALIASES[normalizedCourse] || [])]
+    .map(normalizeSubjectValue)
+    .filter(Boolean);
+}
+
+function lessonSubjectMatchesCourse(subjectValue, course) {
+  const subjects = splitSubjectList(subjectValue);
+  if (!subjects.length) return true;
+  const aliases = getCourseAliases(course);
+  return subjects.some(subject => aliases.includes(subject));
+}
+
 function getFormLinksForUser(courses) {
   const links = {};
   for (const course of courses || []) {
@@ -297,9 +332,10 @@ function getLessonsByUser(userId, course) {
   const rows = openCourseSheet(course, 'Уроки').getDataRange().getValues();
   const res = [];
   for (let i = 1; i < rows.length; i++) {
-    const ids = String(rows[i][3] || '').split(',').map(x => x.trim()).filter(Boolean);
-    if (ids.length === 0 || ids.includes(String(userId))) {
-      res.push({ num: rows[i][0], link: rows[i][1], hwLink: rows[i][2], course });
+    const ids = String(rows[i][3] || '').split(/[\n,;|]+/).map(x => x.trim()).filter(Boolean);
+    const lessonSubject = rows[i][4] || '';
+    if ((ids.length === 0 || ids.includes(String(userId))) && lessonSubjectMatchesCourse(lessonSubject, course)) {
+      res.push({ num: rows[i][0], link: rows[i][1], hwLink: rows[i][2], subject: lessonSubject, course });
     }
   }
   return res;
