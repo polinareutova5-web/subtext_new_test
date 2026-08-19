@@ -329,8 +329,22 @@ function stripDisplaySeconds(value) {
   return String(value || '').trim().replace(/(\b\d{1,2}[:.]\d{2})[:.]\d{2}(\b)/g, '$1');
 }
 
+function normalizeSlotTimeColumn(sheet) {
+  const range = sheet.getDataRange();
+  const displayRows = range.getDisplayValues();
+  for (let i = 1; i < displayRows.length; i++) {
+    const currentTime = displayRows[i][2];
+    const normalizedTime = stripDisplaySeconds(currentTime);
+    if (normalizedTime && normalizedTime !== currentTime) {
+      sheet.getRange(i + 1, 3).setNumberFormat('@').setValue(normalizedTime);
+    }
+  }
+}
+
 function getSlots(course) {
-  const rows = openCourseSheet(course, 'Слоты').getDataRange().getDisplayValues();
+  const sheet = openCourseSheet(course, 'Слоты');
+  normalizeSlotTimeColumn(sheet);
+  const rows = sheet.getDataRange().getDisplayValues();
   return rows.slice(1).map(r => ({
     id: r[0],
     date: r[1],
@@ -344,7 +358,9 @@ function getSlots(course) {
 }
 
 function getGroupSlots(course) {
-  const rows = openCourseSheet(course, 'Группы').getDataRange().getDisplayValues();
+  const sheet = openCourseSheet(course, 'Группы');
+  normalizeSlotTimeColumn(sheet);
+  const rows = sheet.getDataRange().getDisplayValues();
   return rows.slice(1).map(r => ({
     id: r[0],
     date: r[1],
@@ -378,6 +394,7 @@ function bookSlot(userId, slotId, course) {
   const user = getUser(userId);
   if (!user) return error('Пользователь не найден');
   const sheet = openCourseSheet(course, 'Слоты');
+  normalizeSlotTimeColumn(sheet);
   const rows = sheet.getDataRange().getValues();
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][0]) === String(slotId)) {
@@ -399,6 +416,7 @@ function bookGroupSlot(userId, slotId, course) {
   const user = getUser(userId);
   if (!user) return error('Пользователь не найден');
   const sheet = openCourseSheet(course, 'Группы');
+  normalizeSlotTimeColumn(sheet);
   const rows = sheet.getDataRange().getValues();
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][0]) === String(slotId)) {
