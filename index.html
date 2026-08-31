@@ -133,6 +133,46 @@ body[data-on="true"] .teacher-link {
   50% { transform: translateY(-18px); }
 }
 
+/* ===== 1 СЕНТЯБРЯ ===== */
+.autumn-leaves {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.autumn-leaf {
+  position: absolute;
+  top: -12vh;
+  left: var(--start-x);
+  color: var(--leaf-color);
+  font-size: var(--leaf-size);
+  line-height: 1;
+  opacity: 0;
+  filter: drop-shadow(0 5px 5px rgba(72, 31, 6, 0.16));
+  will-change: transform, opacity;
+  animation: maple-leaf-fall var(--fall-duration) linear var(--fall-delay) infinite;
+}
+
+@keyframes maple-leaf-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  8% { opacity: 0.46; }
+  50% { transform: translate3d(var(--drift), 56vh, 0) rotate(210deg); }
+  92% { opacity: 0.36; }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(var(--drift) * -0.35), 124vh, 0) rotate(420deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .autumn-leaf { animation: none; display: none; }
+}
+
 /* ===== ЛАМПА ===== */
 .lamp-wrap {
   position: absolute;
@@ -403,6 +443,34 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxsGtFdEd3YyEWD15nAxtYo
 let isOn = false;
 const root = document.documentElement;
 const body = document.body;
+
+function addSeptemberLeaves() {
+  const today = new Date();
+  const isFirstOfSeptember = today.getMonth() === 8 && today.getDate() === 1;
+  if (!isFirstOfSeptember) return;
+
+  const leaves = document.createElement("div");
+  leaves.className = "autumn-leaves";
+  leaves.setAttribute("aria-hidden", "true");
+
+  const colors = ["#d66a20", "#e99b2e", "#c84f25", "#f0b44b"];
+  for (let index = 0; index < 11; index += 1) {
+    const leaf = document.createElement("span");
+    leaf.className = "autumn-leaf";
+    leaf.textContent = "🍁";
+    leaf.style.setProperty("--start-x", `${4 + ((index * 37) % 92)}%`);
+    leaf.style.setProperty("--drift", `${-52 + ((index * 29) % 104)}px`);
+    leaf.style.setProperty("--leaf-size", `${18 + ((index * 7) % 14)}px`);
+    leaf.style.setProperty("--leaf-color", colors[index % colors.length]);
+    leaf.style.setProperty("--fall-duration", `${12 + ((index * 3) % 7)}s`);
+    leaf.style.setProperty("--fall-delay", `${-((index * 17) % 19)}s`);
+    leaves.appendChild(leaf);
+  }
+
+  document.body.appendChild(leaves);
+}
+
+addSeptemberLeaves();
 
 function toggleLamp() {
   isOn = !isOn;
