@@ -1078,21 +1078,12 @@
     .notify-head {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       gap: 1rem;
       padding: 1rem 1rem 0.8rem;
       border-bottom: 1px solid rgba(22, 119, 255, 0.12);
     }
 
     .notify-head strong { color: var(--blue); }
-
-    .notify-head button {
-      border: 0;
-      color: var(--blue);
-      font-weight: 800;
-      cursor: pointer;
-      background: transparent;
-    }
 
     #notify-list {
       max-height: 390px;
@@ -1613,7 +1604,6 @@
   <div id="notify-panel" class="hidden">
     <div class="notify-head">
       <strong>Уведомления</strong>
-      <button type="button" onclick="markNotificationsRead()">прочитано</button>
     </div>
     <div id="notify-list">
       <div class="notify-empty">Пока нет уведомлений</div>
