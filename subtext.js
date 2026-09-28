@@ -391,14 +391,24 @@ function startNotificationsPolling() {
   notificationsTimer = setInterval(() => loadNotifications(), 60000);
 }
 
-function toggleNotifications() {
+async function toggleNotifications() {
   unlockNotificationSound();
-  document.getElementById("notify-panel")?.classList.toggle("hidden");
-  loadNotifications({ silent: true });
+  const panel = document.getElementById("notify-panel");
+  if (!panel) return;
+
+  const isOpening = panel.classList.contains("hidden");
+  panel.classList.toggle("hidden");
+
+  if (!isOpening) return;
+
+  await markNotificationsRead();
+  await loadNotifications({ silent: true });
 }
 
 async function markNotificationsRead() {
   renderNotifications(notificationsCache.map(item => ({ ...item, read: true })));
+
+  if (!userId) return;
 
   try {
     await fetch(buildUrl({ action: "mark_notifications_read", userId }));
