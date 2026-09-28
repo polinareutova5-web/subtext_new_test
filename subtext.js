@@ -391,7 +391,7 @@ function startNotificationsPolling() {
   notificationsTimer = setInterval(() => loadNotifications(), 60000);
 }
 
-async function toggleNotifications() {
+function toggleNotifications() {
   unlockNotificationSound();
   const panel = document.getElementById("notify-panel");
   if (!panel) return;
@@ -399,22 +399,14 @@ async function toggleNotifications() {
   const isOpening = panel.classList.contains("hidden");
   panel.classList.toggle("hidden");
 
-  if (!isOpening) return;
-
-  await markNotificationsRead();
-  await loadNotifications({ silent: true });
+  // Открытие панели заменяет отдельную кнопку «Прочитано». Не отправляем
+  // дополнительный action в Apps Script: кабинет не зависит от необязательного
+  // API уведомлений, а статус останется прочитанным до следующего обновления.
+  if (isOpening) markNotificationsRead();
 }
 
-async function markNotificationsRead() {
+function markNotificationsRead() {
   renderNotifications(notificationsCache.map(item => ({ ...item, read: true })));
-
-  if (!userId) return;
-
-  try {
-    await fetch(buildUrl({ action: "mark_notifications_read", userId }));
-  } catch (e) {
-    console.warn("Cannot mark notifications as read", e);
-  }
 }
 
 
@@ -727,12 +719,9 @@ async function loadData() {
       setText("loading", "❌ Не указан ID");
       return;
     }
-    const checkRes = await fetch(buildUrl({ action: "check_user", userId }));
-    const checkData = await checkRes.json();
-    if (!checkData.success) {
-      setText("loading", checkData.error || "❌ Вы не зарегистрированы");
-      return;
-    }
+    // Проверка пользователя уже выполнена на странице входа. Повторный запрос
+    // check_user здесь был лишней точкой отказа: при изменении Apps Script он
+    // мог не дать открыть кабинет, хотя основной ответ кабинета доступен.
     await loadCabinet();
   } catch (e) {
     console.error(e);
