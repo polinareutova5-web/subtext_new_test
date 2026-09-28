@@ -399,14 +399,24 @@ function toggleNotifications() {
   const isOpening = panel.classList.contains("hidden");
   panel.classList.toggle("hidden");
 
-  // Открытие панели заменяет отдельную кнопку «Прочитано». Не отправляем
-  // дополнительный action в Apps Script: кабинет не зависит от необязательного
-  // API уведомлений, а статус останется прочитанным до следующего обновления.
+  // Открытие панели заменяет отдельную кнопку «Прочитано».
   if (isOpening) markNotificationsRead();
 }
 
 function markNotificationsRead() {
+  const hasUnreadNotifications = notificationsCache.some(item => !item.read);
   renderNotifications(notificationsCache.map(item => ({ ...item, read: true })));
+
+  if (!userId || !hasUnreadNotifications) return;
+
+  // Запрос намеренно не ожидается: отметка в readBy сохраняется в таблицу,
+  // но недоступность необязательного action не может задержать кабинет или
+  // помешать ученику открыть уведомления.
+  fetch(buildUrl({ action: "mark_notifications_read", userId }), { keepalive: true })
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    })
+    .catch(error => console.warn("Cannot mark notifications as read", error));
 }
 
 
