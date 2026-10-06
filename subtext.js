@@ -8,7 +8,7 @@ let notificationsLoadedOnce = false;
 let notificationsTimer = null;
 let soundUnlocked = false;
 let lessonCalendar = null;
-const OTHER_MATERIALS_GROUP = "ПРОВЕРКА";
+const OTHER_MATERIALS_GROUP = "Другое";
 const selectedMaterialsSort = {};
 // true = сначала пробуем Apps Script action=ai_chat, при ошибке остаётся локальный помощник.
 const REMOTE_AI_ENABLED = true;
