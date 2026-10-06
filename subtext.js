@@ -585,24 +585,50 @@ function parseScheduleText(scheduleText = "", fallbackCourse = getCurrentCourse(
 function collectScheduleItems({ courseFilter = true } = {}) {
   const data = cabinetData || {};
   const user = data.user || {};
-  const sources = [data.scheduleEvents, data.events, data.calendar, data.scheduleItems, data.lessonsSchedule, user.scheduleEvents, user.events, user.calendar, user.nextLessons];
   const course = getCurrentCourse();
-  const items = sources.find(source => Array.isArray(source) && source.length)
-    || parseScheduleText(user.schedule, course);
 
-  return items
+  // Собираем расписание из всех доступных источников.
+  // Важно: API может вернуть scheduleEvents только для текущего курса,
+  // поэтому одного первого непустого источника недостаточно для ученика
+  // с несколькими предметами. Главная строка расписания содержит все записи.
+  const sources = [
+    data.scheduleEvents,
+    data.events,
+    data.calendar,
+    data.scheduleItems,
+    data.lessonsSchedule,
+    user.scheduleEvents,
+    user.events,
+    user.calendar,
+    user.nextLessons,
+  ];
+
+  const rawItems = sources
+    .filter(source => Array.isArray(source))
+    .flat();
+
+  const parsedSchedule = user.schedule
+    ? parseScheduleText(user.schedule, course)
+    : [];
+
+  const items = [...rawItems, ...parsedSchedule];
+
+  const normalizedItems = items
     .map((item, index) => {
       const startDate = parseLessonDateTime(item);
       const rawCourse = item.course || item.subjectKey || item["Предмет"] || "";
       const title = item.title || item.subject || item["Предмет"] || "";
       const detectedCourse = normalizeCourseName(rawCourse)
         || inferScheduleCourse(title || item.topic || "", "");
+
       const subject = item.subject
         || item["Предмет"]
-        || (detectedCourse ? getCourseLabel(detectedCourse) : inferScheduleSubject(title || item.topic || "", ""));
+        || (detectedCourse
+          ? getCourseLabel(detectedCourse)
+          : inferScheduleSubject(title || item.topic || "", ""));
 
       return {
-        id: String(item.id || item.lessonId || index),
+        id: String(item.id || item.lessonId || `schedule-${index}-${startDate ? startDate.getTime() : index}`),
         title: String(title || subject || "Урок"),
         subject: String(subject || "Урок"),
         course: detectedCourse,
@@ -614,16 +640,26 @@ function collectScheduleItems({ courseFilter = true } = {}) {
         link: String(item.link || item.url || item.meet || item["Ссылка"] || user.link || "").trim(),
       };
     })
-    .filter(item => item.startDate)
-    .filter(item => {
-      if (!courseFilter) return true;
+    .filter(item => item.startDate);
 
-      // Для карточки ближайшего занятия курс обязателен.
-      // Если событие не имеет курса и его нельзя определить из названия,
-      // не показываем его во вкладке текущего курса: иначе одна запись
-      // дублируется во всех курсах ученика.
-      return normalizeCourseName(item.course) === normalizeCourseName(course);
-    });
+  // Один и тот же урок может прийти одновременно из API и из строки
+  // расписания. Убираем дубликаты по курсу + дате + времени.
+  const uniqueItems = [];
+  const seen = new Set();
+
+  for (const item of normalizedItems) {
+    const key = `${normalizeCourseName(item.course)}|${item.startDate.getTime()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    uniqueItems.push(item);
+  }
+
+  return uniqueItems.filter(item => {
+    if (!courseFilter) return true;
+
+    // Карточка ближайшего урока должна показывать только текущий курс.
+    return normalizeCourseName(item.course) === normalizeCourseName(course);
+  });
 }
 
 function getNextLesson() {
