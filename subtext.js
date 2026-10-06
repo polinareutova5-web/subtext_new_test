@@ -646,18 +646,34 @@ function renderNextLesson() {
   `;
 }
 
+function shouldShowScheduleSubject() {
+  return (cabinetData?.user?.courses || []).length > 1;
+}
+
+function getScheduleDisplayTitle(item) {
+  return shouldShowScheduleSubject() ? String(item.subject || item.title || "").trim() : "";
+}
+
 function openLessonCard(eventId) {
   const lesson = collectScheduleItems({ courseFilter: false }).find(item => item.id === String(eventId));
   if (!lesson) return;
-  alert(`${lesson.subject}\n${formatDate(lesson.startDate)} ${formatTime(lesson.startDate)}`);
+  const dateTime = `${formatDate(lesson.startDate)} ${formatTime(lesson.startDate)}`;
+  alert(shouldShowScheduleSubject() ? `${lesson.subject}\n${dateTime}` : dateTime);
 }
 
 function renderCalendar() {
   const calendarEl = document.getElementById("lesson-calendar");
   const upcomingEl = document.getElementById("upcoming-lessons");
   if (!calendarEl || !upcomingEl) return;
+
   const items = collectScheduleItems({ courseFilter: false }).sort((a, b) => a.startDate - b.startDate);
-  const events = items.map((item, index) => ({ id: item.id, title: item.title, start: item.startDate.toISOString(), backgroundColor: index % 2 ? "#35b779" : "#1677ff", borderColor: index % 2 ? "#35b779" : "#1677ff" }));
+  const events = items.map((item, index) => ({
+    id: item.id,
+    title: getScheduleDisplayTitle(item),
+    start: item.startDate.toISOString(),
+    backgroundColor: index % 2 ? "#35b779" : "#1677ff",
+    borderColor: index % 2 ? "#35b779" : "#1677ff"
+  }));
 
   if (window.FullCalendar) {
     if (lessonCalendar) lessonCalendar.destroy();
@@ -680,8 +696,11 @@ function renderCalendar() {
   upcomingEl.innerHTML = items.filter(item => item.startDate >= new Date()).slice(0, 4).map((item, index) => `
     <button type="button" class="upcoming-item" onclick="openLessonCard('${escapeAttr(item.id)}')">
       <span class="upcoming-mark" style="background:${index % 2 ? '#35b779' : '#1677ff'}"></span>
-      <span><span class="upcoming-date">${formatDate(item.startDate)}</span><br><span class="upcoming-time">${formatTime(item.startDate)}</span></span>
-      <span class="upcoming-title">${escapeHtml(item.subject)}</span>
+      <span>
+        <span class="upcoming-date">${formatDate(item.startDate)}</span><br>
+        <span class="upcoming-time">${formatTime(item.startDate)}</span>
+      </span>
+      ${shouldShowScheduleSubject() ? `<span class="upcoming-title">${escapeHtml(item.subject)}</span>` : ""}
     </button>
   `).join("") || '<p style="color:var(--muted);line-height:1.7">Ближайших занятий пока нет.</p>';
 }
