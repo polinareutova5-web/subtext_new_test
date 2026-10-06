@@ -440,7 +440,7 @@ function bookSlot(userId, slotId, course) {
       sheet.getRange(i + 1, 6).setValue(user.username);
       sheet.getRange(i + 1, 8).setValue(new Date());
       const displayRows = sheet.getDataRange().getDisplayValues();
-      addSchedule(userId, displayRows[i][1], stripDisplaySeconds(displayRows[i][2]));
+      addSchedule(userId, displayRows[i][1], stripDisplaySeconds(displayRows[i][2]), course);
       return json({ success: true });
     }
   }
@@ -465,7 +465,7 @@ function bookGroupSlot(userId, slotId, course) {
       sheet.getRange(i + 1, 7).setValue(rows[i][6] ? rows[i][6] + ',' + userId : userId);
       sheet.getRange(i + 1, 8).setValue(rows[i][7] ? rows[i][7] + ', ' + user.username : user.username);
       const displayRows = sheet.getDataRange().getDisplayValues();
-      addSchedule(userId, displayRows[i][1], stripDisplaySeconds(displayRows[i][2]));
+      addSchedule(userId, displayRows[i][1], stripDisplaySeconds(displayRows[i][2]), course);
       return json({ success: true });
     }
   }
@@ -498,16 +498,20 @@ function updateUserCoins(userId, newCoins) {
   }
 }
 
-function addSchedule(userId, date, time) {
+function addSchedule(userId, date, time, course) {
   const dateText = String(date || '').trim();
   const timeText = stripDisplaySeconds(time);
+  const courseText = String(course || '').trim();
   const fmt = [dateText, timeText].filter(Boolean).join(' в ');
+  // Новые записи помечаем курсом. Старые записи в расписании не переписываем:
+  // они остаются в прежнем формате и продолжают читаться существующим парсером.
+  const scheduleEntry = courseText ? `${courseText}: ${fmt}` : fmt;
   const sheet = openUsersSheet('Лист1');
   const rows = sheet.getDataRange().getValues();
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][0]).trim() === String(userId).trim()) {
       const cur = rows[i][6] || '';
-      sheet.getRange(i + 1, 7).setValue(cur ? cur + ', ' + fmt : fmt);
+      sheet.getRange(i + 1, 7).setValue(cur ? cur + ', ' + scheduleEntry : scheduleEntry);
       break;
     }
   }
