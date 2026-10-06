@@ -506,30 +506,43 @@ function addSchedule(userId, date, time, course) {
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0].map(h => String(h).trim());
 
+  const userIdCol = findHeaderIndex(headers, ['userId', 'user_id', 'id'], 0);
+  const scheduleCol = findHeaderIndex(headers, ['schedule', 'расписание'], 6);
+  const subjectCol = findHeaderIndex(
+    headers,
+    ['subject', 'subjects', 'course', 'courses', 'предмет', 'предметы'],
+    -1
+  );
+
   for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]).trim() !== String(userId).trim()) continue;
+    if (String(getCell(rows[i], userIdCol)).trim() !== String(userId).trim()) continue;
 
-    const subjectCandidates = ['subject', 'subjects', 'course', 'courses', 'предмет', 'предметы'];
-    let subjectCol = -1;
-    for (const header of subjectCandidates) {
-      const idx = headers.indexOf(header);
-      if (idx >= 0) {
-        subjectCol = idx;
-        break;
-      }
-    }
+    const rawSubjects = subjectCol >= 0
+      ? String(getCell(rows[i], subjectCol) || '').trim()
+      : '';
 
-    const rawSubjects = subjectCol >= 0 ? String(rows[i][subjectCol] || '').trim() : '';
-    const courses = rawSubjects.split(',').map(value => String(value).trim()).filter(Boolean);
+    const courses = splitSubjectList(rawSubjects);
 
-    // Один предмет: старый формат — только дата и время.
-    // Два и более предмета: новый формат — предмет + дата и время.
+    // Один предмет: полностью сохраняем старый формат.
+    // 2+ предметов: каждый урок явно получает свой предмет.
     const scheduleEntry = courses.length > 1
-      ? String(course || '').trim() + ': ' + fmt
+      ? `${String(course || '').trim()}: ${fmt}`
       : fmt;
 
-    const cur = rows[i][6] || '';
-    sheet.getRange(i + 1, 7).setValue(cur ? cur + ', ' + scheduleEntry : scheduleEntry);
+    const currentSchedule = String(getCell(rows[i], scheduleCol) || '').trim();
+
+    // Не добавляем один и тот же урок повторно.
+    const existingEntries = currentSchedule
+      ? currentSchedule.split(/\\n|,(?=\\s*(?:[^,]+):\\s*\\d{1,2}[.\\/-])|;\\s*/).map(x => x.trim()).filter(Boolean)
+      : [];
+
+    if (!existingEntries.includes(scheduleEntry)) {
+      const updatedSchedule = currentSchedule
+        ? `${currentSchedule}, ${scheduleEntry}`
+        : scheduleEntry;
+      sheet.getRange(i + 1, scheduleCol + 1).setValue(updatedSchedule);
+    }
+
     break;
   }
 }

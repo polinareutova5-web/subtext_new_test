@@ -585,84 +585,23 @@ function parseScheduleText(scheduleText = "", fallbackCourse = getCurrentCourse(
     .filter(Boolean);
 }
 
-function collectScheduleItems({ courseFilter = true } = {}) {
+function collectScheduleItems({ courseFilter = false } = {}) {
   const data = cabinetData || {};
   const user = data.user || {};
   const course = getCurrentCourse();
 
-  // Собираем расписание из всех доступных источников.
-  // Важно: API может вернуть scheduleEvents только для текущего курса,
-  // поэтому одного первого непустого источника недостаточно для ученика
-  // с несколькими предметами. Главная строка расписания содержит все записи.
-  const sources = [
-    data.scheduleEvents,
-    data.events,
-    data.calendar,
-    data.scheduleItems,
-    data.lessonsSchedule,
-    user.scheduleEvents,
-    user.events,
-    user.calendar,
-    user.nextLessons,
-  ];
-
-  const rawItems = sources
-    .filter(source => Array.isArray(source))
-    .flat();
-
+  // Единый источник истины для расписания — user.schedule.
+  // Все календарные события, список расписания и «Ближайший урок»
+  // строятся из одной и той же строки, чтобы данные не расходились.
   const parsedSchedule = user.schedule
     ? parseScheduleText(user.schedule, course)
     : [];
 
-  const items = [...rawItems, ...parsedSchedule];
+  if (!courseFilter) return parsedSchedule;
 
-  const normalizedItems = items
-    .map((item, index) => {
-      const startDate = parseLessonDateTime(item);
-      const rawCourse = item.course || item.subjectKey || item["Предмет"] || "";
-      const title = item.title || item.subject || item["Предмет"] || "";
-      const detectedCourse = normalizeCourseName(rawCourse)
-        || inferScheduleCourse(title || item.topic || "", "");
-
-      const subject = item.subject
-        || item["Предмет"]
-        || (detectedCourse
-          ? getCourseLabel(detectedCourse)
-          : inferScheduleSubject(title || item.topic || "", ""));
-
-      return {
-        id: String(item.id || item.lessonId || `schedule-${index}-${startDate ? startDate.getTime() : index}`),
-        title: String(title || subject || "Урок"),
-        subject: String(subject || "Урок"),
-        course: detectedCourse,
-        topic: String(item.topic || item.theme || item["Тема"] || "Тема уточняется"),
-        startDate,
-        date: item.date || item["Дата"] || (startDate ? startDate.toISOString() : ""),
-        time: item.time || item["Время"] || (startDate ? startDate.toISOString() : ""),
-        duration: item.duration || item["Продолжительность"] || "60 минут",
-        link: String(item.link || item.url || item.meet || item["Ссылка"] || user.link || "").trim(),
-      };
-    })
-    .filter(item => item.startDate);
-
-  // Один и тот же урок может прийти одновременно из API и из строки
-  // расписания. Убираем дубликаты по курсу + дате + времени.
-  const uniqueItems = [];
-  const seen = new Set();
-
-  for (const item of normalizedItems) {
-    const key = `${normalizeCourseName(item.course)}|${item.startDate.getTime()}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    uniqueItems.push(item);
-  }
-
-  return uniqueItems.filter(item => {
-    if (!courseFilter) return true;
-
-    // Карточка ближайшего урока должна показывать только текущий курс.
-    return normalizeCourseName(item.course) === normalizeCourseName(course);
-  });
+  return parsedSchedule.filter(item =>
+    normalizeCourseName(item.course) === normalizeCourseName(course)
+  );
 }
 
 function getNextLesson() {
@@ -677,16 +616,24 @@ function getNextLesson() {
 function renderNextLesson() {
   const container = document.getElementById("next-lesson-card");
   if (!container) return;
+
   const lesson = getNextLesson();
   if (!lesson) {
     container.innerHTML = '<p style="color:var(--muted);line-height:1.7">Ближайший урок пока не назначен.</p>';
     return;
   }
-  container.innerHTML = `
-    <div class="next-lesson-row"><small>Дата</small>${formatDate(lesson.startDate)}</div>
-    <div class="next-lesson-row"><small>Время</small>${formatTime(lesson.startDate)}</div>
-    <div class="next-lesson-row"><small>Предмет</small>${escapeHtml(lesson.subject)}</div>
-  `;
+
+  const rows = [
+    `<div class="next-lesson-row"><small>Дата</small>${formatDate(lesson.startDate)}</div>`,
+    `<div class="next-lesson-row"><small>Время</small>${formatTime(lesson.startDate)}</div>`
+  ];
+
+  // Предмет показываем только когда у ученика несколько предметов.
+  if (shouldShowScheduleSubject()) {
+    rows.push(`<div class="next-lesson-row"><small>Предмет</small>${escapeHtml(lesson.subject)}</div>`);
+  }
+
+  container.innerHTML = rows.join("");
 }
 
 function shouldShowScheduleSubject() {
@@ -694,14 +641,20 @@ function shouldShowScheduleSubject() {
 }
 
 function getScheduleDisplayTitle(item) {
-  return shouldShowScheduleSubject() ? String(item.subject || item.title || "").trim() : "";
+  return shouldShowScheduleSubject()
+    ? String(item.subject || item.title || "Урок").trim()
+    : "Урок";
 }
 
 function openLessonCard(eventId) {
-  const lesson = collectScheduleItems({ courseFilter: false }).find(item => item.id === String(eventId));
+  const lesson = collectScheduleItems({ courseFilter: false })
+    .find(item => item.id === String(eventId));
   if (!lesson) return;
-  const dateTime = `${formatDate(lesson.startDate)} ${formatTime(lesson.startDate)}`;
-  alert(shouldShowScheduleSubject() ? `${lesson.subject}\n${dateTime}` : dateTime);
+
+  const dateTime = `${formatDate(lesson.startDate)} в ${formatTime(lesson.startDate)}`;
+  alert(shouldShowScheduleSubject()
+    ? `${lesson.subject}: ${dateTime}`
+    : dateTime);
 }
 
 function renderCalendar() {
@@ -709,17 +662,18 @@ function renderCalendar() {
   const upcomingEl = document.getElementById("upcoming-lessons");
   if (!calendarEl || !upcomingEl) return;
 
-  const items = collectScheduleItems({ courseFilter: false }).sort((a, b) => a.startDate - b.startDate);
-  const events = items.map((item, index) => ({
+  const items = collectScheduleItems({ courseFilter: false })
+    .sort((a, b) => a.startDate - b.startDate);
+
+  const events = items.map(item => ({
     id: item.id,
     title: getScheduleDisplayTitle(item),
-    start: item.startDate.toISOString(),
-    backgroundColor: index % 2 ? "#35b779" : "#1677ff",
-    borderColor: index % 2 ? "#35b779" : "#1677ff"
+    start: item.startDate.toISOString()
   }));
 
   if (window.FullCalendar) {
     if (lessonCalendar) lessonCalendar.destroy();
+
     lessonCalendar = new FullCalendar.Calendar(calendarEl, {
       initialView: "dayGridMonth",
       height: 330,
@@ -729,28 +683,59 @@ function renderCalendar() {
       dayMaxEvents: 2,
       headerToolbar: { left: "prev,next", center: "title", right: "today" },
       events,
-      eventClick(info) { openLessonCard(info.event.id); },
+      eventClick(info) {
+        openLessonCard(info.event.id);
+      },
     });
+
     lessonCalendar.render();
   } else {
     calendarEl.innerHTML = '<p style="padding:1rem;color:var(--muted)">Календарь временно недоступен</p>';
   }
 
-  upcomingEl.innerHTML = items.filter(item => item.startDate >= new Date()).slice(0, 4).map((item, index) => `
-    <button type="button" class="upcoming-item" onclick="openLessonCard('${escapeAttr(item.id)}')">
-      <span class="upcoming-mark" style="background:${index % 2 ? '#35b779' : '#1677ff'}"></span>
-      <span>
-        <span class="upcoming-date">${formatDate(item.startDate)}</span><br>
-        <span class="upcoming-time">${formatTime(item.startDate)}</span>
-      </span>
-      ${shouldShowScheduleSubject() ? `<span class="upcoming-title">${escapeHtml(item.subject)}</span>` : ""}
-    </button>
-  `).join("") || '<p style="color:var(--muted);line-height:1.7">Ближайших занятий пока нет.</p>';
+  const upcoming = items
+    .filter(item => item.startDate >= new Date())
+    .slice(0, 4);
+
+  upcomingEl.innerHTML = upcoming.length
+    ? upcoming.map(item => `
+      <button type="button" class="upcoming-item" onclick="openLessonCard('${escapeAttr(item.id)}')">
+        <span class="upcoming-mark"></span>
+        <span>
+          <span class="upcoming-date">${formatDate(item.startDate)}</span><br>
+          <span class="upcoming-time">${formatTime(item.startDate)}</span>
+        </span>
+        ${shouldShowScheduleSubject()
+          ? `<span class="upcoming-title">${escapeHtml(item.subject)}</span>`
+          : ""}
+      </button>
+    `).join("")
+    : '<p style="color:var(--muted);line-height:1.7">Ближайших занятий пока нет.</p>';
 }
 
 // ================= UI =================
 function logoutCabinet() {
   window.location.href = "index.html";
+}
+
+function renderScheduleSummary() {
+  const scheduleEl = document.getElementById("lesson-schedule");
+  if (!scheduleEl) return;
+
+  const items = collectScheduleItems({ courseFilter: false })
+    .sort((a, b) => a.startDate - b.startDate);
+
+  if (!items.length) {
+    scheduleEl.textContent = "Не указано";
+    return;
+  }
+
+  scheduleEl.innerHTML = items.map(item => {
+    const dateTime = `${formatDate(item.startDate)} в ${formatTime(item.startDate)}`;
+    return shouldShowScheduleSubject()
+      ? `${escapeHtml(item.subject)}: ${dateTime}`
+      : dateTime;
+  }).join("<br>");
 }
 
 function showSection(sectionId) {
@@ -775,6 +760,7 @@ function setCourse(course) {
   renderSubmissionFormLink(course);
   renderNextLesson();
   renderCalendar();
+  renderScheduleSummary();
 }
 
 function renderCourseTabs() {
@@ -855,7 +841,7 @@ if (lessonLinkEl) {
     lessonLinkEl.textContent = "Ссылка пока не назначена";
   }
 }
-    setText("lesson-schedule", u.schedule || "Не указано");
+    renderScheduleSummary();
 
     const avatarImg = document.getElementById("avatar-img");
     if (avatarImg) avatarImg.src = u.avatarUrl || "https://via.placeholder.com/120/2e7d32/FFFFFF?text=👤";
