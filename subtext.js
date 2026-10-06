@@ -535,8 +535,11 @@ function inferScheduleSubject(line = "", fallback = getCourseLabel(getCurrentCou
 function parseScheduleText(scheduleText = "", fallbackCourse = getCurrentCourse()) {
   const courseLabel = getCourseLabel(fallbackCourse);
 
+  // В много-предметном расписании записи могут храниться одной строкой:
+  // "English: 07.10.2026 в 16:30, French: 06.10.2026 в 15:20".
+  // Поэтому разделяем не только перед датой, но и перед названием предмета.
   return String(scheduleText)
-    .split(/\n|;|,(?=\s*(?:\d{1,2}[.\/-]|пн|вт|ср|чт|пт|сб|вс|понедельник|вторник|среда|четверг|пятница|суббота|воскресенье))/i)
+    .split(/\n|;|,(?=\s*(?:\d{1,2}[.\/-]|пн|вт|ср|чт|пт|сб|вс|понедельник|вторник|среда|четверг|пятница|суббота|воскресенье|(?:английский|англ|english|физика|physics|математика|math|биология|biology|химия|chemistry|французский|французскому|french|испанский|испанскому|spanish)\s*:))/i)
     .map(line => line.trim())
     .filter(Boolean)
     .map((line, index) => {
@@ -664,7 +667,11 @@ function collectScheduleItems({ courseFilter = true } = {}) {
 
 function getNextLesson() {
   const now = new Date();
-  return collectScheduleItems().filter(item => item.startDate >= now).sort((a, b) => a.startDate - b.startDate)[0] || null;
+  // «Ближайший урок» — действительно ближайший урок ученика,
+  // независимо от выбранной вкладки предмета.
+  return collectScheduleItems({ courseFilter: false })
+    .filter(item => item.startDate >= now)
+    .sort((a, b) => a.startDate - b.startDate)[0] || null;
 }
 
 function renderNextLesson() {
