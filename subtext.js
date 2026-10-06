@@ -711,10 +711,14 @@ function renderCalendar() {
     calendarEl.innerHTML = '<p style="padding:1rem;color:var(--muted)">Календарь временно недоступен</p>';
   }
 
-  // Под календарём показываем ТО ЖЕ расписание, что и в календаре.
-  // Здесь нельзя отбрасывать уже прошедший сегодня урок:
-  // пользователь должен видеть все свои записи.
-  const scheduleList = items;
+  // Под календарём показываем только будущие записи.
+  // Исторические уроки остаются в календаре, но не дублируются в списке ниже.
+  const now = new Date();
+  const scheduleList = items.filter(item =>
+    item.startDate instanceof Date &&
+    !isNaN(item.startDate.getTime()) &&
+    item.startDate.getTime() >= now.getTime()
+  );
 
   upcomingEl.innerHTML = scheduleList.length
     ? scheduleList.map(item => `
