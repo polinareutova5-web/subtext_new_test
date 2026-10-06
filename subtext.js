@@ -606,11 +606,15 @@ function collectScheduleItems({ courseFilter = false } = {}) {
 
 function getNextLesson() {
   const now = new Date();
-  // «Ближайший урок» — действительно ближайший урок ученика,
-  // независимо от выбранной вкладки предмета.
-  return collectScheduleItems({ courseFilter: false })
-    .filter(item => item.startDate >= now)
-    .sort((a, b) => a.startDate - b.startDate)[0] || null;
+
+  // «Ближайший урок» ищем ТОЛЬКО среди будущих уроков,
+  // но сразу по ВСЕМ предметам ученика.
+  // Выбранная вкладка предмета здесь вообще не участвует.
+  const allLessons = collectScheduleItems({ courseFilter: false });
+
+  return allLessons
+    .filter(item => item.startDate.getTime() >= now.getTime())
+    .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())[0] || null;
 }
 
 function renderNextLesson() {
@@ -693,12 +697,13 @@ function renderCalendar() {
     calendarEl.innerHTML = '<p style="padding:1rem;color:var(--muted)">Календарь временно недоступен</p>';
   }
 
-  const upcoming = items
-    .filter(item => item.startDate >= new Date())
-    .slice(0, 4);
+  // Под календарём показываем ТО ЖЕ расписание, что и в календаре.
+  // Здесь нельзя отбрасывать уже прошедший сегодня урок:
+  // пользователь должен видеть все свои записи.
+  const scheduleList = items;
 
-  upcomingEl.innerHTML = upcoming.length
-    ? upcoming.map(item => `
+  upcomingEl.innerHTML = scheduleList.length
+    ? scheduleList.map(item => `
       <button type="button" class="upcoming-item" onclick="openLessonCard('${escapeAttr(item.id)}')">
         <span class="upcoming-mark"></span>
         <span>
