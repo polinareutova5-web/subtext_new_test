@@ -185,8 +185,27 @@ function normalizeSubjectValue(value) {
 }
 
 function splitSubjectList(value) {
-  return String(value || '')
-    .split(/[\n,;|]+/)
+  if (Array.isArray(value)) {
+    return value.map(normalizeSubjectValue).filter(Boolean);
+  }
+
+  const raw = String(value || '').trim();
+  if (!raw) return [];
+
+  // Таблица может хранить список предметов как JSON-массив.
+  if ((raw.startsWith('[') && raw.endsWith(']'))) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.map(normalizeSubjectValue).filter(Boolean);
+      }
+    } catch (e) {
+      // Если это не JSON, продолжаем обычный разбор.
+    }
+  }
+
+  return raw
+    .split(/[\n,;|/]+|\s+и\s+/i)
     .map(normalizeSubjectValue)
     .filter(Boolean);
 }
@@ -273,8 +292,9 @@ function getUser(userId) {
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     if (String(getCell(row, userIdCol)).trim() === String(userId).trim()) {
-      const coursesStr = String(getCell(row, subjectCol) || '').toLowerCase();
-      const courses = coursesStr.split(',').map(c => normalizeCourse(c)).filter(Boolean);
+      const courses = splitSubjectList(getCell(row, subjectCol))
+        .map(c => normalizeCourse(c))
+        .filter(Boolean);
       const stats = getUserCourseStats(userId);
       const progressFallback = progressCol >= 0 && progressCol !== lessonsRemainingCol ? getCell(row, progressCol, 0) : 0;
       return {
@@ -522,10 +542,13 @@ function addSchedule(userId, date, time, course) {
       : '';
 
     const courses = splitSubjectList(rawSubjects);
+    const requestedCourse = normalizeSubjectValue(course);
 
-    // Один предмет: полностью сохраняем старый формат.
-    // 2+ предметов: каждый урок явно получает свой предмет.
-    const scheduleEntry = courses.length > 1
+    // Критически важно: решение о формате принимаем по реальному списку
+    // предметов пользователя, а не по текущей вкладке/переданному course.
+    // Если в таблице два и более предмета — ЗАПИСЬ ВСЕГДА предметная.
+    const isMultiSubject = courses.length >= 2;
+    const scheduleEntry = isMultiSubject
       ? `${String(course || '').trim()}: ${fmt}`
       : fmt;
 
