@@ -591,26 +591,21 @@ function collectScheduleItems({ courseFilter = true } = {}) {
     || parseScheduleText(user.schedule, course);
 
   return items
-    .filter(item => {
-      if (!courseFilter) return true;
-
-      const itemCourse = item.course || item.subjectKey || item["Предмет"] || "";
-      return !itemCourse
-        || normalizeCourseName(itemCourse) === normalizeCourseName(course)
-        || getCourseLabel(itemCourse) === getCourseLabel(course);
-    })
     .map((item, index) => {
       const startDate = parseLessonDateTime(item);
-      const title = item.title || item.subject || item["Предмет"] || getCourseLabel(item.course || course);
+      const rawCourse = item.course || item.subjectKey || item["Предмет"] || "";
+      const title = item.title || item.subject || item["Предмет"] || "";
+      const detectedCourse = normalizeCourseName(rawCourse)
+        || inferScheduleCourse(title || item.topic || "", "");
       const subject = item.subject
         || item["Предмет"]
-        || inferScheduleSubject(title || item.topic || "", getCourseLabel(item.course || course));
+        || (detectedCourse ? getCourseLabel(detectedCourse) : inferScheduleSubject(title || item.topic || "", ""));
 
       return {
         id: String(item.id || item.lessonId || index),
         title: String(title || subject || "Урок"),
         subject: String(subject || "Урок"),
-        course: normalizeCourseName(item.course || item.subjectKey || "") || inferScheduleCourse(title, course),
+        course: detectedCourse,
         topic: String(item.topic || item.theme || item["Тема"] || "Тема уточняется"),
         startDate,
         date: item.date || item["Дата"] || (startDate ? startDate.toISOString() : ""),
@@ -619,7 +614,16 @@ function collectScheduleItems({ courseFilter = true } = {}) {
         link: String(item.link || item.url || item.meet || item["Ссылка"] || user.link || "").trim(),
       };
     })
-    .filter(item => item.startDate);
+    .filter(item => item.startDate)
+    .filter(item => {
+      if (!courseFilter) return true;
+
+      // Для карточки ближайшего занятия курс обязателен.
+      // Если событие не имеет курса и его нельзя определить из названия,
+      // не показываем его во вкладке текущего курса: иначе одна запись
+      // дублируется во всех курсах ученика.
+      return normalizeCourseName(item.course) === normalizeCourseName(course);
+    });
 }
 
 function getNextLesson() {
