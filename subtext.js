@@ -532,8 +532,8 @@ function inferScheduleSubject(line = "", fallback = getCourseLabel(getCurrentCou
   return getCourseLabel(inferScheduleCourse(line, fallback));
 }
 
-function parseScheduleText(scheduleText = "", fallbackCourse = getCurrentCourse()) {
-  const courseLabel = getCourseLabel(fallbackCourse);
+function parseScheduleText(scheduleText = "", fallbackCourse = "") {
+  const courseLabel = fallbackCourse ? getCourseLabel(fallbackCourse) : "";
 
   // В много-предметном расписании записи могут храниться одной строкой:
   // "English: 07.10.2026 в 16:30, French: 06.10.2026 в 15:20".
@@ -565,8 +565,11 @@ function parseScheduleText(scheduleText = "", fallbackCourse = getCurrentCourse(
         .replace(/\s+/g, " ")
         .trim();
 
-      const subject = inferScheduleSubject(line, courseLabel);
-      const scheduleCourse = inferScheduleCourse(line, fallbackCourse);
+      const explicitCourse = inferScheduleCourse(line, "");
+      const scheduleCourse = explicitCourse || normalizeCourseName(fallbackCourse);
+      const subject = explicitCourse
+        ? getCourseLabel(explicitCourse)
+        : (fallbackCourse ? getCourseLabel(fallbackCourse) : "Предмет");
 
       return {
         id: `schedule-${index}-${startDate.getTime()}`,
@@ -586,34 +589,31 @@ function parseScheduleText(scheduleText = "", fallbackCourse = getCurrentCourse(
 }
 
 function collectScheduleItems({ courseFilter = false } = {}) {
-  const data = cabinetData || {};
-  const user = data.user || {};
-  const course = getCurrentCourse();
-
-  // Единый источник истины для расписания — user.schedule.
-  // Все календарные события, список расписания и «Ближайший урок»
-  // строятся из одной и той же строки, чтобы данные не расходились.
+  const user = cabinetData?.user || {};
+  const courses = Array.isArray(user.courses) ? user.courses : [];
+  
+  // ВАЖНО: расписание всегда разбирается независимо от currentCourse.
+  // При 2+ предметах нельзя передавать выбранную вкладку как fallback,
+  // иначе один и тот же урок превращается то в English, то в French.
+  const fallbackCourse = courses.length === 1 ? courses[0] : "";
   const parsedSchedule = user.schedule
-    ? parseScheduleText(user.schedule, course)
+    ? parseScheduleText(user.schedule, fallbackCourse)
     : [];
 
   if (!courseFilter) return parsedSchedule;
 
   return parsedSchedule.filter(item =>
-    normalizeCourseName(item.course) === normalizeCourseName(course)
+    normalizeCourseName(item.course) === normalizeCourseName(getCurrentCourse())
   );
 }
 
 function getNextLesson() {
   const now = new Date();
 
-  // «Ближайший урок» ищем ТОЛЬКО среди будущих уроков,
-  // но сразу по ВСЕМ предметам ученика.
-  // Выбранная вкладка предмета здесь вообще не участвует.
-  const allLessons = collectScheduleItems({ courseFilter: false });
-
-  return allLessons
-    .filter(item => item.startDate.getTime() >= now.getTime())
+  // Один и тот же глобальный массив расписания используется независимо
+  // от выбранной вкладки предмета.
+  return collectScheduleItems({ courseFilter: false })
+    .filter(item => item.startDate instanceof Date && item.startDate.getTime() >= now.getTime())
     .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())[0] || null;
 }
 
