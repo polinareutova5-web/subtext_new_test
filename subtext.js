@@ -513,7 +513,7 @@ function parseLessonDateTime(item = {}) {
 }
 
 
-function inferScheduleSubject(line = "", fallback = getCourseLabel(getCurrentCourse())) {
+function inferScheduleCourse(line = "", fallback = getCurrentCourse()) {
   const subjects = [
     ["english", ["английский", "англ", "english"]],
     ["physics", ["физика", "физику", "physics"]],
@@ -525,11 +525,15 @@ function inferScheduleSubject(line = "", fallback = getCourseLabel(getCurrentCou
   ];
   const normalized = String(line).toLowerCase();
   const found = subjects.find(([, aliases]) => aliases.some(alias => normalized.includes(alias)));
-  return found ? getCourseLabel(found[0]) : fallback;
+  return found ? found[0] : normalizeCourseName(fallback);
 }
 
-function parseScheduleText(scheduleText = "") {
-  const courseLabel = getCourseLabel(getCurrentCourse());
+function inferScheduleSubject(line = "", fallback = getCourseLabel(getCurrentCourse())) {
+  return getCourseLabel(inferScheduleCourse(line, fallback));
+}
+
+function parseScheduleText(scheduleText = "", fallbackCourse = getCurrentCourse()) {
+  const courseLabel = getCourseLabel(fallbackCourse);
 
   return String(scheduleText)
     .split(/\n|;|,(?=\s*(?:\d{1,2}[.\/-]|пн|вт|ср|чт|пт|сб|вс|понедельник|вторник|среда|четверг|пятница|суббота|воскресенье))/i)
@@ -559,12 +563,13 @@ function parseScheduleText(scheduleText = "") {
         .trim();
 
       const subject = inferScheduleSubject(line, courseLabel);
+      const scheduleCourse = inferScheduleCourse(line, fallbackCourse);
 
       return {
         id: `schedule-${index}-${startDate.getTime()}`,
         title: title || subject,
         subject,
-        course: getCurrentCourse(),
+        course: scheduleCourse,
         fromScheduleText: true,
         topic: title,
         startDate,
@@ -577,26 +582,35 @@ function parseScheduleText(scheduleText = "") {
     .filter(Boolean);
 }
 
-function collectScheduleItems() {
+function collectScheduleItems({ courseFilter = true } = {}) {
   const data = cabinetData || {};
   const user = data.user || {};
   const sources = [data.scheduleEvents, data.events, data.calendar, data.scheduleItems, data.lessonsSchedule, user.scheduleEvents, user.events, user.calendar, user.nextLessons];
   const course = getCurrentCourse();
-  const items = sources.find(source => Array.isArray(source) && source.length) || parseScheduleText(user.schedule);
+  const items = sources.find(source => Array.isArray(source) && source.length)
+    || parseScheduleText(user.schedule, course);
 
   return items
     .filter(item => {
-      if (item.fromScheduleText) return true;
+      if (!courseFilter) return true;
+
       const itemCourse = item.course || item.subjectKey || item["Предмет"] || "";
-      return !itemCourse || normalizeCourseName(itemCourse) === normalizeCourseName(course) || getCourseLabel(itemCourse) === getCourseLabel(course);
+      return !itemCourse
+        || normalizeCourseName(itemCourse) === normalizeCourseName(course)
+        || getCourseLabel(itemCourse) === getCourseLabel(course);
     })
     .map((item, index) => {
       const startDate = parseLessonDateTime(item);
-      const title = item.title || item.subject || item["Предмет"] || getCourseLabel(course);
+      const title = item.title || item.subject || item["Предмет"] || getCourseLabel(item.course || course);
+      const subject = item.subject
+        || item["Предмет"]
+        || inferScheduleSubject(title || item.topic || "", getCourseLabel(item.course || course));
+
       return {
         id: String(item.id || item.lessonId || index),
-        title: String(title || "Урок"),
-        subject: String(item.subject || item["Предмет"] || getCourseLabel(course)),
+        title: String(title || subject || "Урок"),
+        subject: String(subject || "Урок"),
+        course: normalizeCourseName(item.course || item.subjectKey || "") || inferScheduleCourse(title, course),
         topic: String(item.topic || item.theme || item["Тема"] || "Тема уточняется"),
         startDate,
         date: item.date || item["Дата"] || (startDate ? startDate.toISOString() : ""),
@@ -629,7 +643,7 @@ function renderNextLesson() {
 }
 
 function openLessonCard(eventId) {
-  const lesson = collectScheduleItems().find(item => item.id === String(eventId));
+  const lesson = collectScheduleItems({ courseFilter: false }).find(item => item.id === String(eventId));
   if (!lesson) return;
   alert(`${lesson.subject}\n${formatDate(lesson.startDate)} ${formatTime(lesson.startDate)}`);
 }
@@ -638,7 +652,7 @@ function renderCalendar() {
   const calendarEl = document.getElementById("lesson-calendar");
   const upcomingEl = document.getElementById("upcoming-lessons");
   if (!calendarEl || !upcomingEl) return;
-  const items = collectScheduleItems().sort((a, b) => a.startDate - b.startDate);
+  const items = collectScheduleItems({ courseFilter: false }).sort((a, b) => a.startDate - b.startDate);
   const events = items.map((item, index) => ({ id: item.id, title: item.title, start: item.startDate.toISOString(), backgroundColor: index % 2 ? "#35b779" : "#1677ff", borderColor: index % 2 ? "#35b779" : "#1677ff" }));
 
   if (window.FullCalendar) {
