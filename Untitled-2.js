@@ -503,9 +503,15 @@ function addSchedule(userId, date, time, course) {
   const timeText = stripDisplaySeconds(time);
   const courseText = String(course || '').trim();
   const fmt = [dateText, timeText].filter(Boolean).join(' в ');
-  // Новые записи помечаем курсом. Старые записи в расписании не переписываем:
-  // они остаются в прежнем формате и продолжают читаться существующим парсером.
-  const scheduleEntry = courseText ? `${courseText}: ${fmt}` : fmt;
+
+  // Если у ученика только один курс — сохраняем полностью старый формат:
+  // "дата в время". Курс в такую запись не добавляем.
+  // Если курсов два или больше — сохраняем курс, чтобы общий календарь
+  // мог однозначно определить, к какому курсу относится запись.
+  const userCourses = Array.isArray(getUser(userId)?.courses) ? getUser(userId).courses : [];
+  const hasMultipleCourses = userCourses.length >= 2;
+  const scheduleEntry = hasMultipleCourses && courseText ? `${courseText}: ${fmt}` : fmt;
+
   const sheet = openUsersSheet('Лист1');
   const rows = sheet.getDataRange().getValues();
   for (let i = 1; i < rows.length; i++) {
