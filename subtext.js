@@ -513,7 +513,7 @@ function parseLessonDateTime(item = {}) {
 }
 
 
-function inferScheduleCourse(line = "", fallback = getCurrentCourse()) {
+function inferScheduleCourse(line = "", fallback = "") {
   const subjects = [
     ["english", ["английский", "англ", "english"]],
     ["physics", ["физика", "физику", "physics"]],
@@ -523,9 +523,17 @@ function inferScheduleCourse(line = "", fallback = getCurrentCourse()) {
     ["french", ["французский", "французскому", "french"]],
     ["spanish", ["испанский", "испанскому", "spanish"]],
   ];
-  const normalized = String(line).toLowerCase();
-  const found = subjects.find(([, aliases]) => aliases.some(alias => normalized.includes(alias)));
-  return found ? found[0] : normalizeCourseName(fallback);
+
+  // Для 2+ предметов предмет обязан стоять перед двоеточием.
+  const prefix = String(line).split(":")[0].trim().toLowerCase();
+  const explicit = subjects.find(([, aliases]) =>
+    aliases.some(alias => prefix === alias)
+  );
+  if (explicit) return explicit[0];
+
+  // Старый формат одного предмета: название предмета отсутствует,
+  // поэтому используем fallback только если он явно передан.
+  return normalizeCourseName(fallback);
 }
 
 function inferScheduleSubject(line = "", fallback = getCourseLabel(getCurrentCourse())) {
@@ -539,7 +547,11 @@ function parseScheduleText(scheduleText = "", fallbackCourse = "") {
   // "English: 07.10.2026 в 16:30, French: 06.10.2026 в 15:20".
   // Поэтому разделяем не только перед датой, но и перед названием предмета.
   return String(scheduleText)
-    .split(/\n|;|,(?=\s*(?:\d{1,2}[.\/-]|пн|вт|ср|чт|пт|сб|вс|понедельник|вторник|среда|четверг|пятница|суббота|воскресенье|(?:английский|англ|english|физика|physics|математика|math|биология|biology|химия|chemistry|французский|французскому|french|испанский|испанскому|spanish)\s*:))/i)
+    // Основной формат 2+ предметов:
+    // "English: 07.10.2026 в 16:30, French: 08.10.2026 в 15:20"
+    // Каждая запись отделяется по запятой именно перед следующим
+    // "Предмет:".
+    .split(/\n|;|,(?=\s*(?:[^,;\n:]+)\s*:\s*\d{1,2}[.\/-]\d{1,2})/)
     .map(line => line.trim())
     .filter(Boolean)
     .map((line, index) => {
@@ -561,6 +573,7 @@ function parseScheduleText(scheduleText = "", fallbackCourse = "") {
         .replace(/\d{1,2}[.\/-]\d{1,2}(?:[.\/-]\d{2,4})?/, "")
         .replace(/\d{1,2}[:.]\d{2}/, "")
         .replace(/понедельник(?:ам)?|вторник(?:ам)?|сред[ауам]*|четверг(?:ам)?|пятниц[ауам]*|суббот[ауам]*|воскресенье|воскресеньям|пн|вт|ср|чт|пт|сб|вс/gi, "")
+        .replace(/^[^:]+:\s*/, "")
         .replace(/[—–-]+/g, " ")
         .replace(/\s+/g, " ")
         .trim();
