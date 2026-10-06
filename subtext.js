@@ -772,21 +772,28 @@ function renderCourseTabs() {
   const courses = cabinetData?.user?.courses || [];
   const profile = document.getElementById("profile");
   if (!profile) return;
-  let tabs = document.getElementById("course-tabs");
+
+  const profileTabs = document.getElementById("course-tabs-profile");
+  let tabs = profileTabs || document.getElementById("course-tabs");
+
   if (!tabs) {
     tabs = document.createElement("div");
     tabs.id = "course-tabs";
     tabs.style.cssText = "display:flex; gap:8px; margin:10px 0; flex-wrap:wrap; justify-content:center;";
     profile.prepend(tabs);
   }
+
   if (courses.length <= 1) {
     tabs.innerHTML = "";
+    tabs.classList?.add("hidden");
     return;
   }
-  tabs.innerHTML = courses.map(c => 
-    `<button class="buy-btn" style="opacity:${c === getCurrentCourse() ? '1' : '0.5'}" onclick="setCourse('${escapeAttr(c)}')">
-          ${escapeHtml(getCourseLabel(c))}
-     </button>`
+
+  tabs.classList?.remove("hidden");
+  tabs.innerHTML = courses.map(c =>
+    `<button class="buy-btn" style="opacity:${normalizeCourseName(c) === normalizeCourseName(getCurrentCourse()) ? '1' : '0.5'}" onclick="setCourse('${escapeAttr(c)}')">
+      ${escapeHtml(getCourseLabel(c))}
+    </button>`
   ).join("");
 }
 
