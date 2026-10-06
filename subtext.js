@@ -551,7 +551,7 @@ function parseScheduleText(scheduleText = "", fallbackCourse = "") {
     // "English: 07.10.2026 в 16:30, French: 08.10.2026 в 15:20"
     // Каждая запись отделяется по запятой именно перед следующим
     // "Предмет:".
-    .split(/\n|;|,(?=\s*(?:[^,;\n:]+)\s*:\s*\d{1,2}[.\/-]\d{1,2})/)
+    .split(/\n|;|,(?=\s*(?:(?:[^,;\n:]+)\s*:\s*)?\d{1,2}[.\/-]\d{1,2}(?:[.\/-]\d{2,4})?)/)
     .map(line => line.trim())
     .filter(Boolean)
     .map((line, index) => {
@@ -562,11 +562,11 @@ function parseScheduleText(scheduleText = "", fallbackCourse = "") {
       const startDate = combineDateAndTime(date, time);
       if (!startDate) return null;
 
-      const now = new Date();
-      if (startDate < now && weekday !== null) {
+      // Явная календарная дата всегда является фактической датой урока.
+      // Исторические занятия нельзя переносить в будущее: они нужны для истории.
+      // Только записи без даты (по дню недели) рассчитываются относительно текущей недели.
+      if (startDate < new Date() && weekday !== null && !explicitDate) {
         startDate.setDate(startDate.getDate() + 7);
-      } else if (startDate < now && explicitDate && !/\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}/.test(line)) {
-        startDate.setFullYear(startDate.getFullYear() + 1);
       }
 
       const title = line
@@ -574,6 +574,7 @@ function parseScheduleText(scheduleText = "", fallbackCourse = "") {
         .replace(/\d{1,2}[:.]\d{2}/, "")
         .replace(/понедельник(?:ам)?|вторник(?:ам)?|сред[ауам]*|четверг(?:ам)?|пятниц[ауам]*|суббот[ауам]*|воскресенье|воскресеньям|пн|вт|ср|чт|пт|сб|вс/gi, "")
         .replace(/^[^:]+:\s*/, "")
+        .replace(/^в\s+/i, "")
         .replace(/[—–-]+/g, " ")
         .replace(/\s+/g, " ")
         .trim();
