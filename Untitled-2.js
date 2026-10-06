@@ -501,19 +501,36 @@ function updateUserCoins(userId, newCoins) {
 function addSchedule(userId, date, time, course) {
   const dateText = String(date || '').trim();
   const timeText = stripDisplaySeconds(time);
-  const courseText = String(course || '').trim();
   const fmt = [dateText, timeText].filter(Boolean).join(' в ');
-  // Новые записи помечаем курсом. Старые записи в расписании не переписываем:
-  // они остаются в прежнем формате и продолжают читаться существующим парсером.
-  const scheduleEntry = courseText ? `${courseText}: ${fmt}` : fmt;
   const sheet = openUsersSheet('Лист1');
   const rows = sheet.getDataRange().getValues();
+  const headers = rows[0].map(h => String(h).trim());
+
   for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]).trim() === String(userId).trim()) {
-      const cur = rows[i][6] || '';
-      sheet.getRange(i + 1, 7).setValue(cur ? cur + ', ' + scheduleEntry : scheduleEntry);
-      break;
+    if (String(rows[i][0]).trim() !== String(userId).trim()) continue;
+
+    const subjectCandidates = ['subject', 'subjects', 'course', 'courses', 'предмет', 'предметы'];
+    let subjectCol = -1;
+    for (const header of subjectCandidates) {
+      const idx = headers.indexOf(header);
+      if (idx >= 0) {
+        subjectCol = idx;
+        break;
+      }
     }
+
+    const rawSubjects = subjectCol >= 0 ? String(rows[i][subjectCol] || '').trim() : '';
+    const courses = rawSubjects.split(',').map(value => String(value).trim()).filter(Boolean);
+
+    // Один предмет: старый формат — только дата и время.
+    // Два и более предмета: новый формат — предмет + дата и время.
+    const scheduleEntry = courses.length > 1
+      ? String(course || '').trim() + ': ' + fmt
+      : fmt;
+
+    const cur = rows[i][6] || '';
+    sheet.getRange(i + 1, 7).setValue(cur ? cur + ', ' + scheduleEntry : scheduleEntry);
+    break;
   }
 }
 
