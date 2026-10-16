@@ -1,9 +1,0 @@
-meta:
-  environment: static_web
-  toolchain:
-    name: html
-    version: latest
-build:
-  artifacts:
-    "*": /
-run: {}
