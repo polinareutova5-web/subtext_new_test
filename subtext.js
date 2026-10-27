@@ -72,11 +72,13 @@ function normalizeMaterialsSort(value = "") {
 function getCourseLabel(course = "") {
   const labels = {
     english: "Английский",
+    english2: "Английский 2",
     physics: "Физика",
     math: "Математика",
     biology: "Биология",
     chemistry: "Химия",
     french: "Французский",
+    french2: "Французский 2",
     spanish: "Испанский",
   };
   const normalized = normalizeCourseName(course);
@@ -515,11 +517,13 @@ function parseLessonDateTime(item = {}) {
 
 function inferScheduleCourse(line = "", fallback = "") {
   const subjects = [
+    ["english2", ["английский 2", "english 2", "english2", "english_2", "english-2"]],
     ["english", ["английский", "англ", "english"]],
     ["physics", ["физика", "физику", "physics"]],
     ["math", ["математика", "математику", "math"]],
     ["biology", ["биология", "биологию", "biology"]],
     ["chemistry", ["химия", "химию", "chemistry"]],
+    ["french2", ["французский 2", "french 2", "french2", "french_2", "french-2"]],
     ["french", ["французский", "французскому", "french"]],
     ["spanish", ["испанский", "испанскому", "spanish"]],
   ];
