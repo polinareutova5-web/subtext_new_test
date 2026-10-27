@@ -3,8 +3,10 @@
 const USERS_SHEET_ID = '10_fVJ9HHIjbMGoC2CULBj8Ak91sTh_6zh-bk7NAL5Bg';
 const COURSE_TABLES = {
   english: '1qe3P8lpnpfRgrYpBdNreTsv7wdO3lsCgUfsOK3lwPog',
+  english2: '1glsFbjoquUo7WVyDuKl1q_UsTW_Htp2poTZoYoEmt-g',
   physics: '1yWDAwuiIC44l_CFNMoW_SvoolD5EAAC2EajwoPr-v6M',
   french : '1guk31UBwUuLHoMIKm5bQ0-_t58VGfsofaokIest3Z-A',
+  french2: '1CWczRXL3Xzy2LZWoXSICbwzGHI0wIioK8cPhm2LA-3I',
   biology:'1Tp8AgjBG__X3hwoMKfMNqZb33B2rIx3FeDQqg_nj1KI',
   español: '1guk31UBwUuLHoMIKm5bQ0-_t58VGfsofaokIest3Z-A',
   chemistry: '1Bx8in9m1NIRobRIHeM7SdMEE4eB2PM-ceRQ1B3kVDVg'
@@ -172,11 +174,13 @@ function normalizeCourse(course) {
 
 const COURSE_ALIASES = {
   english: ['english', 'английский', 'англ', 'английский язык'],
+  english2: ['english2', 'english 2', 'english_2', 'english-2', 'английский 2', 'английский 2 язык'], 
   physics: ['physics', 'физика', 'физику'],
   math: ['math', 'математика', 'математику'],
   biology: ['biology', 'биология', 'биологию'],
   chemistry: ['chemistry', 'химия', 'химию'],
   french: ['french', 'французский', 'французский язык', 'французскому'],
+  french2: ['french2', 'french 2', 'french_2', 'french-2', 'французский 2', 'французский 2 язык'], 
   español: ['español', 'spanish', 'испанский', 'испанский язык', 'испанскому'],
 };
 
