@@ -11,7 +11,7 @@ const COURSE_TABLES = {
   español: '1guk31UBwUuLHoMIKm5bQ0-_t58VGfsofaokIest3Z-A',
   chemistry: '1Bx8in9m1NIRobRIHeM7SdMEE4eB2PM-ceRQ1B3kVDVg'
 };
-const API_VERSION = '2026-08-16-materials-sorting';
+const API_VERSION = '2026-11-26-homework-drive';
 
 
 // ================= ОСНОВНОЙ РОУТЕР (doGet) =================
@@ -406,13 +406,24 @@ function getHomeworkCourseFolder_(course) {
     HOMEWORK_ROOT_FOLDER_PROPERTY,
     null
   );
-  const label = getHomeworkCourseLabel_(course);
-  const safeKey = String(course).replace(/[^a-zA-Z0-9_-]/g, '_');
-  return getOrCreateHomeworkFolder_(
-    label,
-    'HOMEWORK_COURSE_FOLDER_' + safeKey,
-    root
-  );
+
+  // Создаём папки для всех предметов платформы при первой загрузке,
+  // а не только для предмета, по которому ученик отправил первую работу.
+  Object.keys(COURSE_TABLES).forEach(courseKey => {
+    const label = getHomeworkCourseLabel_(courseKey);
+    const safeKey = String(courseKey).replace(/[^a-zA-Z0-9_-]/g, '_');
+    getOrCreateHomeworkFolder_(
+      label,
+      'HOMEWORK_COURSE_FOLDER_' + safeKey,
+      root
+    );
+  });
+
+  const requestedKey = String(course).replace(/[^a-zA-Z0-9_-]/g, '_');
+  const requestedId = PropertiesService.getScriptProperties()
+    .getProperty('HOMEWORK_COURSE_FOLDER_' + requestedKey);
+  if (!requestedId) throw new Error('Не удалось подготовить папку для выбранного предмета.');
+  return DriveApp.getFolderById(requestedId);
 }
 
 function ensureHomeworkColumns_(sheet) {
