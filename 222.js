@@ -2,20 +2,12 @@
 // This script is the API layer between the student cabinet and Google Sheets.
 const SPREADSHEET_ID = '1jht0DzSZpECR--i-2JauGXknH4Zn48m4Sx5V0xQctdo';
 const USERS_SHEET_ID = SPREADSHEET_ID;
-const COURSE_TABLES = { english:SPREADSHEET_ID, english2:SPREADSHEET_ID, physics:SPREADSHEET_ID, french:SPREADSHEET_ID, french2:SPREADSHEET_ID, biology:SPREADSHEET_ID, español:SPREADSHEET_ID, chemistry:SPREADSHEET_ID, math:SPREADSHEET_ID };
+// One subject per installation. Change these two values for another tutor.
+const SUBJECT_KEY = 'english';
+const SUBJECT_LABEL = 'Английский';
 const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
 const QWEN_API_KEY = PropertiesService.getScriptProperties().getProperty('QWEN_API_KEY') || '';
 const API_VERSION = 'sales-demo-single-sheet-1';
-const COURSE_FORM_LINKS = {
-  english: 'https://docs.google.com/forms/d/e/1FAIpQLSdyaEIut7zciiAfhbNexWHxXLy6eE1IoEwpprm-x8I-penPrw/viewform',
-  physics: 'https://docs.google.com/forms/d/e/ССЫЛКА_НА_ФОРМУ_ФИЗИКИ/viewform',
-  french: 'https://docs.google.com/forms/d/e/1FAIpQLSfdiRbWSD0T5KXx0oT7pi9B65qwlXZXH0g-pGpbisnyketAiw/viewform',
-  biology: 'https://docs.google.com/forms/d/e/1FAIpQLSddRnIm_yXH21Z4asGY7ylNY9I3g_oScgV_wu5Ufx_iL3He-w/viewform',
-  español: 'https://docs.google.com/forms/d/e/1FAIpQLSfdiRbWSD0T5KXx0oT7pi9B65qwlXZXH0g-pGpbisnyketAiw/viewform',
-  chemistry: 'https://docs.google.com/forms/d/e/1FAIpQLScPwnne8jObiTRcYoOueho7FQtxhg5EVMEaLsuf8MVX43DsTg/viewform?usp=publish-editor',
-  english2: 'https://docs.google.com/spreadsheets/d/1glsFbjoquUo7WVyDuKl1q_UsTW_Htp2poTZoYoEmt-g/edit?gid=0#gid=0',
-  french2: 'https://docs.google.com/spreadsheets/d/1CWczRXL3Xzy2LZWoXSICbwzGHI0wIioK8cPhm2LA-3I/edit?gid=0#gid=0'
-};
 
 
 function setupTemplateSheets() {
@@ -23,7 +15,7 @@ function setupTemplateSheets() {
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID);
   const tabs={
     'Лист1':['userId','username','lessonsRemaining','progress','lesson_link','schedule','subject','avatarUrl'],
-    'Прогресс':['userId','course','progress','level','schoolRank','schoolTopText'],
+    'Прогресс':['userId','progress','level','schoolRank','schoolTopText'],
     'Уроки':['lessonNum','link','hwLink','userIds','subject'],
     'Материалы':['title','link','sort'],
     'Слоты':['id','date','time','status','userId','username','contact','bookingDate'],
@@ -31,10 +23,9 @@ function setupTemplateSheets() {
     'ДЗ':['userId','username','text','submittedAt','lessonNum','status'],
     'Поддержка':['date','userId','question','answer'],
     'Уведомления':['id','Дата','userId','Заголовок','Текст','Статус','sound','readBy'],
-    'Доступ':['login','password','teacherName','courses','access']
   };
   Object.keys(tabs).forEach(name=>{let sh=ss.getSheetByName(name);if(!sh)sh=ss.insertSheet(name);if(sh.getLastRow()===0){sh.getRange(1,1,1,tabs[name].length).setValues([tabs[name]]);sh.setFrozenRows(1);sh.getRange(1,1,1,tabs[name].length).setFontWeight('bold');}});
-  return 'Готово: листы для личного кабинета созданы.';
+  return 'Готово: листы для ученического кабинета созданы.';
 }
 
 // ================= ОСНОВНОЙ РОУТЕР (doGet) =================
@@ -43,16 +34,6 @@ function doGet(e) {
     const p = e.parameter || {};
     const action = p.action || '';
     
-    // 1. ДЕЙСТВИЯ ПРЕПОДАВАТЕЛЯ (проверяем ПЕРВЫМИ, до проверки userId)
-    if (action === 'teacher_login') return teacherLogin(p.login, p.password);
-    if (action === 'teacher_get_sheets') return teacherGetSheets(p.tableType, p.course, p.access);
-    if (action === 'teacher_get_data') return teacherGetData(p.tableType, p.course, p.sheetName, p.access);
-    if (action === 'teacher_update_cell') return teacherUpdateCell(p.tableType, p.course, p.sheetName, p.row, p.col, p.value, p.access);
-    if (action === 'teacher_add_row') return teacherAddRow(p.tableType, p.course, p.sheetName, p.rowIndex, p.rowData ? JSON.parse(p.rowData) : [], p.access);
-    if (action === 'teacher_delete_row') return teacherDeleteRow(p.tableType, p.course, p.sheetName, p.rowIndex, p.access);
-    if (action === 'teacher_add_column') return teacherAddColumn(p.tableType, p.course, p.sheetName, p.colIndex, p.access);
-    if (action === 'teacher_delete_column') return teacherDeleteColumn(p.tableType, p.course, p.sheetName, p.colIndex, p.access);
-    if (action === 'teacher_save_sheet') return teacherSaveSheet(p.tableType, p.course, p.sheetName, JSON.parse(p.changes), p.access);
     if (action === "ai_chat" || action === "qwen_chat") {
       const message = p.message;
       if (!message) return error("Сообщение не указано");
@@ -94,10 +75,7 @@ function doGet(e) {
 
     const user = getUser(userId);
     if (!user) return error('Пользователь не найден');
-    if (!user.courses.length) return error('У пользователя не указаны курсы');
-
-    const course = normalizeCourse(p.course || user.courses[0]);
-    if (!COURSE_TABLES[course]) return error(`Курс "${course}" не найден`);
+    const course = SUBJECT_KEY;
 
     if (action === 'check_user') return json({ success: true });
     if (action === 'get_support') return json({ success: true, messages: getSupport(userId) });
@@ -109,13 +87,7 @@ function doGet(e) {
     if (action === 'book_slot') return bookSlot(userId, p.slotId, course);
     if (action === 'book_group_slot') return bookGroupSlot(userId, p.slotId, course);
 
-    const agg = { lessons: [], materials: [] };
-    for (const c of user.courses) {
-      const normalizedCourse = normalizeCourse(c);
-      if (!COURSE_TABLES[normalizedCourse]) continue;
-      agg.lessons.push(...getLessonsByUser(userId, normalizedCourse));
-      agg.materials.push(...getMaterialsByUser(normalizedCourse));
-    }
+    const agg = { lessons: getLessonsByUser(userId, SUBJECT_KEY), materials: getMaterialsByUser(SUBJECT_KEY) };
 
     return json({
       success: true,
@@ -132,7 +104,7 @@ function doGet(e) {
         ranks: user.ranks,
         avatarUrl: user.avatarUrl,
         courses: user.courses,
-        formLinks: getFormLinksForUser(user.courses),
+        subject: SUBJECT_LABEL,
       },
       lessons: agg.lessons,
       materials: agg.materials,
@@ -158,8 +130,7 @@ function doPost(e) {
 
     if (data.action === 'submit_homework') {
       const user = getUser(data.userId);
-      const course = normalizeCourse(data.course || (user && user.courses[0]) || 'english');
-      return handleHomework(data, course);
+      return handleHomework(data, SUBJECT_KEY);
     }
     return error('Неизвестное POST-действие');
   } catch (err) {
@@ -180,53 +151,9 @@ function normalizeCourse(course) {
   return String(course || '').trim().toLowerCase();
 }
 
-const COURSE_ALIASES = {
-  english: ['english', 'английский', 'англ', 'английский язык'],
-  english2: ['english2', 'english 2', 'english_2', 'english-2', 'английский 2', 'английский 2 язык'], 
-  physics: ['physics', 'физика', 'физику'],
-  math: ['math', 'математика', 'математику'],
-  biology: ['biology', 'биология', 'биологию'],
-  chemistry: ['chemistry', 'химия', 'химию'],
-  french: ['french', 'французский', 'французский язык', 'французскому'],
-  french2: ['french2', 'french 2', 'french_2', 'french-2', 'французский 2', 'французский 2 язык'], 
-  español: ['español', 'spanish', 'испанский', 'испанский язык', 'испанскому'],
-};
-
-function normalizeSubjectValue(value) {
-  return String(value || '').trim().toLowerCase().replace(/ё/g, 'е');
-}
-
-function splitSubjectList(value) {
-  return String(value || '')
-    .split(/[\n,;|]+/)
-    .map(normalizeSubjectValue)
-    .filter(Boolean);
-}
-
-function getCourseAliases(course) {
-  const normalizedCourse = normalizeSubjectValue(course);
-  return [normalizedCourse, ...(COURSE_ALIASES[normalizedCourse] || [])]
-    .map(normalizeSubjectValue)
-    .filter(Boolean);
-}
-
-function lessonSubjectMatchesCourse(subjectValue, course) {
-  const subjects = splitSubjectList(subjectValue);
-  if (!subjects.length) return true;
-  const aliases = getCourseAliases(course);
-  return subjects.some(subject => aliases.includes(subject));
-}
-
-function getFormLinksForUser(courses) {
-  const links = {};
-  for (const course of courses || []) {
-    const normalizedCourse = normalizeCourse(course);
-    if (COURSE_FORM_LINKS[normalizedCourse]) {
-      links[normalizedCourse] = COURSE_FORM_LINKS[normalizedCourse];
-    }
-  }
-  return links;
-}
+function normalizeSubjectValue(value) { return String(value || '').trim().toLowerCase().replace(/ё/g, 'е'); }
+function splitSubjectList(value) { return String(value || '').split(/[\n,;|]+/).map(normalizeSubjectValue).filter(Boolean); }
+function lessonSubjectMatchesCourse() { return true; }
 
 function openUsersSheet(sheetName) {
   const sheet = SpreadsheetApp.openById(USERS_SHEET_ID).getSheetByName(sheetName);
@@ -284,8 +211,7 @@ function getUser(userId) {
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     if (String(getCell(row, userIdCol)).trim() === String(userId).trim()) {
-      const coursesStr = String(getCell(row, subjectCol) || '').toLowerCase();
-      const courses = coursesStr.split(',').map(c => normalizeCourse(c)).filter(Boolean);
+      const courses = [SUBJECT_KEY];
       const stats = getUserCourseStats(userId);
       const progressFallback = progressCol >= 0 && progressCol !== lessonsRemainingCol ? getCell(row, progressCol, 0) : 0;
       return {
@@ -318,13 +244,13 @@ function getUserCourseStats(userId) {
   const levelCol = headers.indexOf('level');
   const rankCol = headers.indexOf('schoolRank');
   const topTextCol = headers.indexOf('schoolTopText');
-  if (userIdCol === -1 || courseCol === -1) return { progress: {}, levels: {}, ranks: {} };
+  if (userIdCol === -1) return { progress: {}, levels: {}, ranks: {} };
   const stats = { progress: {}, levels: {}, ranks: {} };
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     if (String(row[userIdCol]).trim() !== String(userId).trim()) continue;
-    const course = normalizeCourse(row[courseCol]);
-    if (!course) continue;
+    const course = courseCol >= 0 ? normalizeCourse(row[courseCol]) : SUBJECT_KEY;
+    if (course && course !== SUBJECT_KEY) continue;
     if (progressCol >= 0) stats.progress[course] = Math.max(0, Math.min(Number(row[progressCol]) || 0, 100));
     if (levelCol >= 0) stats.levels[course] = row[levelCol] || '';
     stats.ranks[course] = topTextCol >= 0 && row[topTextCol] ? row[topTextCol] : (rankCol >= 0 ? row[rankCol] || '' : '');
@@ -333,8 +259,8 @@ function getUserCourseStats(userId) {
 }
 
 function openCourseSheet(course, sheetName) {
-  const sheet = SpreadsheetApp.openById(COURSE_TABLES[course]).getSheetByName(sheetName);
-  if (!sheet) throw new Error(`Лист "${sheetName}" не найден в курсе "${course}"`);
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(sheetName);
+  if (!sheet) throw new Error(`Лист "${sheetName}" не найден в таблице`);
   return sheet;
 }
 
@@ -344,7 +270,7 @@ function getLessonsByUser(userId, course) {
   for (let i = 1; i < rows.length; i++) {
     const ids = String(rows[i][3] || '').split(/[\n,;|]+/).map(x => x.trim()).filter(Boolean);
     const lessonSubject = rows[i][4] || '';
-    if ((ids.length === 0 || ids.includes(String(userId))) && lessonSubjectMatchesCourse(lessonSubject, course)) {
+    if (ids.length === 0 || ids.includes(String(userId))) {
       res.push({ num: rows[i][0], link: rows[i][1], hwLink: rows[i][2], subject: lessonSubject, course });
     }
   }
@@ -608,250 +534,6 @@ function formatSheetDate(value) {
   return String(value);
 }
 
-// ================= TEACHER PLATFORM API =================
-// (Все функции находятся в глобальной области видимости)
-
-function teacherLogin(login, password) {
-  const sheet = SpreadsheetApp.openById(USERS_SHEET_ID).getSheetByName('Доступ');
-  if (!sheet) return error('Лист "Доступ" не найден');
-
-  const rows = sheet.getDataRange().getValues();
-
-  for (let i = 1; i < rows.length; i++) {
-    if (
-      String(rows[i][0]).trim().toLowerCase() === String(login).trim().toLowerCase() &&
-      String(rows[i][1]).trim() === String(password).trim()
-    ) {
-      const courses = String(rows[i][3])
-        .split(',')
-        .map(s => s.trim().toLowerCase())
-        .filter(Boolean);
-
-      return json({
-        success: true,
-        token: Utilities.base64Encode(login + ':' + Date.now()),
-        teacherName: rows[i][2],
-        courses: courses,
-        access: String(rows[i][4] || "teacher").trim().toLowerCase()
-      });
-    }
-  }
-
-  return error('Неверный логин или пароль');
-}
-
-function getTableId(tableType, course) {
-  if (!SPREADSHEET_ID || SPREADSHEET_ID.indexOf('ВСТАВЬТЕ_') === 0) throw new Error('Укажите ID одной Google-таблицы в SPREADSHEET_ID');
-  return SPREADSHEET_ID;
-}
-
-function teacherGetSheets(tableType, course, access) {
-
-  access = String(access || '')
-    .trim()
-    .toLowerCase();
-
-  const ss = SpreadsheetApp.openById(getTableId(tableType, course));
-  let sheets = ss.getSheets().map(s => s.getName());
-
-  if (tableType === 'main' && access !== 'full') {
-
-    const hiddenSheets = ['Доступ'];
-
-    sheets = sheets.filter(
-      name => !hiddenSheets.includes(name)
-    );
-  }
-
-  return json({
-    success: true,
-    sheets
-  });
-}
-
-function teacherGetData(tableType, course, sheetName, access) {
-  try {
-    // Проверка доступа к листу
-    if (tableType === 'main' && !canAccessSheet(sheetName, access)) {
-      return error('Нет доступа к этому листу');
-    }
-
-    const ss = SpreadsheetApp.openById(getTableId(tableType, course));
-    const sheet = ss.getSheetByName(sheetName);
-    if (!sheet) return error('Лист не найден');
-
-    // Используем getDisplayValues() для корректного отображения дат и времени
-    const data = sheet.getDataRange().getDisplayValues();
-    
-    // Если таблица полностью пустая, возвращаем пустой массив
-    if (data.length === 0 || (data.length === 1 && data[0].every(cell => cell === ''))) {
-      return json({ success: true, data: [] });
-    }
-    
-    return json({ success: true, data: data });
-  } catch (e) {
-    return error('Ошибка получения данных: ' + e.message);
-  }
-}
-
-function teacherUpdateCell(tableType, course, sheetName, row, col, value, access) {
-  try {
-    if (tableType === 'main' && !canAccessSheet(sheetName, access)) {
-      return error('Нет доступа к редактированию этого листа');
-    }
-
-    const ss = SpreadsheetApp.openById(getTableId(tableType, course));
-    const sheet = ss.getSheetByName(sheetName);
-    if (!sheet) return error('Лист не найден');
-    
-    sheet.getRange(Number(row) + 1, Number(col) + 1).setValue(value);
-    return json({ success: true });
-  } catch (e) {
-    return error('Ошибка обновления: ' + e.message);
-  }
-}
-
-function teacherAddRow(tableType, course, sheetName, rowIndex, rowData, access) {
-  try {
-    if (tableType === 'main' && !canAccessSheet(sheetName, access)) {
-      return error('Нет доступа к редактированию этого листа');
-    }
-
-    const ss = SpreadsheetApp.openById(getTableId(tableType, course));
-    const sheet = ss.getSheetByName(sheetName);
-    if (!sheet) return error('Лист не найден');
-
-    try {
-      // Если поле пустое, передано '' или -1 → добавляем в самый конец таблицы
-      if (rowIndex === undefined || rowIndex === null || rowIndex === '' || Number(rowIndex) < 0) {
-        const lastRow = sheet.getLastRow();
-        sheet.insertRowAfter(lastRow);
-        
-        // Гарантированно заполняем первую ячейку пустой строкой, чтобы строка была видна
-        const cols = sheet.getLastColumn() || 1;
-        const emptyRow = new Array(cols).fill('');
-        sheet.getRange(lastRow + 1, 1, 1, cols).setValues([emptyRow]);
-        
-        // Если есть данные для вставки, перезаписываем
-        if (rowData && rowData.length > 0) {
-          sheet.getRange(lastRow + 1, 1, 1, rowData.length).setValues([rowData]);
-        }
-      } else {
-        // Иначе вставляем перед указанной строкой
-        const targetRow = Number(rowIndex) + 1;
-        sheet.insertRowBefore(targetRow);
-        
-        // Заполняем строку пустыми значениями
-        const cols = sheet.getLastColumn() || 1;
-        const emptyRow = new Array(cols).fill('');
-        sheet.getRange(targetRow, 1, 1, cols).setValues([emptyRow]);
-        
-        if (rowData && rowData.length > 0) {
-          sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
-        }
-      }
-      return json({ success: true, message: 'Строка добавлена' });
-    } catch (e) {
-      return error('Ошибка добавления строки: ' + e.message);
-    }
-  } catch (e) {
-    return error('Ошибка: ' + e.message);
-  }
-}
-
-function teacherDeleteRow(tableType, course, sheetName, rowIndex, access) {
-  try {
-    if (tableType === 'main' && !canAccessSheet(sheetName, access)) {
-      return error('Нет доступа к редактированию этого листа');
-    }
-
-    const ss = SpreadsheetApp.openById(getTableId(tableType, course));
-    const sheet = ss.getSheetByName(sheetName);
-    if (!sheet) return error('Лист не найден');
-    if (Number(rowIndex) + 1 <= 1) return error('Нельзя удалить первую строку (заголовки)');
-    sheet.deleteRow(Number(rowIndex) + 1);
-    return json({ success: true });
-  } catch (e) {
-    return error('Ошибка удаления строки: ' + e.message);
-  }
-}
-
-function teacherAddColumn(tableType, course, sheetName, colIndex, access) {
-  try {
-    if (tableType === 'main' && !canAccessSheet(sheetName, access)) {
-      return error('Нет доступа к редактированию этого листа');
-    }
-
-    const ss = SpreadsheetApp.openById(getTableId(tableType, course));
-    const sheet = ss.getSheetByName(sheetName);
-    if (!sheet) return error('Лист не найден');
-
-    // Если поле пустое или < 0 → добавляем столбец в самый конец
-    if (colIndex === undefined || colIndex === null || colIndex === '' || Number(colIndex) < 0) {
-      const lastCol = sheet.getLastColumn() || 1;
-      sheet.insertColumnAfter(lastCol);
-    } else {
-      sheet.insertColumnAfter(Number(colIndex) + 1);
-    }
-    return json({ success: true });
-  } catch (e) {
-    return error('Ошибка добавления столбца: ' + e.message);
-  }
-}
-
-function teacherDeleteColumn(tableType, course, sheetName, colIndex, access) {
-  try {
-    if (tableType === 'main' && !canAccessSheet(sheetName, access)) {
-      return error('Нет доступа к редактированию этого листа');
-    }
-
-    const ss = SpreadsheetApp.openById(getTableId(tableType, course));
-    const sheet = ss.getSheetByName(sheetName);
-    if (!sheet) return error('Лист не найден');
-    if (Number(colIndex) + 1 <= 1) return error('Нельзя удалить первый столбец');
-    sheet.deleteColumn(Number(colIndex) + 1);
-    return json({ success: true });
-  } catch (e) {
-    return error('Ошибка удаления столбца: ' + e.message);
-  }
-}
-
-function teacherSaveSheet(tableType, course, sheetName, changes, access) {
-  try {
-    if (tableType === 'main' && !canAccessSheet(sheetName, access)) {
-      return error('Нет доступа к редактированию этого листа');
-    }
-
-    const ss = SpreadsheetApp.openById(getTableId(tableType, course));
-    const sheet = ss.getSheetByName(sheetName);
-    if (!sheet) return error('Лист не найден');
-    
-    changes.forEach(change => {
-      sheet.getRange(Number(change.row) + 1, Number(change.col) + 1).setValue(change.value);
-    });
-    
-    return json({ success: true, message: 'Изменения сохранены' });
-  } catch (e) {
-    return error('Ошибка сохранения: ' + e.message);
-  }
-}
-
-// Вспомогательная функция для проверки доступа к листу
-function canAccessSheet(sheetName, access) {
-
-  access = String(access || '')
-    .trim()
-    .toLowerCase();
-
-  const restrictedSheets = ['Доступ'];
-
-  if (access === 'full') {
-    return true;
-  }
-
-  return !restrictedSheets.includes(sheetName);
-}
-
 // ================= QWEN AI CHAT =================
 function handleQwenChat(request) {
   const apiKey = String(QWEN_API_KEY || '').trim();
@@ -869,7 +551,7 @@ function handleQwenChat(request) {
 
   try {
     const systemPrompt = [
-      "Ты — дружелюбный и полезный ИИ-помощник образовательной платформы Subtext.",
+      "Ты — дружелюбный и полезный ИИ-помощник учебной платформы.",
       "Отвечай ученику кратко, понятно и по существу.",
       "Если вопрос касается личного кабинета, учитывай переданный контекст ученика.",
       "Если данных недостаточно, честно скажи, что нужно уточнить у преподавателя или в поддержке."
