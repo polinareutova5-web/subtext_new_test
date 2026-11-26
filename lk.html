@@ -704,34 +704,9 @@
     /* ===== BUTTONS ===== */
     .lesson-btn,
     .buy-btn,
-    .big-form-btn,
-    #support-chat button {
-      position: relative;
-      display: inline-block;
-      overflow: hidden;
-      margin-top: 0.65rem;
-      padding: 0.78rem 1.6rem;
-      border: 0;
-      border-radius: 999px;
-      color: #fff;
-      font-weight: 800;
-      text-decoration: none;
-      cursor: pointer;
-      background: linear-gradient(135deg, var(--blue), var(--blue-2) 54%, var(--cyan));
-      box-shadow: 0 14px 32px rgba(22, 119, 255, 0.28);
-      transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
-    }
-
-    .lesson-btn:hover,
+    .big-form-btn,.lesson-btn:hover,
     .buy-btn:hover,
-    .big-form-btn:hover,
-    #support-chat button:hover {
-      transform: translateY(-3px) scale(1.025);
-      box-shadow: 0 20px 48px rgba(22, 119, 255, 0.36), 0 0 0 6px rgba(53, 216, 255, 0.12);
-      filter: saturate(1.08);
-    }
-
-    .lesson-actions {
+    .big-form-btn:hover,.lesson-actions {
       display: flex;
      flex-direction: column;
       align-items: center;
@@ -1195,10 +1170,7 @@
       #notify-btn { top: 72px; right: 16px; min-width: 54px; min-height: 46px; padding: 0.6rem; }
       .notify-label { display: none; }
       #notify-panel { top: 128px; right: 16px; bottom: auto; }
-      .logout-btn { top: 22px; right: 16px; min-width: 82px; min-height: 38px; padding: 0.5rem 0.78rem; font-size: 0.82rem; }
-      #support-btn { right: 16px; bottom: 16px; }
-      #support-chat { right: 16px; bottom: 90px; }
-    }
+      .logout-btn { top: 22px; right: 16px; min-width: 82px; min-height: 38px; padding: 0.5rem 0.78rem; font-size: 0.82rem; }}
   /* White-label soft pink theme */
 :root{--ink:#493544;--muted:#8b7180;--blue:#c66b98;--blue-2:#df91b4;--cyan:#f3b8d0;--ice:#fff5f9;--glass:rgba(255,255,255,.78);--glass-strong:rgba(255,255,255,.92);--line:rgba(198,107,152,.22);--shadow:0 24px 70px rgba(125,67,96,.13);--shadow-strong:0 34px 90px rgba(125,67,96,.2)}
 body{color:var(--ink)!important;background:radial-gradient(circle at 10% 8%,rgba(255,190,216,.58),transparent 30rem),radial-gradient(circle at 90% 12%,rgba(241,190,213,.5),transparent 32rem),radial-gradient(circle at 72% 92%,rgba(255,220,235,.75),transparent 34rem),linear-gradient(145deg,#fffafd 0%,#fff0f6 48%,#f9e4ef 100%)!important}
@@ -1340,14 +1312,7 @@ body{color:var(--ink)!important;background:radial-gradient(circle at 10% 8%,rgba
           <p class="schedule-block-title">Ссылка</p>
           <p id="lesson-link">—</p>
 
-          <hr>
-
-          <p class="schedule-block-title">Расписание на неделю</p>
-          <p id="lesson-schedule">—</p>
-
-          <hr>
-
-          <p class="schedule-block-title">Доступные слоты</p>
+          <hr><p class="schedule-block-title">Доступные слоты</p>
           <div id="slots-container"></div>
 
           <hr>
