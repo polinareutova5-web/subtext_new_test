@@ -544,49 +544,60 @@ function handleBuy(userId, itemIndex, course) {
 
 function bookSlot(userId, slotId, course) {
   if (!slotId) return error('slotId не указан');
-  const user = getUser(userId);
-  if (!user) return error('Пользователь не найден');
-  const sheet = openCourseSheet(course, 'Слоты');
-  normalizeSlotTimeColumn(sheet);
-  const rows = sheet.getDataRange().getValues();
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]) === String(slotId)) {
-      if (rows[i][3] !== 'free') return error('Слот уже занят');
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return error('Сейчас много записей. Подождите несколько секунд и попробуйте снова.');
+  try {
+    const user = getUser(userId);
+    if (!user) return error('Пользователь не найден');
+    const sheet = openCourseSheet(course, 'Слоты');
+    normalizeSlotTimeColumn(sheet);
+    const rows = sheet.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]) !== String(slotId)) continue;
+      if (String(rows[i][3]).trim().toLowerCase() !== 'free') return error('Слот уже занят. Обновите список доступных занятий.');
       sheet.getRange(i + 1, 4).setValue('booked');
       sheet.getRange(i + 1, 5).setValue(userId);
-      sheet.getRange(i + 1, 6).setValue(user.username);
+      sheet.getRange(i + 1, 6).setValue(user.username || '');
       sheet.getRange(i + 1, 8).setValue(new Date());
+      SpreadsheetApp.flush();
       const displayRows = sheet.getDataRange().getDisplayValues();
       addSchedule(userId, displayRows[i][1], stripDisplaySeconds(displayRows[i][2]), course);
       return json({ success: true });
     }
-  }
-  return error('Слот не найден');
+    return error('Слот не найден. Возможно, его уже удалили или изменили.');
+  } finally { lock.releaseLock(); }
 }
 
 function bookGroupSlot(userId, slotId, course) {
   if (!slotId) return error('slotId не указан');
-  const user = getUser(userId);
-  if (!user) return error('Пользователь не найден');
-  const sheet = openCourseSheet(course, 'Группы');
-  normalizeSlotTimeColumn(sheet);
-  const rows = sheet.getDataRange().getValues();
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]) === String(slotId)) {
-      const cap = Number(rows[i][4]) || 1;
-      const booked = Number(rows[i][5]) || 0;
-      if (booked >= cap) return error('Мест больше нет');
-      const ids = String(rows[i][6] || '').split(',').map(x => x.trim()).filter(Boolean);
-      if (ids.includes(String(userId))) return error('Вы уже записаны');
-      sheet.getRange(i + 1, 6).setValue(booked + 1);
-      sheet.getRange(i + 1, 7).setValue(rows[i][6] ? rows[i][6] + ',' + userId : userId);
-      sheet.getRange(i + 1, 8).setValue(rows[i][7] ? rows[i][7] + ', ' + user.username : user.username);
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return error('Сейчас много записей. Подождите несколько секунд и попробуйте снова.');
+  try {
+    const user = getUser(userId);
+    if (!user) return error('Пользователь не найден');
+    const sheet = openCourseSheet(course, 'Группы');
+    normalizeSlotTimeColumn(sheet);
+    const rows = sheet.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]) !== String(slotId)) continue;
+      const capacity = Math.max(1, Number(rows[i][4]) || 1);
+      const bookedCount = Math.max(0, Number(rows[i][5]) || 0);
+      const ids = String(rows[i][6] || '').split(',').map(value => value.trim()).filter(Boolean);
+      if (ids.includes(String(userId))) return error('Вы уже записаны на это занятие.');
+      if (bookedCount >= capacity || ids.length >= capacity) return error('Мест больше нет. Обновите список групповых занятий.');
+      const nextIds = [...ids, String(userId)];
+      const names = String(rows[i][7] || '').split(',').map(value => value.trim()).filter(Boolean);
+      if (user.username && !names.includes(String(user.username))) names.push(String(user.username));
+      sheet.getRange(i + 1, 6).setValue(Math.max(bookedCount + 1, nextIds.length));
+      sheet.getRange(i + 1, 7).setValue(nextIds.join(','));
+      sheet.getRange(i + 1, 8).setValue(names.join(', '));
+      SpreadsheetApp.flush();
       const displayRows = sheet.getDataRange().getDisplayValues();
       addSchedule(userId, displayRows[i][1], stripDisplaySeconds(displayRows[i][2]), course);
       return json({ success: true });
     }
-  }
-  return error('Слот не найден');
+    return error('Групповое занятие не найдено. Возможно, его уже удалили или изменили.');
+  } finally { lock.releaseLock(); }
 }
 
 function getSupport(userId) {
@@ -618,50 +629,38 @@ function updateUserCoins(userId, newCoins) {
 function addSchedule(userId, date, time, course) {
   const dateText = String(date || '').trim();
   const timeText = stripDisplaySeconds(time);
-  const fmt = [dateText, timeText].filter(Boolean).join(' в ');
+  const formattedDateTime = [dateText, timeText].filter(Boolean).join(' в ');
+  if (!formattedDateTime) return;
+
   const sheet = openUsersSheet('Лист1');
   const rows = sheet.getDataRange().getValues();
-  const headers = rows[0].map(h => String(h).trim());
-
+  if (!rows.length) throw new Error('Главная таблица не содержит строки заголовков.');
+  const headers = rows[0].map(header => String(header).trim());
   const userIdCol = findHeaderIndex(headers, ['userId', 'user_id', 'id'], 0);
   const scheduleCol = findHeaderIndex(headers, ['schedule', 'расписание'], 6);
-  const subjectCol = findHeaderIndex(
-    headers,
-    ['subject', 'subjects', 'course', 'courses', 'предмет', 'предметы'],
-    -1
-  );
+  const subjectCol = findHeaderIndex(headers, ['subject', 'subjects', 'course', 'courses', 'предмет', 'предметы'], -1);
 
   for (let i = 1; i < rows.length; i++) {
     if (String(getCell(rows[i], userIdCol)).trim() !== String(userId).trim()) continue;
-
-    const rawSubjects = subjectCol >= 0
-      ? String(getCell(rows[i], subjectCol) || '').trim()
-      : '';
-
+    const rawSubjects = subjectCol >= 0 ? String(getCell(rows[i], subjectCol) || '').trim() : '';
     const courses = splitSubjectList(rawSubjects);
-
-    // Один предмет: полностью сохраняем старый формат.
-    // 2+ предметов: каждый урок явно получает свой предмет.
-    const scheduleEntry = courses.length > 1
-      ? `${String(course || '').trim()}: ${fmt}`
-      : fmt;
-
+    const scheduleEntry = courses.length > 1 ? \`\${String(course || '').trim()}: \${formattedDateTime}\` : formattedDateTime;
     const currentSchedule = String(getCell(rows[i], scheduleCol) || '').trim();
-
-    // Не добавляем один и тот же урок повторно.
+    // Поддерживаем старые записи с запятыми и новые записи с переносами строк.
     const existingEntries = currentSchedule
-      ? currentSchedule.split(/\\n|,(?=\\s*(?:[^,]+):\\s*\\d{1,2}[.\\/-])|;\\s*/).map(x => x.trim()).filter(Boolean)
+      ? currentSchedule.split(/\r?\n|;\s*|,(?=\s*(?:(?:[^,;:\n]+)\s*:\s*)?\d{1,2}[.\/-]\d{1,2})/)
+          .map(value => value.trim()).filter(Boolean)
       : [];
-
-    if (!existingEntries.includes(scheduleEntry)) {
-      const updatedSchedule = currentSchedule
-        ? `${currentSchedule}, ${scheduleEntry}`
-        : scheduleEntry;
+    const normalizeEntry = value => String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const alreadyExists = existingEntries.some(value => normalizeEntry(value) === normalizeEntry(scheduleEntry));
+    if (!alreadyExists) {
+      const updatedSchedule = currentSchedule ? \`\${currentSchedule}\n\${scheduleEntry}\` : scheduleEntry;
       sheet.getRange(i + 1, scheduleCol + 1).setValue(updatedSchedule);
+      SpreadsheetApp.flush();
     }
-
-    break;
+    return;
   }
+  throw new Error('Не удалось найти ученика в главной таблице для обновления расписания.');
 }
 
 function getNotifications(userId) {
