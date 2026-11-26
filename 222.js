@@ -644,7 +644,7 @@ function addSchedule(userId, date, time, course) {
     if (String(getCell(rows[i], userIdCol)).trim() !== String(userId).trim()) continue;
     const rawSubjects = subjectCol >= 0 ? String(getCell(rows[i], subjectCol) || '').trim() : '';
     const courses = splitSubjectList(rawSubjects);
-    const scheduleEntry = courses.length > 1 ? \`\${String(course || '').trim()}: \${formattedDateTime}\` : formattedDateTime;
+    const scheduleEntry = courses.length > 1 ? `${String(course || '').trim()}: ${formattedDateTime}` : formattedDateTime;
     const currentSchedule = String(getCell(rows[i], scheduleCol) || '').trim();
     // Поддерживаем старые записи с запятыми и новые записи с переносами строк.
     const existingEntries = currentSchedule
@@ -654,7 +654,7 @@ function addSchedule(userId, date, time, course) {
     const normalizeEntry = value => String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
     const alreadyExists = existingEntries.some(value => normalizeEntry(value) === normalizeEntry(scheduleEntry));
     if (!alreadyExists) {
-      const updatedSchedule = currentSchedule ? \`\${currentSchedule}\n\${scheduleEntry}\` : scheduleEntry;
+      const updatedSchedule = currentSchedule ? `${currentSchedule}\n${scheduleEntry}` : scheduleEntry;
       sheet.getRange(i + 1, scheduleCol + 1).setValue(updatedSchedule);
       SpreadsheetApp.flush();
     }
