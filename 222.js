@@ -429,6 +429,19 @@ function getHomeworkCourseFolder_(course) {
   return DriveApp.getFolderById(requestedId);
 }
 
+function getOrCreateHomeworkSheet_(course) {
+  const spreadsheet = SpreadsheetApp.openById(COURSE_TABLES[course]);
+  let sheet = spreadsheet.getSheetByName('ДЗ');
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet('ДЗ');
+    sheet.getRange(1, 1, 1, 6).setValues([[
+      'userId', 'username', 'text', 'submittedAt', 'lessonNum', 'status'
+    ]]);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
 function ensureHomeworkColumns_(sheet) {
   const lastColumn = Math.max(sheet.getLastColumn(), 1);
   let headers = sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0].map(value => String(value).trim());
@@ -488,7 +501,7 @@ function handleHomework(data, user, course) {
     const blob = Utilities.newBlob(bytes, mimeType, fileName);
     file = getHomeworkCourseFolder_(course).createFile(blob);
 
-    const homeworkSheet = openCourseSheet(course, 'ДЗ');
+    const homeworkSheet = getOrCreateHomeworkSheet_(course);
     const headers = ensureHomeworkColumns_(homeworkSheet);
     const row = new Array(headers.length).fill('');
     const valuesByHeader = {
