@@ -329,23 +329,28 @@ function renderCalendar() {
   }));
 
   if (window.FullCalendar) {
-    if (lessonCalendar) lessonCalendar.destroy();
+    try {
+      if (lessonCalendar) lessonCalendar.destroy();
 
-    lessonCalendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: "dayGridMonth",
-      height: 245,
-      contentHeight: 210,
-      locale: "ru",
-      firstDay: 1,
-      dayMaxEvents: 2,
-      headerToolbar: { left: "prev,next", center: "title", right: "today" },
-      events,
-      eventClick(info) {
-        openLessonCard(info.event.id);
-      },
-    });
+      lessonCalendar = new window.FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        height: 245,
+        contentHeight: 210,
+        locale: "ru",
+        firstDay: 1,
+        dayMaxEvents: 2,
+        headerToolbar: { left: "prev,next", center: "title", right: "today" },
+        events,
+        eventClick(info) {
+          openLessonCard(info.event.id);
+        },
+      });
 
-    lessonCalendar.render();
+      lessonCalendar.render();
+    } catch (calendarError) {
+      console.error("FullCalendar не смог отрисовать календарь:", calendarError);
+      calendarEl.innerHTML = '<p style="padding:1rem;color:var(--muted)">Календарь временно недоступен</p>';
+    }
   } else {
     calendarEl.innerHTML = '<p style="padding:1rem;color:var(--muted)">Календарь временно недоступен</p>';
   }
@@ -449,13 +454,36 @@ if (lessonLinkEl) {
     if (avatarImg) avatarImg.src = u.avatarUrl || "https://via.placeholder.com/120/2e7d32/FFFFFF?text=👤";
 
     renderCourseTabs();
-    renderCourseData();
-    // Загрузка домашних заданий встроена непосредственно в кабинет.
- 
+
+    // Показываем кабинет до отрисовки независимых блоков, чтобы сбой
+    // в материалах или уроках не оставлял календарь и ближайший урок пустыми.
     document.getElementById("loading")?.classList.add("hidden");
     document.getElementById("main")?.classList.remove("hidden");
-    renderNextLesson();
-    renderCalendar();
+
+    try {
+      renderNextLesson();
+    } catch (dashboardError) {
+      console.error("Ошибка блока «Ближайший урок»:", dashboardError);
+      const nextLessonEl = document.getElementById("next-lesson-card");
+      if (nextLessonEl) nextLessonEl.textContent = "Не удалось загрузить ближайший урок.";
+    }
+
+    try {
+      renderCalendar();
+    } catch (calendarError) {
+      console.error("Ошибка календаря:", calendarError);
+      const calendarEl = document.getElementById("lesson-calendar");
+      const upcomingEl = document.getElementById("upcoming-lessons");
+      if (calendarEl) calendarEl.textContent = "Календарь временно недоступен.";
+      if (upcomingEl) upcomingEl.textContent = "Не удалось загрузить список занятий.";
+    }
+
+    // Остальные разделы загружаются независимо от расписания.
+    try {
+      renderCourseData();
+    } catch (courseError) {
+      console.error("Ошибка загрузки учебных материалов:", courseError);
+    }
   } catch (e) {
     console.error(e);
     setText("loading", `❌ ${e.message}`);
