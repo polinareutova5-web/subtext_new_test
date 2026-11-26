@@ -8,20 +8,29 @@ const SUBJECT_LABEL = 'Английский';
 const API_VERSION = 'sales-demo-single-sheet-1';
 
 
+function removeLegacyColumn_(sheet, headerName) {
+  if (!sheet || sheet.getLastColumn() < 1) return;
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0].map(v => String(v).trim());
+  const index = headers.indexOf(headerName);
+  if (index >= 0) sheet.deleteColumn(index + 1);
+}
+
 function setupTemplateSheets() {
   if (!SPREADSHEET_ID || SPREADSHEET_ID.indexOf('ВСТАВЬТЕ_') === 0) throw new Error('Сначала укажите ID Google-таблицы в SPREADSHEET_ID.');
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID);
   const tabs={
-    'Лист1':['userId','username','lessonsRemaining','progress','lesson_link','schedule','subject','avatarUrl'],
+    'Лист1':['userId','username','lessonsRemaining','lesson_link','schedule','subject','avatarUrl'],
     'Прогресс':['userId','progress','level','schoolRank','schoolTopText'],
     'Уроки':['lessonNum','link','hwLink','userIds','subject'],
     'Материалы':['title','link','sort'],
-    'Слоты':['id','date','time','status','userId','username','contact','bookingDate'],
+    'Слоты':['id','date','time','status','userId','username','bookingDate'],
     'Группы':['id','date','time','title','capacity','booked','userIds','usernames'],
-    'ДЗ':['userId','username','text','submittedAt','lessonNum','status','fileName','fileUrl','fileId'],
-    'Уведомления':['id','Дата','userId','Заголовок','Текст','Статус','sound','readBy'],
+    'ДЗ':['userId','username','text','submittedAt','lessonNum','fileName','fileUrl','fileId'],
   };
   Object.keys(tabs).forEach(name=>{let sh=ss.getSheetByName(name);if(!sh)sh=ss.insertSheet(name);if(sh.getLastRow()===0){sh.getRange(1,1,1,tabs[name].length).setValues([tabs[name]]);sh.setFrozenRows(1);sh.getRange(1,1,1,tabs[name].length).setFontWeight('bold');}});
+  removeLegacyColumn_(ss.getSheetByName('Лист1'), 'progress');
+  removeLegacyColumn_(ss.getSheetByName('Слоты'), 'contact');
+  removeLegacyColumn_(ss.getSheetByName('ДЗ'), 'status');
   ensureHomeworkColumns_();
   getHomeworkFolder_(); // Создаём общую папку и сохраняем её ID в свойствах проекта.
   return 'Готово: листы созданы, папка «Домашние задания» подготовлена.';
@@ -45,8 +54,6 @@ function doGet(e) {
 
     if (action === 'check_user') return json({ success: true });
     if (action === 'get_slots') return json({ success: true, slots: getSlots(course) });
-    if (action === 'get_notifications') return json(getNotifications(userId));
-    if (action === 'mark_notifications_read') return json(markNotificationsRead(userId));
     if (action === 'get_group_slots') return json({ success: true, slots: getGroupSlots(course) });
     if (action === 'book_slot') return bookSlot(userId, p.slotId, course);
     if (action === 'book_group_slot') return bookGroupSlot(userId, p.slotId, course);
@@ -158,7 +165,6 @@ function getUser(userId) {
     'уроков осталось',
     'уроки осталось',
   ], 2);
-  const progressCol = findHeaderIndex(headers, ['progress'], -1);
   const linkCol = findHeaderIndex(headers, ['lesson_link', 'link', 'ссылка'], 5);
   const scheduleCol = findHeaderIndex(headers, ['schedule', 'расписание'], 6);
   const subjectCol = findHeaderIndex(headers, ['subject', 'subjects', 'course', 'courses', 'предмет'], 7);
@@ -169,11 +175,10 @@ function getUser(userId) {
     if (String(getCell(row, userIdCol)).trim() === String(userId).trim()) {
       const courses = [SUBJECT_KEY];
       const stats = getUserCourseStats(userId);
-      const progressFallback = progressCol >= 0 && progressCol !== lessonsRemainingCol ? getCell(row, progressCol, 0) : 0;
       return {
         id: getCell(row, userIdCol),
         username: getCell(row, usernameCol),
-        progress: Object.keys(stats.progress).length ? stats.progress : progressFallback,
+        progress: stats.progress,
         link: getCell(row, linkCol) || '',
         schedule: getCell(row, scheduleCol) || '',
         lessonsRemaining: getCell(row, lessonsRemainingCol, ''),
@@ -262,16 +267,15 @@ function normalizeSlotTimeColumn(sheet) {
 function getSlots(course) {
   const sheet = openCourseSheet(course, 'Слоты');
   normalizeSlotTimeColumn(sheet);
-  const rows = sheet.getDataRange().getDisplayValues();
-  return rows.slice(1).map(r => ({
-    id: r[0],
-    date: r[1],
-    time: stripDisplaySeconds(r[2]),
-    status: r[3],
-    userId: r[4],
-    username: r[5],
-    contact: r[6],
-    bookingDate: r[7]
+  const values = sheet.getDataRange().getDisplayValues();
+  if (!values.length) return [];
+  const headers = values[0].map(v => String(v).trim());
+  const col = name => headers.indexOf(name);
+  return values.slice(1).map(r => ({
+    id: r[col('id')], date: r[col('date')],
+    time: stripDisplaySeconds(r[col('time')]), status: r[col('status')],
+    userId: r[col('userId')], username: r[col('username')],
+    bookingDate: col('bookingDate') >= 0 ? r[col('bookingDate')] : ''
   }));
 }
 
@@ -360,11 +364,19 @@ function handleHomework(data, user, course) {
     const blob = Utilities.newBlob(bytes, mimeType, fileName);
     const file = getHomeworkFolder_().createFile(blob);
     try {
+      const homeworkSheet = openCourseSheet(course, 'ДЗ');
       ensureHomeworkColumns_();
-      openCourseSheet(course, 'ДЗ').appendRow([
-        user.id, user.username, comment, new Date(), lessonNum, 'На проверке',
-        fileName, file.getUrl(), file.getId()
-      ]);
+      const headers = homeworkSheet.getRange(1, 1, 1, homeworkSheet.getLastColumn()).getDisplayValues()[0].map(value => String(value).trim());
+      const row = new Array(headers.length).fill('');
+      const valuesByHeader = {
+        userId: user.id, username: user.username, text: comment,
+        submittedAt: new Date(), lessonNum, fileName,
+        fileUrl: file.getUrl(), fileId: file.getId()
+      };
+      headers.forEach((header, index) => {
+        if (Object.prototype.hasOwnProperty.call(valuesByHeader, header)) row[index] = valuesByHeader[header];
+      });
+      homeworkSheet.appendRow(row);
     } catch (sheetError) {
       file.setTrashed(true);
       throw sheetError;
@@ -385,10 +397,15 @@ function bookSlot(userId, slotId, course) {
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][0]) === String(slotId)) {
       if (rows[i][3] !== 'free') return error('Слот уже занят');
-      sheet.getRange(i + 1, 4).setValue('booked');
-      sheet.getRange(i + 1, 5).setValue(userId);
-      sheet.getRange(i + 1, 6).setValue(user.username);
-      sheet.getRange(i + 1, 8).setValue(new Date());
+      const headers = rows[0].map(value => String(value).trim());
+      const setByHeader = (name, value) => {
+        const column = headers.indexOf(name);
+        if (column >= 0) sheet.getRange(i + 1, column + 1).setValue(value);
+      };
+      setByHeader('status', 'booked');
+      setByHeader('userId', userId);
+      setByHeader('username', user.username);
+      setByHeader('bookingDate', new Date());
       const displayRows = sheet.getDataRange().getDisplayValues();
       addSchedule(userId, displayRows[i][1], stripDisplaySeconds(displayRows[i][2]), course);
       return json({ success: true });
@@ -470,87 +487,3 @@ function addSchedule(userId, date, time, course) {
     break;
   }
 }
-
-function getNotifications(userId) {
-  if (!userId) return { success: false, error: 'Не указан userId', notifications: [] };
-  const sheet = SpreadsheetApp.openById(USERS_SHEET_ID).getSheetByName('Уведомления');
-  if (!sheet) return { success: true, notifications: [] };
-  const values = sheet.getDataRange().getValues();
-  if (values.length < 2) return { success: true, notifications: [] };
-  const headers = values[0].map(String);
-  const rows = values.slice(1);
-  const idCol = headers.indexOf('id');
-  const dateCol = headers.indexOf('Дата');
-  const userIdCol = headers.indexOf('userId');
-  const titleCol = headers.indexOf('Заголовок');
-  const textCol = headers.indexOf('Текст');
-  const statusCol = headers.indexOf('Статус');
-  const soundCol = headers.indexOf('sound');
-  const readByCol = headers.indexOf('readBy');
-  const notifications = rows.map((row, index) => {
-    const targetUserId = String(row[userIdCol] || '').trim();
-    const readBy = readByCol >= 0 ? String(row[readByCol] || '').split(',').map(item => item.trim()).filter(Boolean) : [];
-    const status = statusCol >= 0 ? String(row[statusCol] || '').trim().toLowerCase() : '';
-    const ids = targetUserId.split(',').map(x => x.trim()).filter(Boolean);
-    const isForCurrentUser = targetUserId === 'all' || targetUserId === '*' || ids.includes(String(userId));
-    if (!isForCurrentUser) return null;
-    const id = String(row[idCol] || `notification-${index + 2}`).trim();
-    const isRead = readBy.includes(String(userId)) || status === 'read' || status === 'прочитано';
-    return {
-      id,
-      date: dateCol >= 0 ? formatSheetDate(row[dateCol]) : '',
-      title: titleCol >= 0 ? String(row[titleCol] || 'Уведомление') : 'Уведомление',
-      text: textCol >= 0 ? String(row[textCol] || '') : '',
-      read: isRead,
-      sound: soundCol >= 0 ? parseSheetBoolean(row[soundCol]) : true,
-    };
-  }).filter(Boolean).filter(item => item.text || item.title).reverse();
-  return { success: true, notifications };
-}
-
-function markNotificationsRead(userId) {
-  if (!userId) return { success: false, error: 'Не указан userId' };
-  const sheet = SpreadsheetApp.openById(USERS_SHEET_ID).getSheetByName('Уведомления');
-  if (!sheet) return { success: true };
-  const range = sheet.getDataRange();
-  const values = range.getValues();
-  if (values.length < 2) return { success: true };
-  const headers = values[0].map(String);
-  const userIdCol = headers.indexOf('userId');
-  const statusCol = headers.indexOf('Статус');
-  let readByCol = headers.indexOf('readBy');
-  if (readByCol === -1) {
-    readByCol = headers.length;
-    sheet.getRange(1, readByCol + 1).setValue('readBy');
-  }
-  for (let i = 1; i < values.length; i++) {
-    const row = values[i];
-    const targetUserId = String(row[userIdCol] || '').trim();
-    const ids = targetUserId.split(',').map(x => x.trim()).filter(Boolean);
-    const isForCurrentUser = targetUserId === 'all' || targetUserId === '' || ids.includes(String(userId));
-    if (!isForCurrentUser) continue;
-    if (targetUserId === 'all' || targetUserId === '') {
-      const currentReadBy = String(row[readByCol] || '').split(',').map(item => item.trim()).filter(Boolean);
-      if (!currentReadBy.includes(String(userId))) currentReadBy.push(String(userId));
-      sheet.getRange(i + 1, readByCol + 1).setValue(currentReadBy.join(','));
-    } else if (statusCol >= 0) {
-      sheet.getRange(i + 1, statusCol + 1).setValue('read');
-    }
-  }
-  return { success: true };
-}
-
-function parseSheetBoolean(value) {
-  const normalized = String(value || '').trim().toLowerCase();
-  if (!normalized) return true;
-  return !['false', '0', 'no', 'нет', 'выкл', 'off'].includes(normalized);
-}
-
-function formatSheetDate(value) {
-  if (!value) return '';
-  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
-    return Utilities.formatDate(value, Session.getScriptTimeZone(), 'dd.MM.yyyy');
-  }
-  return String(value);
-}
-
