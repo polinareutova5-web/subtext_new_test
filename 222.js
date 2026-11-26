@@ -26,7 +26,7 @@ function setupTemplateSheets() {
     'Прогресс':['userId','course','progress','level','schoolRank','schoolTopText'],
     'Уроки':['lessonNum','link','hwLink','userIds','subject'],
     'Материалы':['title','link','sort'],
-    'Слоты':['id','date','time','status'],
+    'Слоты':['id','date','time','status','userId','username','contact','bookingDate'],
     'Группы':['id','date','time','title','capacity','booked','userIds','usernames'],
     'ДЗ':['userId','username','text','submittedAt','lessonNum','status'],
     'Поддержка':['date','userId','question','answer'],
