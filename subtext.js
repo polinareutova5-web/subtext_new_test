@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxrKg-1S6hVhFOE6qWeA6OcvYOWQ_oOGGqroqGQXWpzs4u5RxzM5-ut_KFR3VXc9a7p/exec";
+const API_URL = window.APP_CONFIG.apiUrl;
 let userId = "";
 let username = "";
 let currentCourse = "";
@@ -772,10 +772,6 @@ function showSection(sectionId) {
   if (sectionId === "schedule") loadSlots();
 }
 
-function confirmBuy(index, name, price) {
-  if (confirm(`Хотите купить?\n\n${name}\nЦена: ${price} монет`)) buyItem(index);
-}
-
 function setCourse(course) {
   currentCourse = course;
   window.currentCourse = course;
@@ -856,7 +852,6 @@ async function loadCabinet() {
 
     setText("username", u.username || "—");
     setText("level", getCourseMappedValue(u.levels, currentCourse, "—") || "—");
-    setText("coins", u.coins || 0);
     setText("lessons-remaining", getLessonsRemainingText());
     renderCourseProgressMeta(currentCourse);
     const lessonLinkEl = document.getElementById("lesson-link");
@@ -982,18 +977,7 @@ function renderCourseData() {
   if (!cabinetData) return;
   const course = getCurrentCourse();
   
-  const achievements = document.getElementById("achievements-list");
-  if (achievements) {
-    const list = (cabinetData.achievements || []).filter(a => a.course === course);
-    achievements.innerHTML = list.length
-      ? list.map(a => `<div style="display:flex;flex-direction:column;align-items:center;width:100px;">
-          <div style="width:80px;height:80px;border-radius:50%;overflow:hidden;box-shadow:0 6px 16px rgba(0,0,0,.15);background:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
-            <img src="${escapeAttr(a.image)}" alt="${escapeAttr(a.title)}" style="width:100%;height:100%;object-fit:cover;">
-          </div>
-          <div style="font-size:0.8rem;text-align:center;font-weight:600;">${escapeHtml(a.title)}</div>
-        </div>`).join("")
-      : '<p style="opacity:.6">Пока нет достижений</p>';
-  }
+
 
   const lessons = document.getElementById("lessons-list");
   if (lessons) {
@@ -1062,24 +1046,7 @@ function renderCourseData() {
       : `<p>${query ? "По этому запросу материалы не найдены." : "Материалы пока не добавлены."}</p>`;
   }
 
-  const shop = document.getElementById("shop-items");
-  if (shop) {
-    const list = (cabinetData.shop || []).filter(s => s.course === course);
-    setText("shop-coins", cabinetData.user?.coins || 0);
-    shop.innerHTML = list.length
-      ? list.map((item, idx) => {
-          const realIdx = cabinetData.shop.indexOf(item);
-          return `<div class="shop-item">
-            ${item.image ? `<div style="height:120px;display:flex;align-items:center;justify-content:center;margin-bottom:.5rem">
-              <img src="${escapeAttr(item.image)}" alt="${escapeAttr(item.name)}" style="max-width:100%;max-height:100%;object-fit:contain">
-            </div>` : ""}
-            <h3>${escapeHtml(item.name)}</h3>
-            <div class="price">${escapeHtml(item.price)} монет</div>
-            <button class="buy-btn" onclick="confirmBuy(${realIdx}, '${escapeAttr(item.name)}', ${Number(item.price) || 0})">Купить</button>
-          </div>`;
-        }).join("")
-      : "<p>Магазин пуст.</p>";
-  }
+
 }
 
 // ================= СЛОТЫ =================
@@ -1210,22 +1177,7 @@ async function bookGroupSlot(slotId) {
   }
 }
 
-// ================= SHOP =================
-async function buyItem(index) {
-  try {
-    const res = await fetch(buildUrl({ action: "buy_item", userId, lessonNum: index, course: getCurrentCourse() }));
-    const data = await res.json();
-    if (data.success) {
-      alert("✅ Куплено!");
-      await loadCabinet();
-    } else {
-      alert("❌ " + (data.error || "Не удалось купить"));
-    }
-  } catch (e) {
-    alert("❌ Ошибка соединения");
-  }
-}
-
+// Store, coins and achievements are disabled in the sales template.
 
 // ===== AI CHAT =====
 const aiChatMessages = [];
