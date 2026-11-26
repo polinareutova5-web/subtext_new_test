@@ -5,8 +5,6 @@ const USERS_SHEET_ID = SPREADSHEET_ID;
 // One subject per installation. Change these two values for another tutor.
 const SUBJECT_KEY = 'english';
 const SUBJECT_LABEL = 'Английский';
-const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
-const QWEN_API_KEY = PropertiesService.getScriptProperties().getProperty('QWEN_API_KEY') || '';
 const API_VERSION = 'sales-demo-single-sheet-1';
 
 
@@ -21,7 +19,6 @@ function setupTemplateSheets() {
     'Слоты':['id','date','time','status','userId','username','contact','bookingDate'],
     'Группы':['id','date','time','title','capacity','booked','userIds','usernames'],
     'ДЗ':['userId','username','text','submittedAt','lessonNum','status'],
-    'Поддержка':['date','userId','question','answer'],
     'Уведомления':['id','Дата','userId','Заголовок','Текст','Статус','sound','readBy'],
   };
   Object.keys(tabs).forEach(name=>{let sh=ss.getSheetByName(name);if(!sh)sh=ss.insertSheet(name);if(sh.getLastRow()===0){sh.getRange(1,1,1,tabs[name].length).setValues([tabs[name]]);sh.setFrozenRows(1);sh.getRange(1,1,1,tabs[name].length).setFontWeight('bold');}});
@@ -34,43 +31,10 @@ function doGet(e) {
     const p = e.parameter || {};
     const action = p.action || '';
     
-    if (action === "ai_chat" || action === "qwen_chat") {
-      const message = p.message;
-      if (!message) return error("Сообщение не указано");
-
-      return json(handleQwenChat({
-        message,
-        context: p.context || "",
-        history: p.history || ""
-      }));
-    }
-
-    if (action === "health" || action === "version") {
-      return json({
-        success: true,
-        version: API_VERSION,
-        qwenEndpointConfigured: Boolean(QWEN_API_URL),
-        qwenKeyConfigured: Boolean(QWEN_API_KEY)
-      });
-    }
-
-    if (action === "ai_diagnostics" || action === "ai_diag" || action === "diagnostics") {
-      const result = handleQwenChat({
-        message: "Ответь одним словом: ok",
-        context: "Диагностика подключения Qwen",
-        history: ""
-      });
-      result.version = API_VERSION;
-      return json(result);
-    }
-
     // 2. ДЕЙСТВИЯ УЧЕНИКА (требуют userId)
     const userId = p.userId;
     if (!userId) {
-      return error(
-        'userId не указан. Если вы проверяете ИИ, откройте этот же Web App URL с ?action=ai_diagnostics. ' +
-        'Если с action=ai_diagnostics всё равно приходит эта ошибка, значит опубликован старый deployment или URL указывает не на обновлённую версию. version=' + API_VERSION + ', action=' + (action || 'пусто')
-      );
+      return error('userId не указан. Откройте личный кабинет по персональной ссылке.');
     }
 
     const user = getUser(userId);
@@ -78,8 +42,6 @@ function doGet(e) {
     const course = SUBJECT_KEY;
 
     if (action === 'check_user') return json({ success: true });
-    if (action === 'get_support') return json({ success: true, messages: getSupport(userId) });
-    if (action === 'send_support') return sendSupport(userId, p.text || '');
     if (action === 'get_slots') return json({ success: true, slots: getSlots(course) });
     if (action === 'get_notifications') return json(getNotifications(userId));
     if (action === 'mark_notifications_read') return json(markNotificationsRead(userId));
@@ -118,15 +80,6 @@ function doPost(e) {
   try {
     if (!e.postData || !e.postData.contents) return error('Пустой POST');
     const data = JSON.parse(e.postData.contents);
-
-    if (data.action === 'ai_chat' || data.action === 'qwen_chat') {
-      if (!data.message) return error('Сообщение не указано');
-      return json(handleQwenChat({
-        message: data.message,
-        context: data.context || '',
-        history: data.history || ''
-      }));
-    }
 
     if (data.action === 'submit_homework') {
       const user = getUser(data.userId);
@@ -387,21 +340,6 @@ function bookGroupSlot(userId, slotId, course) {
   return error('Слот не найден');
 }
 
-function getSupport(userId) {
-  const sheet = SpreadsheetApp.openById(USERS_SHEET_ID).getSheetByName('Поддержка');
-  if (!sheet) return [];
-  const rows = sheet.getDataRange().getValues();
-  return rows.slice(1).filter(r => String(r[1]) === String(userId)).map(r => ({ question: r[2], answer: r[3] || '' }));
-}
-
-function sendSupport(userId, text) {
-  if (!String(text).trim()) return error('Пустой вопрос');
-  const sheet = SpreadsheetApp.openById(USERS_SHEET_ID).getSheetByName('Поддержка');
-  if (!sheet) return error('Лист "Поддержка" не найден');
-  sheet.appendRow([new Date(), userId, text, '']);
-  return json({ success: true });
-}
-
 function addSchedule(userId, date, time, course) {
   const dateText = String(date || '').trim();
   const timeText = stripDisplaySeconds(time);
@@ -534,69 +472,3 @@ function formatSheetDate(value) {
   return String(value);
 }
 
-// ================= QWEN AI CHAT =================
-function handleQwenChat(request) {
-  const apiKey = String(QWEN_API_KEY || '').trim();
-  const message = String(request && request.message || '').trim();
-  const context = String(request && request.context || '').trim();
-  const history = String(request && request.history || '').trim();
-
-  if (!message) {
-    return { success: false, error: "Сообщение не указано" };
-  }
-
-  if (!apiKey) {
-    return { success: false, error: "QWEN_API_KEY не задан в Apps Script" };
-  }
-
-  try {
-    const systemPrompt = [
-      "Ты — дружелюбный и полезный ИИ-помощник учебной платформы.",
-      "Отвечай ученику кратко, понятно и по существу.",
-      "Если вопрос касается личного кабинета, учитывай переданный контекст ученика.",
-      "Если данных недостаточно, честно скажи, что нужно уточнить у преподавателя или в поддержке."
-    ].join(' ');
-
-    const userContent = [
-      context ? "Контекст ученика:\n" + context : "",
-      history ? "Последние сообщения:\n" + history : "",
-      "Вопрос ученика:\n" + message
-    ].filter(Boolean).join("\n\n");
-
-    const payload = {
-      model: "qwen-turbo",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userContent }
-      ]
-    };
-
-    const response = UrlFetchApp.fetch(QWEN_API_URL, {
-      method: "post",
-      contentType: "application/json",
-      headers: { Authorization: "Bearer " + apiKey },
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    });
-
-    const status = response.getResponseCode();
-    const body = response.getContentText();
-    const data = JSON.parse(body || '{}');
-
-    if (status < 200 || status >= 300) {
-      return {
-        success: false,
-        error: (data.error && (data.error.message || data.error.code)) || ("Qwen вернул HTTP " + status)
-      };
-    }
-
-    const answer = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-    if (!answer) {
-      return { success: false, error: "Qwen не вернул текст ответа" };
-    }
-
-    return { success: true, answer: answer, reply: answer, version: API_VERSION };
-  } catch (error) {
-    return { success: false, error: error && error.message ? error.message : String(error) };
-  }
-}
