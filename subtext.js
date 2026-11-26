@@ -10,8 +10,6 @@ let soundUnlocked = false;
 let lessonCalendar = null;
 const OTHER_MATERIALS_GROUP = "Другое";
 const selectedMaterialsSort = {};
-// true = сначала пробуем Apps Script action=ai_chat, при ошибке остаётся локальный помощник.
-const REMOTE_AI_ENABLED = true;
 
 function setText(id, value) {
   const el = document.getElementById(id);
@@ -1227,138 +1225,6 @@ async function buyItem(index) {
 }
 
 
-// ===== AI CHAT =====
-const aiChatMessages = [];
-
-function showChatTab(tab = "ai") {
-  const isAi = tab === "ai";
-  document.getElementById("ai-chat-pane")?.classList.toggle("hidden", !isAi);
-  document.getElementById("support-chat-pane")?.classList.toggle("hidden", isAi);
-  document.getElementById("ai-chat-tab")?.classList.toggle("active", isAi);
-  document.getElementById("support-chat-tab")?.classList.toggle("active", !isAi);
-
-  if (!isAi) loadSupport();
-}
-
-function renderAiMessages() {
-  const container = document.getElementById("ai-messages");
-  if (!container) return;
-
-  container.innerHTML = aiChatMessages.length
-    ? aiChatMessages.map(message => `
-      <div class="ai-message ${message.role === "user" ? "user" : "assistant"}">
-        <strong>${message.role === "user" ? "Вы" : "ИИ-помощник"}:</strong><br>
-        ${escapeHtml(message.text)}
-      </div>
-    `).join("")
-    : '<div style="opacity:.6">ИИ-чат готов помочь с учебными вопросами.</div>';
-
-  container.scrollTop = container.scrollHeight;
-}
-
-function getAiContext() {
-  const user = cabinetData?.user || {};
-  return [
-    `Ученик: ${username || user.username || "не указан"}`,
-    `Предмет: ${getCourseLabel(getCurrentCourse())}`,
-    `Уровень: ${getCourseMappedValue(user.levels, getCurrentCourse(), "не указан") || "не указан"}`,
-    `Прогресс: ${getCourseProgress(getCurrentCourse())}/100`,
-    `Расписание: ${user.schedule || "не указано"}`,
-  ].join("\n");
-}
-
-function buildLocalAiAnswer(question = "") {
-  const normalizedQuestion = question.toLowerCase();
-  const nextLesson = getNextLesson();
-  const subject = getCourseLabel(getCurrentCourse());
-
-  if (/когда|ближайш|следующ|расписан|урок/.test(normalizedQuestion)) {
-    return nextLesson
-      ? `Ближайший урок: ${subject}, ${formatDate(nextLesson.startDate)} в ${formatTime(nextLesson.startDate)}.`
-      : `В расписании пока нет будущих уроков по предмету «${subject}». Проверьте раздел «Расписание» или напишите преподавателю в поддержку.`;
-  }
-
-  if (/дз|домаш|задан|сдать/.test(normalizedQuestion)) {
-    const formLink = getSubmissionFormLink(getCurrentCourse());
-    return formLink
-      ? `Домашнее задание по предмету «${subject}» можно сдать в разделе «ДЗ» через кнопку «Открыть форму ДЗ».`
-      : `Форма ДЗ по предмету «${subject}» пока не назначена. Уточните задание у преподавателя через вкладку «Поддержка».`;
-  }
-
-  if (/прогресс|балл|уров|рейтинг|мест/.test(normalizedQuestion)) {
-    const user = cabinetData?.user || {};
-    const level = getCourseMappedValue(user.levels, getCurrentCourse(), "не указан") || "не указан";
-    const rank = getCourseRank(getCurrentCourse()) || "пока не указан";
-    return `По предмету «${subject}»: прогресс ${getCourseProgress(getCurrentCourse())}/100, уровень — ${level}, рейтинг — ${rank}.`;
-  }
-
-  return `Я помогу с навигацией по кабинету: расписанием, ближайшим уроком, ДЗ, прогрессом и материалами. По самому учебному объяснению лучше написать преподавателю во вкладке «Поддержка», если подключенный ИИ-сервис сейчас недоступен.`;
-}
-
-function openAiChatFromNav() {
-  const chat = document.getElementById("support-chat");
-  chat?.classList.remove("hidden");
-  updateSupportButtonState(true);
-  showChatTab("ai");
-  renderAiMessages();
-}
-
-async function sendAiMessage() {
-  const input = document.getElementById("ai-input");
-  const text = input?.value.trim();
-  if (!text || !userId) return;
-
-  aiChatMessages.push({ role: "user", text });
-  aiChatMessages.push({ role: "assistant", text: "Думаю над ответом..." });
-  renderAiMessages();
-  input.value = "";
-
-  if (!REMOTE_AI_ENABLED) {
-    aiChatMessages[aiChatMessages.length - 1] = { role: "assistant", text: buildLocalAiAnswer(text) };
-    renderAiMessages();
-    return;
-  }
-
-  try {
-    const recentMessages = aiChatMessages
-      .filter(message => message.text !== "Думаю над ответом...")
-      .slice(-8)
-      .map(message => `${message.role}: ${message.text}`)
-      .join("\n");
-
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        action: "ai_chat",
-        userId,
-        course: getCurrentCourse(),
-        message: text,
-        context: getAiContext(),
-        history: recentMessages,
-      }),
-    });
-    const data = await res.json();
-
-    if (!res.ok || data.success === false) {
-      throw new Error(data.error || `HTTP ${res.status}`);
-    }
-
-    const answer = data.answer || data.message || data.text || data.reply;
-    if (!answer) throw new Error("API не вернул ответ ИИ");
-
-    aiChatMessages[aiChatMessages.length - 1] = { role: "assistant", text: answer };
-  } catch (e) {
-    console.warn("Remote AI chat is unavailable, using local helper", e);
-    aiChatMessages[aiChatMessages.length - 1] = {
-      role: "assistant",
-      text: `${buildLocalAiAnswer(text)}\n\n⚠️ Нейросеть Qwen сейчас не ответила: ${e.message}. Если это повторяется, попросите администратора открыть Apps Script URL с action=ai_diagnostics и проверить разрешения/ключ.`,
-    };
-  }
-
-  renderAiMessages();
-}
-
 // ===== SUPPORT =====
 function updateSupportButtonState(isOpen) {
   const button = document.getElementById("support-btn");
@@ -1373,10 +1239,7 @@ function toggleSupport() {
   chat?.classList.toggle("hidden");
   const isOpen = !chat?.classList.contains("hidden");
   updateSupportButtonState(Boolean(isOpen));
-  if (isOpen) {
-    showChatTab("ai");
-    renderAiMessages();
-  }
+  if (isOpen) loadSupport();
 }
 
 async function loadSupport() {
