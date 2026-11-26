@@ -16,6 +16,33 @@ function getCurrentCourse() {
   return currentCourse || cabinetData?.user?.courses?.[0] || "english";
 }
 
+function getCourseMappedValue(values, course, fallback = "") {
+  if (values == null) return fallback;
+  if (typeof values !== "object") return values || fallback;
+  const normalizedCourse = String(course || "").trim().toLowerCase();
+  return values[normalizedCourse] ?? values[course] ?? values.default ?? fallback;
+}
+
+function getLessonsRemainingText() {
+  const user = cabinetData?.user || {};
+  const value = user.lessonsRemaining ?? user.paidLessons ?? "";
+  return value === "" || value == null ? "—" : String(value);
+}
+
+function renderCourseProgressMeta(course) {
+  const progress = getCourseMappedValue(cabinetData?.user?.progress, course, 0);
+  const level = getCourseMappedValue(cabinetData?.user?.levels, course, "—");
+  const rank = getCourseMappedValue(cabinetData?.user?.ranks, course, "");
+  const progressValue = Math.max(0, Math.min(Number(progress) || 0, 100));
+  const progressEl = document.getElementById("progress-value");
+  if (progressEl) progressEl.textContent = progressValue + "%";
+  const levelEl = document.getElementById("level");
+  if (levelEl) levelEl.textContent = level || "—";
+  const rankEl = document.getElementById("school-rank");
+  if (rankEl) rankEl.textContent = rank || "";
+  renderProgress(progressValue);
+}
+
 function buildUrl(params) {
   const url = new URL(API_URL);
   Object.entries(params).forEach(([key, value]) => {
