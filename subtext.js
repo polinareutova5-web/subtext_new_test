@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxrKg-1S6hVhFOE6qWeA6OcvYOWQ_oOGGqroqGQXWpzs4u5RxzM5-ut_KFR3VXc9a7p/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx_efJPvuF5ui2xj2hBriI_Z-hh400SKOzbzYUUsGKmgGL8GcLovqAG3CYeaNwMR-Lj/exec";
 let userId = "";
 let username = "";
 let currentCourse = "";
@@ -430,7 +430,7 @@ function parseDateParts(dateText = "") {
   const day = Number(match[1]);
   const month = Number(match[2]) - 1;
   const currentYear = new Date().getFullYear();
-  const year = match[3] ? Number(match[3].length === 2 ? \`20\${match[3]}\` : match[3]) : currentYear;
+  const year = match[3] ? Number(match[3].length === 2 ? `20${match[3]}` : match[3]) : currentYear;
   const date = new Date(year, month, day);
   return date.getFullYear() === year && date.getMonth() === month && date.getDate() === day ? date : null;
 }
@@ -668,7 +668,7 @@ function renderCalendar() {
   });
 
   const events = items.map((item, index) => ({
-    id: String(item.id || \`lesson-\${index}-\${item.startDate.getTime()}\`),
+    id: String(item.id || `lesson-${index}-${item.startDate.getTime()}`),
     title: getScheduleDisplayTitle(item),
     // Локальный Date без toISOString(): не сдвигаем урок через UTC.
     start: item.startDate
@@ -696,13 +696,13 @@ function renderCalendar() {
   const now = new Date();
   const scheduleList = items.filter(item => item.startDate.getTime() >= now.getTime());
   upcomingEl.innerHTML = scheduleList.length
-    ? scheduleList.map(item => \`
-      <button type="button" class="upcoming-item" onclick="openLessonCard('\${escapeAttr(item.id)}')">
+    ? scheduleList.map(item => `
+      <button type="button" class="upcoming-item" onclick="openLessonCard('${escapeAttr(item.id)}')">
         <span class="upcoming-mark"></span>
-        <span><span class="upcoming-date">\${formatDate(item.startDate)}</span><br>
-        <span class="upcoming-time">\${formatTime(item.startDate)}</span></span>
-        \${shouldShowScheduleSubject() ? \`<span class="upcoming-title">\${escapeHtml(item.subject)}</span>\` : ""}
-      </button>\`
+        <span><span class="upcoming-date">${formatDate(item.startDate)}</span><br>
+        <span class="upcoming-time">${formatTime(item.startDate)}</span></span>
+        ${shouldShowScheduleSubject() ? `<span class="upcoming-title">${escapeHtml(item.subject)}</span>` : ""}
+      </button>`
     ).join("")
     : '<p style="color:var(--muted);line-height:1.7">Ближайших занятий пока нет.</p>';
 }
@@ -1198,7 +1198,7 @@ async function loadSlots(course = getCurrentCourse()) {
   container.innerHTML = "Загрузка слотов...";
   try {
     const res = await fetch(buildUrl({ action: "get_slots", userId, course: requestedCourse }));
-    if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (requestId !== slotsRequestId || requestedCourse !== getCurrentCourse()) return;
     if (!data.success) { container.textContent = data.error || "Ошибка загрузки слотов"; return; }
@@ -1210,10 +1210,10 @@ async function loadSlots(course = getCurrentCourse()) {
     }
     container.innerHTML = slots.map(slot => {
       const isFree = slot.status === "free";
-      return \`<div style="margin-bottom:.8rem;padding:.8rem;border-radius:12px;background:\${isFree ? '#e8f5e9' : '#eee'}">
-        <strong>\${formatDate(slot.date)}</strong> \${formatTime(slot.time)}<br>
-        \${isFree ? \`<button class="buy-btn" onclick="bookSlot('\${escapeAttr(slot.id)}','\${escapeAttr(requestedCourse)}')">Записаться</button>\` : '<span style="opacity:.6">Занято</span>'}
-      </div>\`;
+      return `<div style="margin-bottom:.8rem;padding:.8rem;border-radius:12px;background:${isFree ? '#e8f5e9' : '#eee'}">
+        <strong>${formatDate(slot.date)}</strong> ${formatTime(slot.time)}<br>
+        ${isFree ? `<button class="buy-btn" onclick="bookSlot('${escapeAttr(slot.id)}','${escapeAttr(requestedCourse)}')">Записаться</button>` : '<span style="opacity:.6">Занято</span>'}
+      </div>`;
     }).join("");
     await loadGroupSlots(requestedCourse);
   } catch (e) {
@@ -1226,7 +1226,7 @@ async function bookSlot(slotId, course = getCurrentCourse()) {
   if (!confirm("Записаться на этот слот?")) return;
   try {
     const res = await fetch(buildUrl({ action: "book_slot", userId, slotId, course }));
-    if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (data.success) {
       alert("✅ Вы записались!");
@@ -1247,7 +1247,7 @@ async function loadGroupSlots(course = getCurrentCourse()) {
   container.innerHTML = "Загрузка...";
   try {
     const res = await fetch(buildUrl({ action: "get_group_slots", userId, course: requestedCourse }));
-    if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (requestId !== groupSlotsRequestId || requestedCourse !== getCurrentCourse()) return;
     if (!data.success) { container.textContent = data.error || "Ошибка загрузки"; return; }
@@ -1257,11 +1257,11 @@ async function loadGroupSlots(course = getCurrentCourse()) {
       const capacity = Number(slot.capacity) || 0;
       const bookedCount = Number(slot.bookedCount) || 0;
       const available = capacity - bookedCount > 0;
-      return \`<div style="margin-bottom:.8rem;padding:.8rem;border-radius:12px;background:\${available ? '#e3f2fd' : '#eee'}">
-        <strong>\${escapeHtml(slot.title)}</strong><br>
-        \${formatDate(slot.date)} \${formatTime(slot.time)}<br>
-        \${available ? \`<button class="buy-btn" onclick="bookGroupSlot('\${escapeAttr(slot.id)}','\${escapeAttr(requestedCourse)}')">Записаться (\${bookedCount}/\${capacity})</button>\` : \`<span style="opacity:.6">Мест нет (\${capacity}/\${capacity})</span>\`}
-      </div>\`;
+      return `<div style="margin-bottom:.8rem;padding:.8rem;border-radius:12px;background:${available ? '#e3f2fd' : '#eee'}">
+        <strong>${escapeHtml(slot.title)}</strong><br>
+        ${formatDate(slot.date)} ${formatTime(slot.time)}<br>
+        ${available ? `<button class="buy-btn" onclick="bookGroupSlot('${escapeAttr(slot.id)}','${escapeAttr(requestedCourse)}')">Записаться (${bookedCount}/${capacity})</button>` : `<span style="opacity:.6">Мест нет (${capacity}/${capacity})</span>`}
+      </div>`;
     }).join("");
   } catch (e) {
     if (requestId !== groupSlotsRequestId) return;
@@ -1273,7 +1273,7 @@ async function bookGroupSlot(slotId, course = getCurrentCourse()) {
   if (!confirm("Записаться на групповое занятие?")) return;
   try {
     const res = await fetch(buildUrl({ action: "book_group_slot", userId, slotId, course }));
-    if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (data.success) {
       alert("✅ Вы записались!");
