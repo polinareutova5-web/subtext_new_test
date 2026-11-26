@@ -1,6 +1,6 @@
 // Copy this file to Google Apps Script and deploy it as a Web App.
 // This script is the API layer between the student cabinet and Google Sheets.
-const SPREADSHEET_ID = 'ВСТАВЬТЕ_ID_ОДНОЙ_GOOGLE_ТАБЛИЦЫ';
+const SPREADSHEET_ID = '1jht0DzSZpECR--i-2JauGXknH4Zn48m4Sx5V0xQctdo';
 const USERS_SHEET_ID = SPREADSHEET_ID;
 const COURSE_TABLES = { english:SPREADSHEET_ID, english2:SPREADSHEET_ID, physics:SPREADSHEET_ID, french:SPREADSHEET_ID, french2:SPREADSHEET_ID, biology:SPREADSHEET_ID, español:SPREADSHEET_ID, chemistry:SPREADSHEET_ID, math:SPREADSHEET_ID };
 const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
