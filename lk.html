@@ -1558,12 +1558,16 @@ input:focus,select:focus,textarea:focus {outline:none;border-color:#5aa9ed;box-s
     padding: 2.35rem 0 2.7rem;
     gap: 1.05rem;
   }
-  .big-title {
+  .hero-content .big-title {
+    display: block;
     box-sizing: border-box;
+    width: 100%;
     max-width: 100%;
-    font-size: clamp(2.2rem, 10.5vw, 4rem);
-    letter-spacing: .035em;
-    line-height: 1;
+    min-width: 0;
+    font-size: clamp(1.55rem, 8vw, 2.7rem) !important;
+    letter-spacing: 0 !important;
+    line-height: 1.1;
+    text-align: center;
     white-space: nowrap;
   }
   .hero-subtitle {
