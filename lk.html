@@ -1207,7 +1207,7 @@ body{color:var(--ink)!important;background:radial-gradient(circle at 10% 8%,rgba
         <div class="dashboard-column">
           <div class="glass-panel next-lesson-card">
             <div class="card-title-row"><h2 class="mini-title">Ближайший урок</h2></div>
-            <div id="next-lesson-card" class="next-lesson-details"></div>
+            <div id="next-lesson-card" class="next-lesson-details"><p style="color:var(--muted);line-height:1.7">Загружаем ближайший урок…</p></div>
           </div>
 
 
@@ -1229,8 +1229,8 @@ body{color:var(--ink)!important;background:radial-gradient(circle at 10% 8%,rgba
         <aside class="dashboard-column">
           <div class="glass-panel calendar-panel">
             <div class="card-title-row"><h2 class="mini-title">Календарь</h2></div>
-            <div id="lesson-calendar"></div>
-            <div id="upcoming-lessons" class="upcoming-list"></div>
+            <div id="lesson-calendar"><p style="padding:1rem;color:var(--muted)">Загружаем календарь…</p></div>
+            <div id="upcoming-lessons" class="upcoming-list"><p style="color:var(--muted)">Загружаем занятия…</p></div>
           </div>
         </aside>
         </div>
@@ -1288,7 +1288,7 @@ body{color:var(--ink)!important;background:radial-gradient(circle at 10% 8%,rgba
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
     <script src="config.js"></script>
     <script>document.querySelectorAll("[data-brand]").forEach(el => el.textContent = window.APP_CONFIG.brandName); document.title = window.APP_CONFIG.brandName + " — Личный кабинет";</script>
-    <script src="subtext.js?v=sales-demo-4"></script>
+    <script src="subtext.js?v=sales-demo-5"></script>
 
   <div class="hearts-container" id="hearts"></div>
 
