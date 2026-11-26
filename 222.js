@@ -400,15 +400,13 @@ function getOrCreateHomeworkFolder_(name, propertyKey, parentFolder) {
   return folder;
 }
 
-function getHomeworkCourseFolder_(course) {
+function setupHomeworkDriveFolders() {
   const root = getOrCreateHomeworkFolder_(
     'Subtext — Домашние задания',
     HOMEWORK_ROOT_FOLDER_PROPERTY,
     null
   );
 
-  // Создаём папки для всех предметов платформы при первой загрузке,
-  // а не только для предмета, по которому ученик отправил первую работу.
   Object.keys(COURSE_TABLES).forEach(courseKey => {
     const label = getHomeworkCourseLabel_(courseKey);
     const safeKey = String(courseKey).replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -419,6 +417,11 @@ function getHomeworkCourseFolder_(course) {
     );
   });
 
+  return 'Папки домашних заданий для всех предметов Subtext созданы или уже существуют.';
+}
+
+function getHomeworkCourseFolder_(course) {
+  setupHomeworkDriveFolders();
   const requestedKey = String(course).replace(/[^a-zA-Z0-9_-]/g, '_');
   const requestedId = PropertiesService.getScriptProperties()
     .getProperty('HOMEWORK_COURSE_FOLDER_' + requestedKey);
