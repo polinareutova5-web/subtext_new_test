@@ -1513,6 +1513,38 @@ input:focus,select:focus,textarea:focus {outline:none;border-color:#5aa9ed;box-s
 #notify-panel,#support-chat {border:1px solid rgba(255,255,255,.88);box-shadow:0 25px 70px rgba(15,51,91,.2);backdrop-filter:blur(22px)}
 @media(max-width:768px){.hero{min-height:310px;border-bottom-left-radius:38px;border-bottom-right-radius:38px}.cabinet-shell{width:calc(100% - 22px)}.nav-container{width:calc(100% - 22px)}}
 
+
+/* Quick access to the next lesson */
+.next-lesson-join-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  width: 100%;
+  min-height: 48px;
+  margin-top: .35rem;
+  padding: .8rem 1.1rem;
+  border: 1px solid rgba(255,255,255,.72);
+  border-radius: 16px;
+  color: #fff !important;
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+  background: linear-gradient(115deg,#1259c7,#168af0 58%,#49cce8);
+  box-shadow: 0 12px 26px rgba(22,119,255,.24);
+  transition: transform .22s ease,box-shadow .22s ease,filter .22s ease;
+}
+.next-lesson-join-btn:hover {
+  color: #fff !important;
+  filter: saturate(1.12) brightness(1.04);
+  transform: translateY(-2px);
+  box-shadow: 0 17px 34px rgba(22,119,255,.32);
+}
+.next-lesson-join-btn:focus-visible {
+  outline: 3px solid rgba(53,216,255,.48);
+  outline-offset: 3px;
+}
+
 </style>
 </head>
 
