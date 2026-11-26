@@ -1039,9 +1039,12 @@ async function loadSlots() {
     }
     container.innerHTML = slots.map(slot => {
       const isFree = slot.status === "free";
-      return `<div style="margin-bottom:.8rem;padding:.8rem;border-radius:12px;background:${isFree ? '#e8f5e9' : '#eee'}">
-        <strong>${formatDate(slot.date)}</strong> ${formatTime(slot.time)}<br>
-        ${isFree ? `<button class="buy-btn" onclick="bookSlot('${escapeAttr(slot.id)}')">Записаться</button>` : '<span style="opacity:.6">Занято</span>'}
+      return `<div class="slot-item">
+        <div class="slot-info">
+          <strong class="slot-date">${formatDate(slot.date)}</strong>
+          <span class="slot-time">${formatTime(slot.time)}</span>
+        </div>
+        ${isFree ? `<button class="slot-book-btn" onclick="bookSlot('${escapeAttr(slot.id)}')">Записаться</button>` : '<span class="slot-status">Занято</span>'}
       </div>`;
     }).join("");
     loadGroupSlots();
@@ -1087,10 +1090,12 @@ async function loadGroupSlots() {
       const capacity = Number(slot.capacity) || 0;
       const bookedCount = Number(slot.bookedCount) || 0;
       const available = capacity - bookedCount > 0;
-      return `<div style="margin-bottom:.8rem;padding:.8rem;border-radius:12px;background:${available ? '#e3f2fd' : '#eee'}">
-        <strong>${escapeHtml(slot.title)}</strong><br>
-        ${formatDate(slot.date)} ${formatTime(slot.time)}<br>
-        ${available ? `<button class="buy-btn" onclick="bookGroupSlot('${escapeAttr(slot.id)}')">Записаться (${bookedCount}/${capacity})</button>` : `<span style="opacity:.6">Мест нет (${capacity}/${capacity})</span>`}
+      return `<div class="slot-item">
+        <div class="slot-info">
+          <strong class="slot-date">${escapeHtml(slot.title)}</strong>
+          <span class="slot-time">${formatDate(slot.date)} · ${formatTime(slot.time)}</span>
+        </div>
+        ${available ? `<button class="slot-book-btn" onclick="bookGroupSlot('${escapeAttr(slot.id)}')">Записаться · ${bookedCount}/${capacity}</button>` : `<span class="slot-status">Мест нет · ${capacity}/${capacity}</span>`}
       </div>`;
     }).join("");
   } catch (e) {
