@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Subtext — Вход для преподавателя</title>
+  <title>Ваше название — Вход для преподавателя</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
@@ -442,6 +442,16 @@ opacity:.35;
 opacity:.5;
 
 }
+/* White-label soft pink theme */
+:root{--ink:#493544;--muted:#8b7180;--blue:#c66b98;--blue-2:#df91b4;--cyan:#f3b8d0;--ice:#fff5f9;--glass:rgba(255,255,255,.78);--glass-strong:rgba(255,255,255,.92);--line:rgba(198,107,152,.22);--shadow:0 24px 70px rgba(125,67,96,.13);--shadow-strong:0 34px 90px rgba(125,67,96,.2)}
+body{color:var(--ink)!important;background:radial-gradient(circle at 10% 8%,rgba(255,190,216,.58),transparent 30rem),radial-gradient(circle at 90% 12%,rgba(241,190,213,.5),transparent 32rem),radial-gradient(circle at 72% 92%,rgba(255,220,235,.75),transparent 34rem),linear-gradient(145deg,#fffafd 0%,#fff0f6 48%,#f9e4ef 100%)!important}
+.hero{background:radial-gradient(circle at 20% 18%,rgba(255,255,255,.72),transparent 28rem),radial-gradient(circle at 82% 8%,rgba(244,190,215,.5),transparent 24rem),linear-gradient(135deg,#f7dce9,#eabbd2 55%,#d99ab9)!important;box-shadow:0 30px 70px rgba(160,91,127,.18)!important}
+.big-title{color:#fff!important;text-shadow:0 4px 0 rgba(153,83,119,.28),0 20px 48px rgba(117,64,94,.2)!important}
+.nav-container button{color:#9c5278!important;background:linear-gradient(135deg,#fff,#fff0f6)!important;border-color:rgba(198,107,152,.18)!important}
+.section-title,#about h2{color:#a95b83!important;text-shadow:none!important}
+.section-title:after,#about h2:after,.xp-fill{background:linear-gradient(90deg,#c66b98,#f0b5d0)!important}
+@media(max-width:768px){.hero{min-height:230px!important}.hero-content{padding:2.4rem 0 2rem!important}.big-title{font-size:clamp(2.5rem,13vw,4.5rem)!important;letter-spacing:.04em!important;overflow-wrap:anywhere}.nav-container{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:.5rem!important;padding:.65rem!important;width:calc(100% - 24px)!important}.nav-container button{min-width:0!important;width:100%!important;min-height:46px!important;padding:.55rem .35rem!important;font-size:.82rem!important}.cabinet-shell{width:calc(100% - 20px)!important}.section{padding:1rem 0 2rem!important}.schedule-panel,.next-lesson-card,.progress-panel,.calendar-panel{padding:1rem!important}.dashboard-grid{grid-template-columns:minmax(0,1fr)!important}.profile-section{width:100%!important}.logout-btn{position:absolute!important;top:10px!important;right:10px!important;min-width:0!important;min-height:36px!important;padding:.45rem .75rem!important}}
+@media(max-width:420px){.hero{border-radius:0 0 26px 26px!important}.hero-subtitle{font-size:.82rem!important;padding:0 .5rem}.upcoming-item{grid-template-columns:8px 62px minmax(0,1fr)!important;gap:.45rem!important;padding:.6rem!important}.profile-section,.glass-panel{border-radius:20px!important}}
 </style>
 </head>
  <div class="stars"></div>
@@ -493,8 +503,9 @@ opacity:.5;
 
 </div>
     
+  <script src="config.js"></script>
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxrKg-1S6hVhFOE6qWeA6OcvYOWQ_oOGGqroqGQXWpzs4u5RxzM5-ut_KFR3VXc9a7p/exec"; // Укажите ваш актуальный URL развертывания
+    const API_URL = window.APP_CONFIG.apiUrl;
 
     async function handleLogin() {
       const login = document.getElementById('login').value.trim();
