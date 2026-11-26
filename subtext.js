@@ -621,6 +621,13 @@ function renderNextLesson() {
     rows.push(`<div class="next-lesson-row"><small>Предмет</small>${escapeHtml(lesson.subject)}</div>`);
   }
 
+  // Ссылка та же, что выводится в разделе «Расписание».
+  // Кнопку показываем только если ссылка действительно заполнена.
+  const lessonLink = String(lesson.link || "").trim();
+  if (lessonLink) {
+    rows.push(`<a href="${escapeAttr(lessonLink)}" target="_blank" rel="noopener" class="lesson-btn next-lesson-join-btn">Подключиться к занятию</a>`);
+  }
+
   container.innerHTML = rows.join("");
 }
 

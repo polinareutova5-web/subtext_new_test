@@ -492,7 +492,33 @@
       }
     }
 
-  </style>
+  
+
+/* ===== SUBTEXT DESIGN REFRESH · teacher workspace ===== */
+:root {--primary:#176fe5;--secondary:#8f8bff;--bg:#eef6ff;--border:rgba(91,157,220,.2);--hover:#edf6ff;--card:rgba(255,255,255,.84);--text:#173d61;--shadow:0 22px 65px rgba(28,76,126,.13)}
+body {background:radial-gradient(ellipse at 8% 5%,rgba(97,214,231,.2),transparent 30rem),radial-gradient(ellipse at 92% 90%,rgba(157,145,255,.18),transparent 32rem),linear-gradient(145deg,#f8fcff,#eaf4ff 55%,#f3f1ff)}
+.header {position:relative;background:linear-gradient(115deg,rgba(9,54,103,.97),rgba(28,119,184,.94) 58%,rgba(110,111,190,.94));color:#fff;border:1px solid rgba(255,255,255,.18);box-shadow:0 18px 45px rgba(14,57,102,.2);padding:20px 30px}
+.header-info,.header-info * {color:#fff}
+.header-actions button,.toolbar button {border:1px solid rgba(255,255,255,.4);background:linear-gradient(115deg,#1766d5,#2498ec 60%,#55cce3);box-shadow:0 10px 24px rgba(15,79,153,.2);font-weight:700}
+.logout-btn {background:linear-gradient(120deg,#f36d83,#ee8b9e);box-shadow:0 10px 24px rgba(220,90,116,.2)}
+.main-container {gap:0}
+.sidebar {border:1px solid rgba(255,255,255,.9);border-radius:26px;background:rgba(255,255,255,.78);box-shadow:0 18px 48px rgba(28,76,126,.1);backdrop-filter:blur(18px)}
+.sidebar-title {color:#7890a8;letter-spacing:.12em}
+.sidebar-item {border-radius:14px;margin:4px 8px;transition:background .2s,transform .2s}
+.sidebar-item.active {border:0;border-left:4px solid #4b9eec;background:linear-gradient(100deg,rgba(48,139,226,.16),rgba(143,139,255,.12));color:#1765c5}
+.content-area {padding:26px}
+.workspace {border:1px solid rgba(255,255,255,.92);border-radius:28px;background:rgba(255,255,255,.82);box-shadow:0 22px 65px rgba(28,76,126,.13);backdrop-filter:blur(20px)}
+.sheet-tabs {gap:9px}
+.sheet-tab {border:1px solid rgba(89,155,220,.16);border-radius:14px 14px 0 0;color:#4c7396;font-weight:650}
+.sheet-tab.active {background:linear-gradient(145deg,#fff,#edf7ff);color:#176fe5;border:1px solid rgba(89,155,220,.18);box-shadow:0 -5px 22px rgba(70,150,255,.12)}
+.toolbar {background:linear-gradient(90deg,rgba(237,247,255,.72),rgba(247,245,255,.68));border-top:1px solid rgba(102,166,224,.12);border-bottom:1px solid rgba(102,166,224,.12)}
+.toolbar input {border-radius:14px;background:#fff;box-shadow:0 6px 18px rgba(27,81,135,.06)}
+.grid-container {border:1px solid rgba(116,174,225,.2);border-radius:18px;background:#fff;box-shadow:0 10px 28px rgba(28,76,126,.07)}
+.grid th {background:linear-gradient(180deg,#f2f8ff,#eaf4ff);color:#37688f}
+.grid td {transition:background .15s}
+@media(max-width:900px){.content-area{padding:12px}.header{border-radius:0 0 24px 24px}}
+
+</style>
 </head>
 <body>
 
