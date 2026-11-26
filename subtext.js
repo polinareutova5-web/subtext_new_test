@@ -625,7 +625,7 @@ function renderNextLesson() {
   // Кнопку показываем только если ссылка действительно заполнена.
   const lessonLink = String(lesson.link || "").trim();
   if (lessonLink) {
-    rows.push(`<a href="${escapeAttr(lessonLink)}" target="_blank" rel="noopener" class="lesson-btn next-lesson-join-btn">🎥 Подключиться к занятию</a>`);
+    rows.push(`<a href="${escapeAttr(lessonLink)}" target="_blank" rel="noopener" class="lesson-btn next-lesson-join-btn">Подключиться к занятию</a>`);
   }
 
   container.innerHTML = rows.join("");
@@ -857,7 +857,7 @@ if (lessonLinkEl) {
          target="_blank"
          rel="noopener"
          class="lesson-btn">
-         🎥 Подключиться к занятию
+         Подключиться к занятию
       </a>
     `;
   } else {
