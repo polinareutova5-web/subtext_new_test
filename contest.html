@@ -356,8 +356,8 @@
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(8,16,30,0.8);
-      backdrop-filter: blur(7px);
+      background: rgba(34, 67, 101, 0.66);
+      backdrop-filter: blur(6px);
       z-index: 200;
       display: flex;
       align-items: center;
@@ -1210,7 +1210,8 @@
         { x: 2200, y: 1145, width: 280 },
         { x: 2700, y: 1165, width: 300 },
         { x: 3220, y: 1135, width: 275 },
-        { x: 3690, y: 1160, width: 290 }
+        { x: 3690, y: 1160, width: 290 },
+        { x: 3990, y: 1175, width: 205 }
       ];
       housePositions.forEach((pos, i) => {
         const el = document.createElement('div');
@@ -1218,7 +1219,7 @@
         el.style.left = pos.x + 'px';
         el.style.top = pos.y + 'px';
         el.style.width = pos.width + 'px';
-        el.innerHTML = `<img src="${houseImages[i]}" alt="" draggable="false" />`;
+        el.innerHTML = `<img src="${houseImages[i % houseImages.length]}" alt="" draggable="false" />`;
         world.appendChild(el);
       });
     }
