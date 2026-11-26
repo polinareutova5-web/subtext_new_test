@@ -1564,11 +1564,14 @@ input:focus,select:focus,textarea:focus {outline:none;border-color:#5aa9ed;box-s
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    font-size: clamp(2.5rem, 14vw, 4rem) !important;
-    letter-spacing: .02em !important;
-    line-height: 1.1;
+    /* Keep the Subtext word prominent on phones without clipping it. */
+    font-size: clamp(3.15rem, 16vw, 4.35rem) !important;
+    letter-spacing: .04em !important;
+    line-height: 1.08;
     text-align: center;
     white-space: nowrap;
+    /* Replace the heavy desktop-style 3D shadow with a soft mobile glow. */
+    text-shadow: 0 2px 10px rgba(0, 20, 52, .16), 0 0 22px rgba(104, 230, 255, .18) !important;
   }
   .hero-subtitle {
     box-sizing: border-box;
