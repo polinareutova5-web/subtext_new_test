@@ -857,7 +857,7 @@ if (lessonLinkEl) {
          target="_blank"
          rel="noopener"
          class="lesson-btn">
-         Подключиться к занятию
+         🎥 Подключиться к занятию
       </a>
     `;
   } else {
