@@ -16,6 +16,39 @@ function getCurrentCourse() {
   return currentCourse || cabinetData?.user?.courses?.[0] || "english";
 }
 
+function normalizeCourseName(value = "") {
+  const raw = String(value || "").trim().toLowerCase();
+  const compact = raw.replace(/[\s_-]+/g, "");
+  const aliases = {
+    "английский": "english", "англ": "english", "english": "english",
+    "английский2": "english2", "english2": "english2",
+    "французский": "french", "французскому": "french", "french": "french",
+    "французский2": "french2", "french2": "french2",
+    "испанский": "spanish", "испанскому": "spanish", "spanish": "spanish",
+    "математика": "math", "математику": "math", "math": "math",
+    "физика": "physics", "физику": "physics", "physics": "physics",
+    "биология": "biology", "биологию": "biology", "biology": "biology",
+    "химия": "chemistry", "химию": "chemistry", "chemistry": "chemistry"
+  };
+  return aliases[raw] || aliases[compact] || compact;
+}
+
+function getCourseLabel(course = "") {
+  const normalized = normalizeCourseName(course);
+  const labels = {
+    english: "Английский язык",
+    english2: "Английский язык 2",
+    french: "Французский язык",
+    french2: "Французский язык 2",
+    spanish: "Испанский язык",
+    math: "Математика",
+    physics: "Физика",
+    biology: "Биология",
+    chemistry: "Химия"
+  };
+  return labels[normalized] || String(course || "Предмет").trim();
+}
+
 function getCourseMappedValue(values, course, fallback = "") {
   if (values == null) return fallback;
   if (typeof values !== "object") return values || fallback;
