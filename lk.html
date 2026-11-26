@@ -867,8 +867,6 @@
       text-align: center;
     }
 
-    .announcement-list p { margin: 0.5rem 0; color: var(--muted); line-height: 1.7; }
-    .announcement-list strong { color: var(--blue); }
 
     .about-panel {
       max-width: 940px;
@@ -1184,75 +1182,11 @@
       backdrop-filter: blur(20px);
     }
 
-    #support-messages,
-    #ai-messages {
+    #support-messages {
       scrollbar-width: thin;
       scrollbar-color: rgba(22, 119, 255, 0.42) transparent;
     }
 
-    .chat-tabs {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .chat-tab {
-      flex: 1;
-      border: 0;
-      border-radius: 999px;
-      padding: 0.55rem 0.7rem;
-      color: var(--muted);
-      font-weight: 800;
-      cursor: pointer;
-      background: rgba(22, 119, 255, 0.08);
-    }
-
-    .chat-tab.active {
-      color: white;
-      background: linear-gradient(135deg, var(--blue), var(--cyan));
-      box-shadow: 0 10px 24px rgba(22, 119, 255, 0.22);
-    }
-
-    .chat-pane textarea {
-      width: 100%;
-      min-height: 74px;
-      padding: 0.75rem;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      resize: vertical;
-      font: inherit;
-    }
-
-    .chat-pane button:not(.chat-tab) {
-      width: 100%;
-      margin-top: 0.55rem;
-      border: 0;
-      border-radius: 999px;
-      padding: 0.7rem 1rem;
-      color: white;
-      font-weight: 800;
-      cursor: pointer;
-      background: linear-gradient(135deg, var(--blue), var(--cyan));
-    }
-
-    .ai-message {
-      margin-bottom: 10px;
-      padding: 8px;
-      border-radius: 12px;
-      line-height: 1.5;
-      background: #eef8ff;
-    }
-
-    .ai-message.user {
-      background: #f1f8e9;
-    }
-
-    .ai-note {
-      margin: 0 0 0.75rem;
-      color: var(--muted);
-      font-size: 0.84rem;
-      line-height: 1.45;
-    }
 
     /* ===== 14 FEB HEARTS ===== */
     .hearts-container {
@@ -1338,7 +1272,6 @@
       <button onclick="showSection('schedule')">Расписание</button>
       <button onclick="showSection('materials')">Материалы</button>
       <button onclick="showSection('contest')">🎄 Конкурс</button>
-      <button onclick="showSection('announcements')">Объявления</button>
       <button onclick="showSection('about')">О нас</button>
     </nav>
 
@@ -1447,46 +1380,6 @@
         <div class="section-title">Магазин</div>
         <p class="coins-pill">💰 Монеты: <span id="shop-coins">0</span></p>
         <div id="shop-items" class="shop-grid"></div>
-      </section>
-
-      <!-- ===== ОБЪЯВЛЕНИЯ ===== -->
-      <section id="announcements" class="section hidden">
-        <div class="section-title">Объявления</div>
-        <div class="glass-panel center-panel announcement-list">
-          <p><strong>31 июля</strong></p>
-          <p>
-            ⚙️ 31 июля вышло обновление платформы, поэтому первое время она может работать некорректно.
-Если вы заметили ошибку в работе или у вас есть замечания, сообщите своему преподавателю или напишите в чат поддержки. Давайте улучшим платформу вместе!
-          </p>
-          <hr>
-
-        
-          <p><strong>04 июня - 14 июня</strong></p>
-          <p>
-            ⚙️ С 4 июня по 14 июня на платформе ведутся технические работы. В это время некоторые разделы сайта могут быть недоступны или работать некорректно. Дополнительно сообщать об этом в тех.поддержку или преподавателю не нужно. Приносим извинения за доставленные неудобства!
-          </p>
-          <hr>
-
-          <p><strong>19 февраля</strong></p>
-          <p>
-            ⚙️ С 13:00 до 15:00 возможны технические работы на сайте.
-            В это время некоторые разделы могут временно не работать.
-          </p>
-          <hr>
-
-          <p><strong>14 февраля</strong></p>
-          <p>
-            Happy Valentine’s Day! 💗<br>
-            Collect love, spread kindness, and level up your happiness today.
-          </p>
-          <hr>
-
-          <p><strong>4 февраля</strong></p>
-          <p>
-            🎉 Запуск образовательной платформы Subtext!
-            Теперь все материалы, расписание, домашние задания и прогресс доступны в личном кабинете.
-          </p>
-        </div>
       </section>
 
       <!-- ====================== РАЗДЕЛ "О НАС" ====================== -->
@@ -1631,19 +1524,7 @@
   <div id="support-btn" role="button" aria-label="Открыть чат" aria-expanded="false" onclick="toggleSupport()">?</div>
 
   <div id="support-chat" class="hidden">
-    <div class="chat-tabs" role="tablist" aria-label="Чаты Subtext">
-      <button id="ai-chat-tab" class="chat-tab active" type="button" onclick="showChatTab('ai')">ИИ</button>
-      <button id="support-chat-tab" class="chat-tab" type="button" onclick="showChatTab('support')">Поддержка</button>
-    </div>
-
-    <div id="ai-chat-pane" class="chat-pane">
-      <p class="ai-note">Задайте вопрос по урокам, домашке или расписанию. Если ИИ недоступен, сообщение можно отправить преподавателю во вкладке «Поддержка».</p>
-      <div id="ai-messages" style="max-height:220px;overflow-y:auto;margin-bottom:10px"></div>
-      <textarea id="ai-input" placeholder="Например: объясни тему урока простыми словами..."></textarea>
-      <button type="button" onclick="sendAiMessage()">Спросить ИИ</button>
-    </div>
-
-    <div id="support-chat-pane" class="chat-pane hidden">
+    <div id="support-chat-pane" class="chat-pane">
       <div id="support-messages" style="max-height:200px;overflow-y:auto;margin-bottom:10px"></div>
       <textarea id="support-input" placeholder="Ваш вопрос..."></textarea>
       <button type="button" onclick="sendSupport()">Отправить</button>
