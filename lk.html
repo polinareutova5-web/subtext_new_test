@@ -768,6 +768,90 @@
       filter: saturate(1.08);
     }
 
+    /* Booking slot cards */
+    #slots-container,
+    #group-slots-container {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 0.85rem;
+    }
+
+    .slot-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.95rem 1rem;
+      border: 1px solid rgba(47, 141, 242, 0.18);
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(255,255,255,.97), rgba(226,243,255,.94));
+      box-shadow: 0 8px 22px rgba(22,119,255,.08);
+      text-align: left;
+      transition: transform .22s ease, box-shadow .22s ease;
+    }
+
+    .slot-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 26px rgba(22,119,255,.13);
+    }
+
+    .slot-info { min-width: 0; display: grid; gap: .2rem; }
+    .slot-date { color: var(--ink); font-weight: 750; }
+    .slot-time { color: var(--muted); font-size: .9rem; }
+
+    .slot-book-btn {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      margin: 0;
+      padding: .58rem 1.05rem;
+      border: 1px solid rgba(255,255,255,.78);
+      border-radius: 14px;
+      color: #fff;
+      font: inherit;
+      font-size: .86rem;
+      font-weight: 750;
+      white-space: nowrap;
+      cursor: pointer;
+      background: linear-gradient(135deg, #267fe8, #35a9ed 58%, #58c9e8);
+      box-shadow: 0 7px 16px rgba(22,119,255,.22);
+      transition: transform .22s ease, box-shadow .22s ease, filter .22s ease;
+    }
+
+    .slot-book-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px rgba(22,119,255,.3);
+      filter: brightness(1.04) saturate(1.06);
+    }
+
+    .slot-book-btn:focus-visible {
+      outline: 3px solid rgba(53,216,255,.3);
+      outline-offset: 3px;
+    }
+
+    .slot-status {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      padding: .45rem .8rem;
+      border-radius: 14px;
+      color: #7c8794;
+      font-size: .82rem;
+      font-weight: 750;
+      background: linear-gradient(135deg, #edf0f3, #e2e6eb);
+      border: 1px solid rgba(125,139,153,.12);
+    }
+
+    @media(max-width:560px) {
+      .slot-item { align-items: flex-start; flex-direction: column; gap: .7rem; }
+      .slot-book-btn { width: 100%; }
+      .slot-status { align-self: flex-start; }
+    }
+
     .lesson-actions {
       display: flex;
      flex-direction: column;
