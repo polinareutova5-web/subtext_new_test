@@ -12,16 +12,7 @@ const COURSE_TABLES = {
   chemistry: '1Bx8in9m1NIRobRIHeM7SdMEE4eB2PM-ceRQ1B3kVDVg'
 };
 const API_VERSION = '2026-08-16-materials-sorting';
-const COURSE_FORM_LINKS = {
-  english: 'https://docs.google.com/forms/d/e/1FAIpQLSdyaEIut7zciiAfhbNexWHxXLy6eE1IoEwpprm-x8I-penPrw/viewform',
-  physics: 'https://docs.google.com/forms/d/e/ССЫЛКА_НА_ФОРМУ_ФИЗИКИ/viewform',
-  french: 'https://docs.google.com/forms/d/e/1FAIpQLSfdiRbWSD0T5KXx0oT7pi9B65qwlXZXH0g-pGpbisnyketAiw/viewform',
-  biology: 'https://docs.google.com/forms/d/e/1FAIpQLSddRnIm_yXH21Z4asGY7ylNY9I3g_oScgV_wu5Ufx_iL3He-w/viewform',
-  español: 'https://docs.google.com/forms/d/e/1FAIpQLSfdiRbWSD0T5KXx0oT7pi9B65qwlXZXH0g-pGpbisnyketAiw/viewform',
-  chemistry: 'https://docs.google.com/forms/d/e/1FAIpQLScPwnne8jObiTRcYoOueho7FQtxhg5EVMEaLsuf8MVX43DsTg/viewform',
-  english2: 'https://docs.google.com/forms/d/e/1FAIpQLSebcIT9xjTqcX0mo16St9aLbFdzNdsWA6ObkBWmdhMpu5jkTA/viewform',
-  french2: 'https://docs.google.com/forms/d/e/1FAIpQLSfjyBRKcFHYlKlr5tYPrQ1JnfyLcB4JCfYfacfTRISyqs0oVA/viewform'
-};
+
 
 // ================= ОСНОВНОЙ РОУТЕР (doGet) =================
 function doGet(e) {
@@ -94,7 +85,6 @@ function doGet(e) {
         ranks: user.ranks,
         avatarUrl: user.avatarUrl,
         courses: user.courses,
-        formLinks: getFormLinksForUser(user.courses),
       },
       lessons: agg.lessons,
       materials: agg.materials,
@@ -178,17 +168,6 @@ function lessonSubjectMatchesCourse(subjectValue, course) {
   if (!subjects.length) return true;
   const aliases = getCourseAliases(course);
   return subjects.some(subject => aliases.includes(subject));
-}
-
-function getFormLinksForUser(courses) {
-  const links = {};
-  for (const course of courses || []) {
-    const normalizedCourse = normalizeCourse(course);
-    if (COURSE_FORM_LINKS[normalizedCourse]) {
-      links[normalizedCourse] = COURSE_FORM_LINKS[normalizedCourse];
-    }
-  }
-  return links;
 }
 
 function openUsersSheet(sheetName) {
