@@ -104,11 +104,12 @@
       border-bottom-left-radius: 54px;
       border-bottom-right-radius: 54px;
       background:
-        radial-gradient(ellipse at 16% 12%, rgba(255, 191, 220, 0.30), transparent 25rem),
-        radial-gradient(ellipse at 78% 6%, rgba(191, 174, 255, 0.24), transparent 26rem),
-        radial-gradient(circle at 22% 22%, rgba(53, 216, 255, 0.34), transparent 28rem),
-        radial-gradient(circle at 82% 8%, rgba(110, 231, 255, 0.20), transparent 24rem),
-        linear-gradient(128deg, #071b3b 0%, #164f9a 46%, #477fc4 74%, #8a6d9f 100%);
+        radial-gradient(ellipse at 12% 18%, rgba(57, 230, 218, 0.38), transparent 27rem),
+        radial-gradient(ellipse at 42% 0%, rgba(65, 167, 255, 0.34), transparent 30rem),
+        radial-gradient(ellipse at 82% 8%, rgba(178, 151, 255, 0.34), transparent 28rem),
+        radial-gradient(ellipse at 76% 88%, rgba(85, 213, 255, 0.28), transparent 32rem),
+        radial-gradient(circle at 24% 78%, rgba(50, 117, 230, 0.32), transparent 27rem),
+        linear-gradient(128deg, #0a3970 0%, #176db0 38%, #438fce 68%, #827fc4 100%);
       box-shadow: 0 34px 80px rgba(4, 44, 86, 0.25);
     }
 
@@ -118,10 +119,13 @@
       inset: -28%;
       z-index: -1;
       background:
-        conic-gradient(from 130deg at 50% 50%, transparent, rgba(255, 191, 220, 0.34), transparent, rgba(53, 216, 255, 0.42), transparent, rgba(169, 143, 255, 0.28), transparent),
-        radial-gradient(circle at 24% 28%, rgba(255, 255, 255, 0.30), transparent 26rem);
-      animation: aurora 14s ease-in-out infinite alternate;
-      filter: blur(10px);
+        radial-gradient(ellipse 42% 24% at 18% 34%, rgba(83, 255, 220, 0.40), transparent 72%),
+        radial-gradient(ellipse 48% 22% at 62% 20%, rgba(83, 190, 255, 0.42), transparent 74%),
+        radial-gradient(ellipse 38% 26% at 84% 62%, rgba(190, 154, 255, 0.38), transparent 72%),
+        conic-gradient(from 145deg at 52% 48%, transparent 0deg, rgba(89, 232, 255, 0.30) 70deg, transparent 145deg, rgba(174, 155, 255, 0.28) 220deg, transparent 300deg),
+        radial-gradient(circle at 24% 28%, rgba(255, 255, 255, 0.34), transparent 26rem);
+      animation: aurora 18s ease-in-out infinite alternate;
+      filter: blur(18px) saturate(1.2);
     }
 
     .hero::after {
@@ -130,9 +134,10 @@
       inset: 0;
       z-index: -1;
       background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.22)),
-        radial-gradient(circle at 78% 72%, rgba(255, 255, 255, 0.22), transparent 22rem),
-        radial-gradient(ellipse at 88% 18%, rgba(255, 183, 216, 0.18), transparent 25rem);
+        linear-gradient(180deg, rgba(225, 248, 255, 0.05), rgba(255, 255, 255, 0.16)),
+        radial-gradient(ellipse at 22% 72%, rgba(150, 245, 255, 0.13), transparent 25rem),
+        radial-gradient(circle at 78% 72%, rgba(255, 255, 255, 0.20), transparent 22rem),
+        radial-gradient(ellipse at 88% 18%, rgba(208, 190, 255, 0.16), transparent 25rem);
     }
 
     @keyframes aurora {
@@ -871,27 +876,40 @@
     }
 
     .homework-panel { text-align: left; }
-    .homework-intro { margin: 0 0 1.5rem; color: var(--muted); line-height: 1.7; text-align: center; }
-    .homework-label { display: block; margin: 1rem 0 .45rem; color: var(--ink); font-weight: 650; }
-    .homework-label span { color: var(--muted); font-weight: 400; }
+    .homework-label {
+      display: block; margin: 1.12rem 0 .5rem; color: #1764a5;
+      font-size: 1.08rem; font-weight: 750; letter-spacing: .01em;
+      text-shadow: 0 1px 0 rgba(255,255,255,.8);
+    }
+    .homework-label span { color: #6285a8; font-size: .92em; font-weight: 500; }
     .homework-input, .homework-file {
       display: block; width: 100%; box-sizing: border-box; padding: .9rem 1rem;
-      border: 1px solid rgba(198,107,152,.28); border-radius: var(--radius-md);
-      color: var(--ink); background: rgba(255,255,255,.82); font: inherit;
+      border: 1px solid rgba(48,132,196,.26); border-radius: var(--radius-md);
+      color: #173c60; background: linear-gradient(145deg, rgba(255,255,255,.94), rgba(235,247,255,.88)); font: inherit;
+      box-shadow: inset 0 1px 2px rgba(36,105,164,.045), 0 3px 12px rgba(45,116,174,.045);
+      transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
     }
-    .homework-input:focus, .homework-file:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(198,107,152,.12); }
+    .homework-input:focus, .homework-file:focus {
+      outline: none; border-color: #4a9bd4;
+      box-shadow: 0 0 0 4px rgba(58,151,216,.13), inset 0 1px 2px rgba(36,105,164,.04);
+      background: #fff;
+    }
     .homework-hint { margin: .5rem 0; color: var(--muted); font-size: .86rem; line-height: 1.5; }
     .homework-file-name { min-height: 1.3rem; color: var(--accent); font-size: .9rem; overflow-wrap: anywhere; }
     .homework-submit-btn {
       position: relative; isolation: isolate; overflow: hidden;
       display: block; width: 100%; margin-top: 1.2rem; padding: 1rem 1.2rem;
       border: 1px solid rgba(255,255,255,.58); border-radius: var(--radius-md);
-      color: #fff; background: linear-gradient(115deg, rgba(91,166,220,.96) 0%, rgba(151,132,211,.96) 52%, rgba(220,139,180,.96) 100%);
-      box-shadow: 0 9px 22px rgba(116,119,190,.24), inset 0 1px 0 rgba(255,255,255,.48);
+      color: #fff;
+      background:
+        linear-gradient(112deg, rgba(255,255,255,.24) 0%, transparent 24%, rgba(255,255,255,.18) 48%, transparent 68%),
+        linear-gradient(115deg, #1769aa 0%, #278fc4 38%, #6a9ee0 72%, #827fd0 100%);
+      background-size: 220% 100%, 100% 100%;
+      box-shadow: 0 10px 24px rgba(35,112,174,.25), inset 0 1px 0 rgba(255,255,255,.58), inset 0 -1px 0 rgba(14,72,130,.14);
       backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       font: inherit; font-weight: 750; letter-spacing: .01em; cursor: pointer;
       text-shadow: 0 1px 2px rgba(53,54,105,.2);
-      transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+      transition: transform .28s cubic-bezier(.2,.8,.2,1), box-shadow .28s ease, filter .28s ease, background-position .7s ease;
     }
     .homework-submit-btn::before {
       content: ""; position: absolute; z-index: -1; inset: 0;
@@ -899,12 +917,16 @@
       transform: translateX(-110%); transition: transform .55s ease;
     }
     .homework-submit-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 13px 26px rgba(116,119,190,.3), inset 0 1px 0 rgba(255,255,255,.58);
-      filter: saturate(1.08);
+      transform: translateY(-3px) scale(1.012);
+      background-position: 100% 0, 0 0;
+      box-shadow: 0 15px 30px rgba(35,112,174,.32), inset 0 1px 0 rgba(255,255,255,.72), inset 0 -1px 0 rgba(14,72,130,.12);
+      filter: saturate(1.12) brightness(1.04);
     }
     .homework-submit-btn:hover::before { transform: translateX(110%); }
-    .homework-submit-btn:active { transform: translateY(0); }
+    .homework-submit-btn:active { transform: translateY(-1px) scale(.998); }
+    @media (prefers-reduced-motion: reduce) {
+      .homework-submit-btn, .homework-submit-btn::before, .homework-input, .homework-file { transition: none !important; }
+    }
     .homework-submit-btn:disabled {
       opacity: .82; cursor: wait; transform: none; filter: saturate(.75);
       box-shadow: 0 5px 14px rgba(116,119,190,.16);
@@ -1402,7 +1424,6 @@
       <section id="submission" class="section hidden">
         <div class="section-title">Сдать домашнее задание</div>
         <div class="glass-panel center-panel homework-panel">
-          <p class="homework-intro">Выберите предмет, укажите номер урока и прикрепите выполненную работу. Она сохранится в папке этого предмета на Google Диске.</p>
           <form id="homework-upload-form" onsubmit="submitHomework(event)">
             <label class="homework-label" for="homework-course">Предмет</label>
             <select id="homework-course" class="homework-input" required></select>
