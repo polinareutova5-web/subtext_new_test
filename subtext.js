@@ -78,6 +78,7 @@ function getCourseLabel(course = "") {
     french: "Французский",
     french2: "Французский 2",
     spanish: "Испанский",
+    español: "Испанский",
   };
   const normalized = normalizeCourseName(course);
   return labels[normalized] || String(course || "Предмет").trim();
@@ -166,47 +167,6 @@ function getMappedLink(source, course) {
   }
 
   return readLink(source);
-}
-
-function getSubmissionFormLink(course = getCurrentCourse()) {
-  const data = cabinetData || {};
-  const user = data.user || {};
-  const sources = [
-    data.submissionForms,
-    data.formLinks,
-    data.forms,
-    data.courseForms,
-    data.subjectForms,
-    user.submissionForms,
-    user.formLinks,
-    user.forms,
-    user.courseForms,
-    user.subjectForms,
-  ];
-
-  for (const source of sources) {
-    const link = getMappedLink(source, course);
-    if (link) return link;
-  }
-
-  return "";
-}
-
-function renderSubmissionFormLink(course = getCurrentCourse()) {
-  const linkEl = document.getElementById("submission-form-link");
-  const emptyEl = document.getElementById("submission-form-empty");
-  if (!linkEl) return;
-
-  const link = getSubmissionFormLink(course);
-  if (link) {
-    linkEl.href = link;
-    linkEl.classList.remove("hidden");
-    if (emptyEl) emptyEl.classList.add("hidden");
-  } else {
-    linkEl.removeAttribute("href");
-    linkEl.classList.add("hidden");
-    if (emptyEl) emptyEl.classList.remove("hidden");
-  }
 }
 
 function renderCourseProgressMeta(course = getCurrentCourse()) {
@@ -896,7 +856,6 @@ if (lessonLinkEl) {
     renderCourseTabs();
     renderCourseData();
     renderNotifications(collectNotificationsFromData(data));
-    renderSubmissionFormLink(currentCourse);
  
     document.getElementById("loading")?.classList.add("hidden");
     document.getElementById("main")?.classList.remove("hidden");
