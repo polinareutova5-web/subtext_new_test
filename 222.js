@@ -112,9 +112,17 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
 
     if (data.action === 'submit_homework') {
-      const user = getUser(data.userId);
-      const course = normalizeCourse(data.course || (user && user.courses[0]) || 'english');
-      return handleHomework(data, course);
+      const userId = String(data.userId || '').trim();
+      if (!userId) return error('Не удалось определить ученика. Перезагрузите кабинет.');
+      const user = getUser(userId);
+      if (!user) return error('Ученик не найден. Перезагрузите личный кабинет.');
+
+      const course = normalizeCourse(data.course || user.courses[0] || '');
+      if (!COURSE_TABLES[course]) return error('Выбранный предмет не найден.');
+      const allowedCourses = (user.courses || []).map(normalizeCourse);
+      if (!allowedCourses.includes(course)) return error('Этот предмет не привязан к вашему аккаунту.');
+
+      return handleHomework(data, user, course);
     }
     return error('Неизвестное POST-действие');
   } catch (err) {
@@ -376,9 +384,145 @@ function getGroupSlots(course) {
   }));
 }
 
-function handleHomework(data, course) {
-  openCourseSheet(course, 'ДЗ').appendRow([data.userId, data.username, data.text, new Date(), data.lessonNum, 'На проверке']);
-  return json({ success: true });
+const MAX_HOMEWORK_FILE_BYTES = 10 * 1024 * 1024;
+const HOMEWORK_ROOT_FOLDER_PROPERTY = 'HOMEWORK_UPLOAD_ROOT_FOLDER_ID';
+
+function getHomeworkCourseLabel_(course) {
+  const labels = {
+    english: 'Английский',
+    english2: 'Английский 2',
+    physics: 'Физика',
+    math: 'Математика',
+    biology: 'Биология',
+    chemistry: 'Химия',
+    french: 'Французский',
+    french2: 'Французский 2',
+    español: 'Испанский'
+  };
+  return labels[course] || String(course || 'Другой предмет');
+}
+
+function getOrCreateHomeworkFolder_(name, propertyKey, parentFolder) {
+  const props = PropertiesService.getScriptProperties();
+  const savedId = props.getProperty(propertyKey);
+  if (savedId) {
+    try {
+      const savedFolder = DriveApp.getFolderById(savedId);
+      if (!parentFolder || savedFolder.getParents().hasNext()) return savedFolder;
+    } catch (e) {
+      props.deleteProperty(propertyKey);
+    }
+  }
+
+  const folder = parentFolder
+    ? parentFolder.createFolder(name)
+    : DriveApp.createFolder(name);
+  props.setProperty(propertyKey, folder.getId());
+  return folder;
+}
+
+function getHomeworkCourseFolder_(course) {
+  const root = getOrCreateHomeworkFolder_(
+    'Subtext — Домашние задания',
+    HOMEWORK_ROOT_FOLDER_PROPERTY,
+    null
+  );
+  const label = getHomeworkCourseLabel_(course);
+  const safeKey = String(course).replace(/[^a-zA-Z0-9_-]/g, '_');
+  return getOrCreateHomeworkFolder_(
+    label,
+    'HOMEWORK_COURSE_FOLDER_' + safeKey,
+    root
+  );
+}
+
+function ensureHomeworkColumns_(sheet) {
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  let headers = sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0].map(value => String(value).trim());
+  if (!headers.some(Boolean)) {
+    headers = ['userId', 'username', 'text', 'submittedAt', 'lessonNum', 'status'];
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.setFrozenRows(1);
+  }
+
+  ['fileName', 'fileUrl', 'fileId', 'course'].forEach(name => {
+    if (!headers.includes(name)) {
+      headers.push(name);
+      sheet.getRange(1, headers.length).setValue(name);
+    }
+  });
+  return headers;
+}
+
+function handleHomework(data, user, course) {
+  const lessonNum = String(data.lessonNum || '').trim().slice(0, 40);
+  const comment = String(data.text || '').trim().slice(0, 1000);
+  const originalName = String(data.fileName || '').trim();
+  const base64 = String(data.fileBase64 || '').replace(/^data:[^,]*,/, '');
+
+  if (!lessonNum) return error('Укажите номер урока.');
+  if (!originalName || !base64) return error('Прикрепите файл с домашним заданием.');
+
+  const estimatedBytes = Math.floor(base64.length * 3 / 4) - (base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0);
+  if (estimatedBytes <= 0 || estimatedBytes > MAX_HOMEWORK_FILE_BYTES) {
+    return error('Размер файла должен быть не больше 10 МБ.');
+  }
+
+  const extensionMatch = originalName.toLowerCase().match(/\.([a-z0-9]{1,8})$/);
+  const extension = extensionMatch ? extensionMatch[1] : '';
+  const mimeByExtension = {
+    pdf: 'application/pdf',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ppt: 'application/vnd.ms-powerpoint',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png'
+  };
+  const mimeType = mimeByExtension[extension];
+  if (!mimeType) return error('Поддерживаются PDF, DOC, DOCX, PPT, PPTX, JPG и PNG.');
+
+  const safeStudent = String(user.username || 'Ученик').replace(/[^a-zA-Zа-яА-ЯёЁ0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 50) || 'Ученик';
+  const safeLesson = lessonNum.replace(/[^a-zA-Zа-яА-ЯёЁ0-9_-]+/g, '_').slice(0, 30) || 'без_номера';
+  const safeCourse = getHomeworkCourseLabel_(course).replace(/[^a-zA-Zа-яА-ЯёЁ0-9_-]+/g, '_');
+  const stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd_HHmmss');
+  const fileName = 'ДЗ_' + safeCourse + '_' + safeStudent + '_Урок' + safeLesson + '_' + stamp + '.' + extension;
+
+  let file = null;
+  try {
+    const bytes = Utilities.base64Decode(base64);
+    const blob = Utilities.newBlob(bytes, mimeType, fileName);
+    file = getHomeworkCourseFolder_(course).createFile(blob);
+
+    const homeworkSheet = openCourseSheet(course, 'ДЗ');
+    const headers = ensureHomeworkColumns_(homeworkSheet);
+    const row = new Array(headers.length).fill('');
+    const valuesByHeader = {
+      userId: user.id,
+      username: user.username,
+      text: comment,
+      submittedAt: new Date(),
+      lessonNum: lessonNum,
+      status: 'На проверке',
+      fileName: fileName,
+      fileUrl: file.getUrl(),
+      fileId: file.getId(),
+      course: course
+    };
+    headers.forEach((header, index) => {
+      const key = String(header || '').trim();
+      if (Object.prototype.hasOwnProperty.call(valuesByHeader, key)) row[index] = valuesByHeader[key];
+    });
+    homeworkSheet.appendRow(row);
+
+    return json({ success: true, fileName: fileName, fileUrl: file.getUrl(), course: course });
+  } catch (err) {
+    if (file) {
+      try { file.setTrashed(true); } catch (cleanupError) {}
+    }
+    return error('Не удалось сохранить работу: ' + err.message);
+  }
 }
 
 function handleBuy(userId, itemIndex, course) {
