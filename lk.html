@@ -163,8 +163,37 @@
       backdrop-filter: blur(16px);
     }
 
+    /* ===== TEMPORARY WINTER SNOW: remove this block after the winter season ===== */
+    .hero-snow {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .hero-snowflake {
+      position: absolute;
+      top: -18px;
+      color: rgba(255, 255, 255, 0.82);
+      font-family: Arial, sans-serif;
+      line-height: 1;
+      text-shadow: 0 0 7px rgba(225, 249, 255, 0.7);
+      animation: heroSnowFall linear infinite;
+      will-change: transform;
+    }
+
+    @keyframes heroSnowFall {
+      to { transform: translate3d(var(--snow-drift), 405px, 0) rotate(180deg); opacity: 0.12; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-snowflake { animation: none; }
+    }
+
     .hero-content {
       position: relative;
+      z-index: 2;
       width: min(980px, calc(100% - 32px));
       display: grid;
       justify-items: center;
@@ -1319,6 +1348,8 @@
   <header class="hero">
     <div class="hero-orb one"></div>
     <div class="hero-orb two"></div>
+    <!-- TEMPORARY WINTER EFFECT: remove this layer and its script after winter. -->
+    <div class="hero-snow" id="hero-snow" aria-hidden="true"></div>
 
     <div class="hero-content">
       <div class="eyebrow">student's space</div>
@@ -1337,6 +1368,7 @@
       <button onclick="showSection('shop')">Магазин</button>
       <button onclick="showSection('schedule')">Расписание</button>
       <button onclick="showSection('materials')">Материалы</button>
+      <!-- TEMPORARY CONTEST: when removing the contest, delete this navigation button AND the full #contest section below, then delete contest.html. -->
       <button onclick="showSection('contest')">Конкурс</button>
       <button onclick="showSection('about')">О нас</button>
     </nav>
@@ -1518,6 +1550,13 @@
         </div>
       </section>
 
+      <!--
+        TEMPORARY CONTEST REMOVAL CHECKLIST:
+        1) Delete the "Конкурс" navigation button marked above.
+        2) Delete this entire <section id="contest">...</section> block.
+        3) Delete contest.html from the repository.
+        Keep the rest of lk.html unchanged.
+      -->
       <!-- ===== ВРЕМЕННЫЙ ЗИМНИЙ КОНКУРС ===== -->
       <section id="contest" class="section hidden">
         <div class="section-title">Winter Wish Contest</div>
@@ -1592,7 +1631,28 @@
     </div>
   </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
+    <script>
+    // TEMPORARY WINTER HEADER SNOW: remove this script together with .hero-snow CSS/HTML after winter.
+    (function createHeroSnow() {
+      const layer = document.getElementById('hero-snow');
+      if (!layer || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      for (let i = 0; i < 28; i++) {
+        const flake = document.createElement('span');
+        flake.className = 'hero-snowflake';
+        flake.textContent = Math.random() > 0.45 ? '❄' : '·';
+        const size = 5 + Math.random() * 7;
+        flake.style.left = Math.random() * 100 + '%';
+        flake.style.fontSize = size + 'px';
+        flake.style.opacity = (0.28 + Math.random() * 0.48).toFixed(2);
+        flake.style.setProperty('--snow-drift', (Math.random() * 34 - 17) + 'px');
+        flake.style.animationDuration = (5.5 + Math.random() * 5) + 's';
+        flake.style.animationDelay = (-Math.random() * 10) + 's';
+        layer.appendChild(flake);
+      }
+    })();
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
     <script src="subtext.js?v=20261006-cache-reset"></script>
 
   <div class="hearts-container" id="hearts"></div>
