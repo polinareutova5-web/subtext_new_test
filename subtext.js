@@ -774,6 +774,20 @@ function confirmBuy(index, name, price) {
   if (confirm(`Хотите купить?\n\n${name}\nЦена: ${price} монет`)) buyItem(index);
 }
 
+function renderHomeworkCourseOptions() {
+  const select = document.getElementById("homework-course");
+  if (!select) return;
+  const courses = Array.isArray(cabinetData?.user?.courses) ? cabinetData.user.courses : [];
+  const availableCourses = courses.length ? courses : [getCurrentCourse()];
+  const selected = availableCourses.some(course => normalizeCourseName(course) === normalizeCourseName(select.value))
+    ? select.value
+    : getCurrentCourse();
+  select.innerHTML = availableCourses.map(course =>
+    `<option value="${escapeAttr(course)}">${escapeHtml(getCourseLabel(course))}</option>`
+  ).join("");
+  select.value = availableCourses.find(course => normalizeCourseName(course) === normalizeCourseName(selected)) || availableCourses[0] || "";
+}
+
 function setCourse(course) {
   currentCourse = course;
   window.currentCourse = course;
@@ -782,7 +796,7 @@ function setCourse(course) {
   renderCourseProgressMeta(course);
   renderCourseTabs();
   renderCourseData();
-  renderSubmissionFormLink(course);
+  renderHomeworkCourseOptions();
   renderNextLesson();
   renderCalendar();
   renderScheduleSummary();
@@ -851,6 +865,7 @@ async function loadCabinet() {
     username = u.username || "";
     currentCourse = u.courses?.[0] || "english";
     window.currentCourse = currentCourse;
+    renderHomeworkCourseOptions();
 
     setText("username", u.username || "—");
     setText("level", getCourseMappedValue(u.levels, currentCourse, "—") || "—");
@@ -1079,6 +1094,100 @@ function renderCourseData() {
       : "<p>Магазин пуст.</p>";
   }
 }
+
+// ================= ЗАГРУЗКА ДОМАШНЕГО ЗАДАНИЯ =================
+const MAX_HOMEWORK_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+function handleHomeworkFileChange(input) {
+  const file = input?.files?.[0];
+  const nameEl = document.getElementById("homework-file-name");
+  if (!nameEl) return;
+  if (!file) {
+    nameEl.textContent = "";
+    return;
+  }
+  if (file.size > MAX_HOMEWORK_UPLOAD_BYTES) {
+    input.value = "";
+    nameEl.textContent = "Файл больше 10 МБ. Пожалуйста, выберите файл меньшего размера.";
+    return;
+  }
+  nameEl.textContent = file.name + " · " + (file.size / (1024 * 1024)).toFixed(2) + " МБ";
+}
+window.handleHomeworkFileChange = handleHomeworkFileChange;
+
+async function submitHomework(event) {
+  event.preventDefault();
+  const form = document.getElementById("homework-upload-form");
+  const courseSelect = document.getElementById("homework-course");
+  const lessonInput = document.getElementById("homework-lesson");
+  const commentInput = document.getElementById("homework-comment");
+  const fileInput = document.getElementById("homework-file");
+  const button = document.getElementById("homework-submit-btn");
+  const status = document.getElementById("homework-upload-status");
+  const file = fileInput?.files?.[0];
+  const course = courseSelect?.value || "";
+
+  if (!userId) {
+    status.textContent = "Не удалось определить ученика. Перезагрузите кабинет.";
+    return;
+  }
+  if (!course || !(cabinetData?.user?.courses || []).some(item => normalizeCourseName(item) === normalizeCourseName(course))) {
+    status.textContent = "Выберите предмет, который привязан к вашему аккаунту.";
+    courseSelect?.focus();
+    return;
+  }
+  if (!lessonInput?.value.trim()) {
+    status.textContent = "Укажите номер урока.";
+    lessonInput?.focus();
+    return;
+  }
+  if (!file) {
+    status.textContent = "Прикрепите файл с домашним заданием.";
+    return;
+  }
+  if (file.size > MAX_HOMEWORK_UPLOAD_BYTES) {
+    status.textContent = "Файл больше 10 МБ. Выберите файл меньшего размера.";
+    return;
+  }
+
+  button.disabled = true;
+  status.textContent = "Загружаем файл…";
+  try {
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("Не удалось прочитать файл."));
+      reader.readAsDataURL(file);
+    });
+    const fileBase64 = dataUrl.split(",")[1];
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({
+        action: "submit_homework",
+        userId,
+        course,
+        lessonNum: lessonInput.value.trim(),
+        text: commentInput?.value.trim() || "",
+        fileName: file.name,
+        fileBase64
+      })
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error || "Не удалось отправить домашнее задание.");
+    status.textContent = "Готово! Домашнее задание отправлено преподавателю.";
+    form.reset();
+    const fileNameEl = document.getElementById("homework-file-name");
+    if (fileNameEl) fileNameEl.textContent = "";
+    renderHomeworkCourseOptions();
+  } catch (err) {
+    console.error(err);
+    status.textContent = err.message || "Ошибка при отправке. Попробуйте ещё раз.";
+  } finally {
+    button.disabled = false;
+  }
+}
+window.submitHomework = submitHomework;
 
 // ================= СЛОТЫ =================
 function formatDate(dateStr) {
