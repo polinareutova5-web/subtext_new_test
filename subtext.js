@@ -379,9 +379,7 @@ async function loadData() {
     await loadCabinet();
   } catch (e) {
     console.error(e);
-    setText("loading", "❌ Ошибка соединения");
-  } finally {
-    if (loadingEl) loadingEl.classList.add("hidden");
+    setText("loading", "❌ Ошибка соединения: " + (e.message || "проверьте подключение"));
   }
 }
 
