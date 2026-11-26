@@ -698,8 +698,8 @@ function renderCalendar() {
 
     lessonCalendar = new FullCalendar.Calendar(calendarEl, {
       initialView: "dayGridMonth",
-      height: 330,
-      contentHeight: 280,
+      height: 245,
+      contentHeight: 210,
       locale: "ru",
       firstDay: 1,
       dayMaxEvents: 2,
