@@ -1544,6 +1544,40 @@ input:focus,select:focus,textarea:focus {outline:none;border-color:#5aa9ed;box-s
   outline-offset: 3px;
 }
 
+
+/* Mobile header: keep the brand and subtitle inside the viewport */
+@media (max-width: 600px) {
+  .hero {
+    overflow: hidden;
+  }
+  .hero-content {
+    box-sizing: border-box;
+    width: calc(100% - 28px);
+    max-width: 100%;
+    min-width: 0;
+    padding: 2.35rem 0 2.7rem;
+    gap: 1.05rem;
+  }
+  .big-title {
+    box-sizing: border-box;
+    max-width: 100%;
+    font-size: clamp(2.2rem, 10.5vw, 4rem);
+    letter-spacing: .035em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .hero-subtitle {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 34rem;
+    padding: 0 .2rem;
+    font-size: clamp(.84rem, 3.6vw, .95rem);
+    line-height: 1.55;
+    overflow-wrap: break-word;
+    text-wrap: balance;
+  }
+}
+
 </style>
 </head>
 
