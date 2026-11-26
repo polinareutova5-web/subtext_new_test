@@ -1340,30 +1340,7 @@ body{color:var(--ink)!important;background:radial-gradient(circle at 10% 8%,rgba
     </div>
   </div>
   
-  <!-- ===== SUPPORT BUTTON ===== -->
-  <div id="support-btn" role="button" aria-label="Открыть чат" aria-expanded="false" onclick="toggleSupport()">?</div>
-
-  <div id="support-chat" class="hidden">
-    <div class="chat-tabs" role="tablist" aria-label="Чаты ВАШЕ НАЗВАНИЕ">
-      <button id="ai-chat-tab" class="chat-tab active" type="button" onclick="showChatTab('ai')">ИИ</button>
-      <button id="support-chat-tab" class="chat-tab" type="button" onclick="showChatTab('support')">Поддержка</button>
-    </div>
-
-    <div id="ai-chat-pane" class="chat-pane">
-      <p class="ai-note">Задайте вопрос по урокам, домашке или расписанию. Если ИИ недоступен, сообщение можно отправить преподавателю во вкладке «Поддержка».</p>
-      <div id="ai-messages" style="max-height:220px;overflow-y:auto;margin-bottom:10px"></div>
-      <textarea id="ai-input" placeholder="Например: объясни тему урока простыми словами..."></textarea>
-      <button type="button" onclick="sendAiMessage()">Спросить ИИ</button>
-    </div>
-
-    <div id="support-chat-pane" class="chat-pane hidden">
-      <div id="support-messages" style="max-height:200px;overflow-y:auto;margin-bottom:10px"></div>
-      <textarea id="support-input" placeholder="Ваш вопрос..."></textarea>
-      <button type="button" onclick="sendSupport()">Отправить</button>
-    </div>
-  </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
     <script src="config.js"></script>
     <script>document.querySelectorAll("[data-brand]").forEach(el => el.textContent = window.APP_CONFIG.brandName); document.title = window.APP_CONFIG.brandName + " — Личный кабинет";</script>
     <script src="subtext.js?v=sales-demo-1"></script>
