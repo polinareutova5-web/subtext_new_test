@@ -8,6 +8,8 @@ let notificationsLoadedOnce = false;
 let notificationsTimer = null;
 let soundUnlocked = false;
 let lessonCalendar = null;
+let slotsRequestId = 0;
+let groupSlotsRequestId = 0;
 const OTHER_MATERIALS_GROUP = "Другое";
 const selectedMaterialsSort = {};
 
@@ -415,15 +417,21 @@ function nextDateForWeekday(dayOfWeek) {
 
 function parseDateParts(dateText = "") {
   const value = String(dateText).trim();
+  const isoMatch = value.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/);
+  if (isoMatch) {
+    const year = Number(isoMatch[1]);
+    const month = Number(isoMatch[2]) - 1;
+    const day = Number(isoMatch[3]);
+    const isoDate = new Date(year, month, day);
+    return isoDate.getFullYear() === year && isoDate.getMonth() === month && isoDate.getDate() === day ? isoDate : null;
+  }
   const match = value.match(/(\d{1,2})[.\/-](\d{1,2})(?:[.\/-](\d{2,4}))?/);
   if (!match) return null;
-
   const day = Number(match[1]);
   const month = Number(match[2]) - 1;
   const currentYear = new Date().getFullYear();
-  const year = match[3] ? Number(match[3].length === 2 ? `20${match[3]}` : match[3]) : currentYear;
+  const year = match[3] ? Number(match[3].length === 2 ? \`20\${match[3]}\` : match[3]) : currentYear;
   const date = new Date(year, month, day);
-
   return date.getFullYear() === year && date.getMonth() === month && date.getDate() === day ? date : null;
 }
 
@@ -642,59 +650,60 @@ function renderCalendar() {
   const upcomingEl = document.getElementById("upcoming-lessons");
   if (!calendarEl || !upcomingEl) return;
 
-  const items = collectScheduleItems({ courseFilter: false })
-    .sort((a, b) => a.startDate - b.startDate);
+  const rawItems = collectScheduleItems({ courseFilter: false })
+    .filter(item => item.startDate instanceof Date && !isNaN(item.startDate.getTime()))
+    .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 
-  const events = items.map(item => ({
-    id: item.id,
+  // Убираем повторные записи одного предмета на одну дату и время.
+  const seen = new Set();
+  const items = rawItems.filter(item => {
+    const key = [
+      normalizeCourseName(item.course || item.subject || ""),
+      item.startDate.getFullYear(), item.startDate.getMonth(), item.startDate.getDate(),
+      item.startDate.getHours(), item.startDate.getMinutes()
+    ].join("|");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  const events = items.map((item, index) => ({
+    id: String(item.id || \`lesson-\${index}-\${item.startDate.getTime()}\`),
     title: getScheduleDisplayTitle(item),
-    start: item.startDate.toISOString()
+    // Локальный Date без toISOString(): не сдвигаем урок через UTC.
+    start: item.startDate
   }));
 
   if (window.FullCalendar) {
-    if (lessonCalendar) lessonCalendar.destroy();
-
-    lessonCalendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: "dayGridMonth",
-      height: 330,
-      contentHeight: 280,
-      locale: "ru",
-      firstDay: 1,
-      dayMaxEvents: 2,
-      headerToolbar: { left: "prev,next", center: "title", right: "today" },
-      events,
-      eventClick(info) {
-        openLessonCard(info.event.id);
-      },
-    });
-
-    lessonCalendar.render();
+    if (!lessonCalendar) {
+      lessonCalendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth", height: 330, contentHeight: 280,
+        locale: "ru", firstDay: 1, dayMaxEvents: 2,
+        headerToolbar: { left: "prev,next", center: "title", right: "today" },
+        events: [],
+        eventClick(info) { openLessonCard(info.event.id); }
+      });
+      lessonCalendar.render();
+    }
+    // Не пересоздаём календарь на каждом рендере — обновляем только события.
+    lessonCalendar.removeAllEvents();
+    events.forEach(event => lessonCalendar.addEvent(event));
+    lessonCalendar.updateSize();
   } else {
     calendarEl.innerHTML = '<p style="padding:1rem;color:var(--muted)">Календарь временно недоступен</p>';
   }
 
-  // Под календарём показываем только будущие записи.
-  // Исторические уроки остаются в календаре, но не дублируются в списке ниже.
   const now = new Date();
-  const scheduleList = items.filter(item =>
-    item.startDate instanceof Date &&
-    !isNaN(item.startDate.getTime()) &&
-    item.startDate.getTime() >= now.getTime()
-  );
-
+  const scheduleList = items.filter(item => item.startDate.getTime() >= now.getTime());
   upcomingEl.innerHTML = scheduleList.length
-    ? scheduleList.map(item => `
-      <button type="button" class="upcoming-item" onclick="openLessonCard('${escapeAttr(item.id)}')">
+    ? scheduleList.map(item => \`
+      <button type="button" class="upcoming-item" onclick="openLessonCard('\${escapeAttr(item.id)}')">
         <span class="upcoming-mark"></span>
-        <span>
-          <span class="upcoming-date">${formatDate(item.startDate)}</span><br>
-          <span class="upcoming-time">${formatTime(item.startDate)}</span>
-        </span>
-        ${shouldShowScheduleSubject()
-          ? `<span class="upcoming-title">${escapeHtml(item.subject)}</span>`
-          : ""}
-      </button>
-    `).join("")
+        <span><span class="upcoming-date">\${formatDate(item.startDate)}</span><br>
+        <span class="upcoming-time">\${formatTime(item.startDate)}</span></span>
+        \${shouldShowScheduleSubject() ? \`<span class="upcoming-title">\${escapeHtml(item.subject)}</span>\` : ""}
+      </button>\`
+    ).join("")
     : '<p style="color:var(--muted);line-height:1.7">Ближайших занятий пока нет.</p>';
 }
 
@@ -1181,99 +1190,100 @@ function formatTime(timeStr) {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-async function loadSlots() {
+async function loadSlots(course = getCurrentCourse()) {
   const container = document.getElementById("slots-container");
   if (!container) return;
+  const requestId = ++slotsRequestId;
+  const requestedCourse = course;
   container.innerHTML = "Загрузка слотов...";
   try {
-    const res = await fetch(buildUrl({ action: "get_slots", userId, course: getCurrentCourse() }));
+    const res = await fetch(buildUrl({ action: "get_slots", userId, course: requestedCourse }));
+    if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
     const data = await res.json();
-    if (!data.success) {
-      container.textContent = data.error || "Ошибка загрузки слотов";
-      return;
-    }
+    if (requestId !== slotsRequestId || requestedCourse !== getCurrentCourse()) return;
+    if (!data.success) { container.textContent = data.error || "Ошибка загрузки слотов"; return; }
     const slots = data.slots || [];
     if (!slots.length) {
       container.textContent = "Нет доступных слотов";
-      loadGroupSlots();
+      await loadGroupSlots(requestedCourse);
       return;
     }
     container.innerHTML = slots.map(slot => {
       const isFree = slot.status === "free";
-      return `<div style="margin-bottom:.8rem;padding:.8rem;border-radius:12px;background:${isFree ? '#e8f5e9' : '#eee'}">
-        <strong>${formatDate(slot.date)}</strong> ${formatTime(slot.time)}<br>
-        ${isFree ? `<button class="buy-btn" onclick="bookSlot('${escapeAttr(slot.id)}')">Записаться</button>` : '<span style="opacity:.6">Занято</span>'}
-      </div>`;
+      return \`<div style="margin-bottom:.8rem;padding:.8rem;border-radius:12px;background:\${isFree ? '#e8f5e9' : '#eee'}">
+        <strong>\${formatDate(slot.date)}</strong> \${formatTime(slot.time)}<br>
+        \${isFree ? \`<button class="buy-btn" onclick="bookSlot('\${escapeAttr(slot.id)}','\${escapeAttr(requestedCourse)}')">Записаться</button>\` : '<span style="opacity:.6">Занято</span>'}
+      </div>\`;
     }).join("");
-    loadGroupSlots();
+    await loadGroupSlots(requestedCourse);
   } catch (e) {
-    console.error(e);
-    container.textContent = "Ошибка соединения";
+    if (requestId !== slotsRequestId) return;
+    console.error(e); container.textContent = "Ошибка соединения";
   }
 }
 
-async function bookSlot(slotId) {
+async function bookSlot(slotId, course = getCurrentCourse()) {
   if (!confirm("Записаться на этот слот?")) return;
   try {
-    const res = await fetch(buildUrl({ action: "book_slot", userId, slotId, course: getCurrentCourse() }));
+    const res = await fetch(buildUrl({ action: "book_slot", userId, slotId, course }));
+    if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
     const data = await res.json();
     if (data.success) {
       alert("✅ Вы записались!");
-      loadSlots();
+      await loadSlots(course);
+      if (normalizeCourseName(course) === normalizeCourseName(getCurrentCourse())) await loadCabinet();
     } else {
       alert("❌ " + (data.error || "Не удалось записаться"));
+      await loadSlots(course);
     }
-  } catch (e) {
-    alert("❌ Ошибка соединения");
-  }
+  } catch (e) { console.error(e); alert("❌ Ошибка соединения"); }
 }
 
-async function loadGroupSlots() {
+async function loadGroupSlots(course = getCurrentCourse()) {
   const container = document.getElementById("group-slots-container");
   if (!container) return;
+  const requestId = ++groupSlotsRequestId;
+  const requestedCourse = course;
   container.innerHTML = "Загрузка...";
   try {
-    const res = await fetch(buildUrl({ action: "get_group_slots", userId, course: getCurrentCourse() }));
+    const res = await fetch(buildUrl({ action: "get_group_slots", userId, course: requestedCourse }));
+    if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
     const data = await res.json();
-    if (!data.success) {
-      container.textContent = data.error || "Ошибка загрузки";
-      return;
-    }
+    if (requestId !== groupSlotsRequestId || requestedCourse !== getCurrentCourse()) return;
+    if (!data.success) { container.textContent = data.error || "Ошибка загрузки"; return; }
     const slots = data.slots || [];
-    if (!slots.length) {
-      container.textContent = "Нет групповых занятий";
-      return;
-    }
+    if (!slots.length) { container.textContent = "Нет групповых занятий"; return; }
     container.innerHTML = slots.map(slot => {
       const capacity = Number(slot.capacity) || 0;
       const bookedCount = Number(slot.bookedCount) || 0;
       const available = capacity - bookedCount > 0;
-      return `<div style="margin-bottom:.8rem;padding:.8rem;border-radius:12px;background:${available ? '#e3f2fd' : '#eee'}">
-        <strong>${escapeHtml(slot.title)}</strong><br>
-        ${formatDate(slot.date)} ${formatTime(slot.time)}<br>
-        ${available ? `<button class="buy-btn" onclick="bookGroupSlot('${escapeAttr(slot.id)}')">Записаться (${bookedCount}/${capacity})</button>` : `<span style="opacity:.6">Мест нет (${capacity}/${capacity})</span>`}
-      </div>`;
+      return \`<div style="margin-bottom:.8rem;padding:.8rem;border-radius:12px;background:\${available ? '#e3f2fd' : '#eee'}">
+        <strong>\${escapeHtml(slot.title)}</strong><br>
+        \${formatDate(slot.date)} \${formatTime(slot.time)}<br>
+        \${available ? \`<button class="buy-btn" onclick="bookGroupSlot('\${escapeAttr(slot.id)}','\${escapeAttr(requestedCourse)}')">Записаться (\${bookedCount}/\${capacity})</button>\` : \`<span style="opacity:.6">Мест нет (\${capacity}/\${capacity})</span>\`}
+      </div>\`;
     }).join("");
   } catch (e) {
-    console.error(e);
-    container.textContent = "Ошибка соединения";
+    if (requestId !== groupSlotsRequestId) return;
+    console.error(e); container.textContent = "Ошибка соединения";
   }
 }
 
-async function bookGroupSlot(slotId) {
+async function bookGroupSlot(slotId, course = getCurrentCourse()) {
   if (!confirm("Записаться на групповое занятие?")) return;
   try {
-    const res = await fetch(buildUrl({ action: "book_group_slot", userId, slotId, course: getCurrentCourse() }));
+    const res = await fetch(buildUrl({ action: "book_group_slot", userId, slotId, course }));
+    if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
     const data = await res.json();
     if (data.success) {
       alert("✅ Вы записались!");
-      loadGroupSlots();
+      await loadGroupSlots(course);
+      if (normalizeCourseName(course) === normalizeCourseName(getCurrentCourse())) await loadCabinet();
     } else {
       alert("❌ " + (data.error || "Не удалось записаться"));
+      await loadGroupSlots(course);
     }
-  } catch (e) {
-    alert("❌ Ошибка соединения");
-  }
+  } catch (e) { console.error(e); alert("❌ Ошибка соединения"); }
 }
 
 // ================= SHOP =================
