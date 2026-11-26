@@ -704,17 +704,103 @@
     /* ===== BUTTONS ===== */
     .lesson-btn,
     .buy-btn,
-    .big-form-btn,.lesson-btn:hover,
-    .buy-btn:hover,
-    .big-form-btn:hover,.lesson-actions {
-      display: flex;
-     flex-direction: column;
+    .big-form-btn {
+      position: relative;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-       gap: 0.42rem;
+      overflow: hidden;
+      margin-top: 0.65rem;
+      padding: 0.78rem 1.6rem;
+      border: 0;
+      border-radius: 999px;
+      color: #fff;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--blue), var(--blue-2) 54%, var(--cyan));
+      box-shadow: 0 14px 32px rgba(198, 107, 152, 0.22);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
+    }
+
+    .lesson-btn:hover,
+    .buy-btn:hover,
+    .big-form-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 34px rgba(198, 107, 152, 0.3);
+      filter: saturate(1.06);
+    }
+
+    .lesson-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.42rem;
       width: 100%;
-     margin: 0.68rem auto 0;
+      margin: 0.68rem auto 0;
       text-align: center;
+    }
+
+    /* Booking cards */
+    #slots-container,
+    #group-slots-container {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 0.85rem;
+    }
+    .slot-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.95rem 1rem;
+      border: 1px solid rgba(198, 107, 152, 0.18);
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(255,239,247,.88));
+      box-shadow: 0 8px 22px rgba(125,67,96,.07);
+      text-align: left;
+    }
+    .slot-info { min-width: 0; display: grid; gap: .2rem; }
+    .slot-date { color: var(--ink); font-weight: 750; }
+    .slot-time { color: var(--muted); font-size: .9rem; }
+    .slot-book-btn {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: .58rem 1.05rem;
+      border: 1px solid rgba(255,255,255,.75);
+      border-radius: 999px;
+      color: #fff;
+      font: inherit;
+      font-size: .86rem;
+      font-weight: 750;
+      white-space: nowrap;
+      cursor: pointer;
+      background: linear-gradient(135deg, #c66b98, #e69fbe);
+      box-shadow: 0 7px 16px rgba(198,107,152,.22);
+      transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+    }
+    .slot-book-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 11px 22px rgba(198,107,152,.3);
+      filter: brightness(1.03);
+    }
+    .slot-book-btn:focus-visible { outline: 3px solid rgba(198,107,152,.25); outline-offset: 3px; }
+    .slot-status {
+      flex: 0 0 auto;
+      padding: .45rem .75rem;
+      border-radius: 999px;
+      color: #9b8490;
+      font-size: .82rem;
+      font-weight: 700;
+      background: #f4edf1;
+    }
+    @media(max-width:560px) {
+      .slot-item { align-items: flex-start; flex-direction: column; gap: .7rem; }
+      .slot-book-btn { width: 100%; }
     }
 
     .lesson-card .lesson-actions .lesson-action-btn {
@@ -1264,7 +1350,6 @@ body{color:var(--ink)!important;background:radial-gradient(circle at 10% 8%,rgba
         
             </div>
           </div>
-        </div>
 
         <aside class="dashboard-column">
           <div class="glass-panel calendar-panel">
