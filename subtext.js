@@ -772,48 +772,8 @@ function showSection(sectionId) {
   if (sectionId === "schedule") loadSlots();
 }
 
-function setCourse(course) {
-  currentCourse = course;
-  window.currentCourse = course;
-  const levels = cabinetData?.user?.levels || {};
-   setText("level", getCourseMappedValue(levels, course, "—") || "—");
-  renderCourseProgressMeta(course);
-  renderCourseTabs();
-  renderCourseData();
-  renderSubmissionFormLink(course);
-  renderNextLesson();
-  renderCalendar();
-  renderScheduleSummary();
-}
-
-function renderCourseTabs() {
-  const courses = cabinetData?.user?.courses || [];
-  const profile = document.getElementById("profile");
-  if (!profile) return;
-
-  const profileTabs = document.getElementById("course-tabs-profile");
-  let tabs = profileTabs || document.getElementById("course-tabs");
-
-  if (!tabs) {
-    tabs = document.createElement("div");
-    tabs.id = "course-tabs";
-    tabs.style.cssText = "display:flex; gap:8px; margin:10px 0; flex-wrap:wrap; justify-content:center;";
-    profile.prepend(tabs);
-  }
-
-  if (courses.length <= 1) {
-    tabs.innerHTML = "";
-    tabs.classList?.add("hidden");
-    return;
-  }
-
-  tabs.classList?.remove("hidden");
-  tabs.innerHTML = courses.map(c =>
-    `<button class="buy-btn" style="opacity:${normalizeCourseName(c) === normalizeCourseName(getCurrentCourse()) ? '1' : '0.5'}" onclick="setCourse('${escapeAttr(c)}')">
-      ${escapeHtml(getCourseLabel(c))}
-    </button>`
-  ).join("");
-}
+function setCourse() { return; }
+function renderCourseTabs() { }
 
 // ================= LOAD DATA =================
 async function loadData() {
