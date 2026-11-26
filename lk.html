@@ -870,6 +870,27 @@
       text-align: center;
     }
 
+    .homework-panel { text-align: left; }
+    .homework-intro { margin: 0 0 1.5rem; color: var(--muted); line-height: 1.7; text-align: center; }
+    .homework-label { display: block; margin: 1rem 0 .45rem; color: var(--ink); font-weight: 650; }
+    .homework-label span { color: var(--muted); font-weight: 400; }
+    .homework-input, .homework-file {
+      display: block; width: 100%; box-sizing: border-box; padding: .9rem 1rem;
+      border: 1px solid rgba(198,107,152,.28); border-radius: var(--radius-md);
+      color: var(--ink); background: rgba(255,255,255,.82); font: inherit;
+    }
+    .homework-input:focus, .homework-file:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(198,107,152,.12); }
+    .homework-hint { margin: .5rem 0; color: var(--muted); font-size: .86rem; line-height: 1.5; }
+    .homework-file-name { min-height: 1.3rem; color: var(--accent-dark); font-size: .9rem; overflow-wrap: anywhere; }
+    .homework-submit-btn {
+      display: block; width: 100%; margin-top: 1.2rem; padding: 1rem 1.2rem;
+      border: 0; border-radius: var(--radius-md); color: white; background: linear-gradient(110deg, var(--accent), #8b79c9);
+      font: inherit; font-weight: 700; cursor: pointer; transition: opacity .2s, transform .2s;
+    }
+    .homework-submit-btn:hover { transform: translateY(-1px); }
+    .homework-submit-btn:disabled { opacity: .55; cursor: wait; transform: none; }
+    .homework-upload-status { min-height: 1.4rem; margin: .9rem 0 0; color: var(--muted); line-height: 1.5; }
+
 
     .about-panel {
       max-width: 940px;
@@ -1274,7 +1295,7 @@
       <button onclick="showSection('shop')">Магазин</button>
       <button onclick="showSection('schedule')">Расписание</button>
       <button onclick="showSection('materials')">Материалы</button>
-      <button onclick="showSection('contest')">🎄 Конкурс</button>
+      <button onclick="showSection('contest')">Конкурс</button>
       <button onclick="showSection('about')">О нас</button>
     </nav>
 
@@ -1358,23 +1379,24 @@
       </section>
 
       <!-- ===== ДЗ ===== -->
-         <section id="submission" class="section hidden">
+      <section id="submission" class="section hidden">
         <div class="section-title">Сдать домашнее задание</div>
-        <div class="glass-panel center-panel">
-          <p style="margin-bottom:1.5rem;color:var(--muted);line-height:1.7">
-            Нажмите кнопку ниже, чтобы открыть форму для отправки ДЗ.
-          </p>
-          <a
-             id="submission-form-link"
-            href="#"
-            target="_blank"
-             rel="noopener"
-            class="big-form-btn hidden">
-            📄 Открыть форму ДЗ
-          </a>
-           <p id="submission-form-empty" style="color:var(--muted);line-height:1.7">
-            Форма для выбранного предмета пока не назначена.
-          </p>
+        <div class="glass-panel center-panel homework-panel">
+          <p class="homework-intro">Выберите предмет, укажите номер урока и прикрепите выполненную работу. Она сохранится в папке этого предмета на Google Диске.</p>
+          <form id="homework-upload-form" onsubmit="submitHomework(event)">
+            <label class="homework-label" for="homework-course">Предмет</label>
+            <select id="homework-course" class="homework-input" required></select>
+            <label class="homework-label" for="homework-lesson">Номер урока</label>
+            <input id="homework-lesson" class="homework-input" type="text" maxlength="40" placeholder="Например, 5" required>
+            <label class="homework-label" for="homework-comment">Комментарий <span>(необязательно)</span></label>
+            <textarea id="homework-comment" class="homework-input" rows="3" maxlength="1000" placeholder="Можно оставить комментарий к работе"></textarea>
+            <label class="homework-label" for="homework-file">Файл с выполненным заданием</label>
+            <input id="homework-file" class="homework-file" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png" required onchange="handleHomeworkFileChange(this)">
+            <p class="homework-hint">PDF, DOC, DOCX, PPT, PPTX, JPG или PNG. Максимальный размер — 10 МБ.</p>
+            <p id="homework-file-name" class="homework-file-name" aria-live="polite"></p>
+            <button id="homework-submit-btn" class="homework-submit-btn" type="submit">Отправить домашнее задание</button>
+            <p id="homework-upload-status" class="homework-upload-status" role="status" aria-live="polite"></p>
+          </form>
         </div>
       </section>
 
@@ -1457,7 +1479,7 @@
 
       <!-- ===== ВРЕМЕННЫЙ ЗИМНИЙ КОНКУРС ===== -->
       <section id="contest" class="section hidden">
-        <div class="section-title">🎄 Winter Wish Contest</div>
+        <div class="section-title">Winter Wish Contest</div>
         <div style="width:100%;height:min(82vh,1000px);min-height:620px;overflow:hidden;border:1px solid rgba(255,255,255,.8);border-radius:26px;background:#0b1a2b;box-shadow:0 24px 70px rgba(6,35,75,.18)">
           <iframe
             src="contest.html"
