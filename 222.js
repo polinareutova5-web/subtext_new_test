@@ -1,19 +1,11 @@
 // Copy this file to Google Apps Script and deploy it as a Web App.
 // This script is the API layer between the student cabinet and Google Sheets.
-const USERS_SHEET_ID = '10_fVJ9HHIjbMGoC2CULBj8Ak91sTh_6zh-bk7NAL5Bg';
-const COURSE_TABLES = {
-  english: '1qe3P8lpnpfRgrYpBdNreTsv7wdO3lsCgUfsOK3lwPog',
-  english2: '1glsFbjoquUo7WVyDuKl1q_UsTW_Htp2poTZoYoEmt-g',
-  physics: '1yWDAwuiIC44l_CFNMoW_SvoolD5EAAC2EajwoPr-v6M',
-  french : '1guk31UBwUuLHoMIKm5bQ0-_t58VGfsofaokIest3Z-A',
-  french2: '1CWczRXL3Xzy2LZWoXSICbwzGHI0wIioK8cPhm2LA-3I',
-  biology:'1Tp8AgjBG__X3hwoMKfMNqZb33B2rIx3FeDQqg_nj1KI',
-  español: '1guk31UBwUuLHoMIKm5bQ0-_t58VGfsofaokIest3Z-A',
-  chemistry: '1Bx8in9m1NIRobRIHeM7SdMEE4eB2PM-ceRQ1B3kVDVg'
-};
+const SPREADSHEET_ID = 'ВСТАВЬТЕ_ID_ОДНОЙ_GOOGLE_ТАБЛИЦЫ';
+const USERS_SHEET_ID = SPREADSHEET_ID;
+const COURSE_TABLES = { english:SPREADSHEET_ID, english2:SPREADSHEET_ID, physics:SPREADSHEET_ID, french:SPREADSHEET_ID, french2:SPREADSHEET_ID, biology:SPREADSHEET_ID, español:SPREADSHEET_ID, chemistry:SPREADSHEET_ID, math:SPREADSHEET_ID };
 const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
-const QWEN_API_KEY = 'sk-ws-H.XPDYDY.ZHWH.MEUCICxR4qL3x76D_zvVOQL8KKtIoaHaip3M8dU5d9PbIX9TAiEAi127LaL4y4dPPmkwUSeNc-0KkIWFmGIrtGbQV7gvQRk';
-const API_VERSION = '2026-08-16-materials-sorting';
+const QWEN_API_KEY = PropertiesService.getScriptProperties().getProperty('QWEN_API_KEY') || '';
+const API_VERSION = 'sales-demo-single-sheet-1';
 const COURSE_FORM_LINKS = {
   english: 'https://docs.google.com/forms/d/e/1FAIpQLSdyaEIut7zciiAfhbNexWHxXLy6eE1IoEwpprm-x8I-penPrw/viewform',
   physics: 'https://docs.google.com/forms/d/e/ССЫЛКА_НА_ФОРМУ_ФИЗИКИ/viewform',
@@ -24,6 +16,26 @@ const COURSE_FORM_LINKS = {
   english2: 'https://docs.google.com/spreadsheets/d/1glsFbjoquUo7WVyDuKl1q_UsTW_Htp2poTZoYoEmt-g/edit?gid=0#gid=0',
   french2: 'https://docs.google.com/spreadsheets/d/1CWczRXL3Xzy2LZWoXSICbwzGHI0wIioK8cPhm2LA-3I/edit?gid=0#gid=0'
 };
+
+
+function setupTemplateSheets() {
+  if (!SPREADSHEET_ID || SPREADSHEET_ID.indexOf('ВСТАВЬТЕ_') === 0) throw new Error('Сначала укажите ID Google-таблицы в SPREADSHEET_ID.');
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+  const tabs={
+    'Лист1':['userId','username','lessonsRemaining','progress','lesson_link','schedule','subject','avatarUrl'],
+    'Прогресс':['userId','course','progress','level','schoolRank','schoolTopText'],
+    'Уроки':['lessonNum','link','hwLink','userIds','subject'],
+    'Материалы':['title','link','sort'],
+    'Слоты':['id','date','time','status'],
+    'Группы':['id','date','time','title','capacity','booked','userIds','usernames'],
+    'ДЗ':['userId','username','text','submittedAt','lessonNum','status'],
+    'Поддержка':['date','userId','question','answer'],
+    'Уведомления':['id','Дата','userId','Заголовок','Текст','Статус','sound','readBy'],
+    'Доступ':['login','password','teacherName','courses','access']
+  };
+  Object.keys(tabs).forEach(name=>{let sh=ss.getSheetByName(name);if(!sh)sh=ss.insertSheet(name);if(sh.getLastRow()===0){sh.getRange(1,1,1,tabs[name].length).setValues([tabs[name]]);sh.setFrozenRows(1);sh.getRange(1,1,1,tabs[name].length).setFontWeight('bold');}});
+  return 'Готово: листы для личного кабинета созданы.';
+}
 
 // ================= ОСНОВНОЙ РОУТЕР (doGet) =================
 function doGet(e) {
@@ -96,16 +108,13 @@ function doGet(e) {
     if (action === 'get_group_slots') return json({ success: true, slots: getGroupSlots(course) });
     if (action === 'book_slot') return bookSlot(userId, p.slotId, course);
     if (action === 'book_group_slot') return bookGroupSlot(userId, p.slotId, course);
-    if (action === 'buy_item') return handleBuy(userId, Number(p.lessonNum), course);
 
-    const agg = { lessons: [], materials: [], shop: [], achievements: [] };
+    const agg = { lessons: [], materials: [] };
     for (const c of user.courses) {
       const normalizedCourse = normalizeCourse(c);
       if (!COURSE_TABLES[normalizedCourse]) continue;
       agg.lessons.push(...getLessonsByUser(userId, normalizedCourse));
       agg.materials.push(...getMaterialsByUser(normalizedCourse));
-      agg.shop.push(...getShopItems(normalizedCourse));
-      agg.achievements.push(...getAchievements(userId, normalizedCourse));
     }
 
     return json({
@@ -114,7 +123,6 @@ function doGet(e) {
         id: user.id,
         username: user.username,
         progress: user.progress,
-        coins: user.coins,
         link: user.link,
         schedule: user.schedule,
         lessonsRemaining: user.lessonsRemaining,
@@ -128,8 +136,6 @@ function doGet(e) {
       },
       lessons: agg.lessons,
       materials: agg.materials,
-      shop: agg.shop,
-      achievements: agg.achievements,
     });
   } catch (err) {
     return error('GET ошибка: ' + err.message);
@@ -270,7 +276,6 @@ function getUser(userId) {
     'уроки осталось',
   ], 2);
   const progressCol = findHeaderIndex(headers, ['progress'], -1);
-  const coinsCol = findHeaderIndex(headers, ['coins', 'монеты'], 3);
   const linkCol = findHeaderIndex(headers, ['lesson_link', 'link', 'ссылка'], 5);
   const scheduleCol = findHeaderIndex(headers, ['schedule', 'расписание'], 6);
   const subjectCol = findHeaderIndex(headers, ['subject', 'subjects', 'course', 'courses', 'предмет'], 7);
@@ -287,7 +292,6 @@ function getUser(userId) {
         id: getCell(row, userIdCol),
         username: getCell(row, usernameCol),
         progress: Object.keys(stats.progress).length ? stats.progress : progressFallback,
-        coins: getCell(row, coinsCol, 0) || 0,
         link: getCell(row, linkCol) || '',
         schedule: getCell(row, scheduleCol) || '',
         lessonsRemaining: getCell(row, lessonsRemainingCol, ''),
@@ -357,16 +361,6 @@ function getMaterialsByUser(course) {
   }));
 }
 
-function getShopItems(course) {
-  const rows = openCourseSheet(course, 'Магазин').getDataRange().getValues();
-  return rows.slice(1).map(r => ({ image: r[0] || '', name: r[1] || 'Товар', price: Number(r[2]) || 0, course }));
-}
-
-function getAchievements(userId, course) {
-  const rows = openCourseSheet(course, 'Ачивки').getDataRange().getValues();
-  return rows.slice(1).filter(r => String(r[0] || '').split(',').map(id => id.trim()).includes(String(userId))).map(r => ({ title: r[1] || 'Ачивка', image: r[2] || '', course }));
-}
-
 function stripDisplaySeconds(value) {
   return String(value || '').trim().replace(/(\b\d{1,2}[:.]\d{2})[:.]\d{2}(\b)/g, '$1');
 }
@@ -417,17 +411,6 @@ function getGroupSlots(course) {
 
 function handleHomework(data, course) {
   openCourseSheet(course, 'ДЗ').appendRow([data.userId, data.username, data.text, new Date(), data.lessonNum, 'На проверке']);
-  return json({ success: true });
-}
-
-function handleBuy(userId, itemIndex, course) {
-  const user = getUser(userId);
-  if (!user) return error('Пользователь не найден');
-  const item = getShopItems(course)[itemIndex];
-  if (!item) return error('Товар не найден');
-  if (Number(user.coins) < item.price) return error('Недостаточно монет');
-  updateUserCoins(userId, Number(user.coins) - item.price);
-  openCourseSheet(course, 'Заказы').appendRow([new Date(), userId, user.username || '', item.name, item.price, 'Новый']);
   return json({ success: true });
 }
 
@@ -491,17 +474,6 @@ function sendSupport(userId, text) {
   if (!sheet) return error('Лист "Поддержка" не найден');
   sheet.appendRow([new Date(), userId, text, '']);
   return json({ success: true });
-}
-
-function updateUserCoins(userId, newCoins) {
-  const sheet = openUsersSheet('Лист1');
-  const rows = sheet.getDataRange().getValues();
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]).trim() === String(userId).trim()) {
-      sheet.getRange(i + 1, 4).setValue(newCoins);
-      return;
-    }
-  }
 }
 
 function addSchedule(userId, date, time, course) {
@@ -669,9 +641,8 @@ function teacherLogin(login, password) {
 }
 
 function getTableId(tableType, course) {
-  if (tableType === 'main') return USERS_SHEET_ID;
-  if (COURSE_TABLES[course]) return COURSE_TABLES[course];
-  throw new Error('Неизвестная таблица или курс');
+  if (!SPREADSHEET_ID || SPREADSHEET_ID.indexOf('ВСТАВЬТЕ_') === 0) throw new Error('Укажите ID одной Google-таблицы в SPREADSHEET_ID');
+  return SPREADSHEET_ID;
 }
 
 function teacherGetSheets(tableType, course, access) {
@@ -685,11 +656,7 @@ function teacherGetSheets(tableType, course, access) {
 
   if (tableType === 'main' && access !== 'full') {
 
-    const hiddenSheets = [
-      'Доступ',
-      'База данных учеников',
-      'Бухгалтерия'
-    ];
+    const hiddenSheets = ['Доступ'];
 
     sheets = sheets.filter(
       name => !hiddenSheets.includes(name)
@@ -876,11 +843,7 @@ function canAccessSheet(sheetName, access) {
     .trim()
     .toLowerCase();
 
-  const restrictedSheets = [
-    'Доступ',
-    'Бухгалтерия',
-    'База данных учеников'
-  ];
+  const restrictedSheets = ['Доступ'];
 
   if (access === 'full') {
     return true;
