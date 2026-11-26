@@ -20,9 +20,9 @@ const COURSE_FORM_LINKS = {
   french: 'https://docs.google.com/forms/d/e/1FAIpQLSfdiRbWSD0T5KXx0oT7pi9B65qwlXZXH0g-pGpbisnyketAiw/viewform',
   biology: 'https://docs.google.com/forms/d/e/1FAIpQLSddRnIm_yXH21Z4asGY7ylNY9I3g_oScgV_wu5Ufx_iL3He-w/viewform',
   español: 'https://docs.google.com/forms/d/e/1FAIpQLSfdiRbWSD0T5KXx0oT7pi9B65qwlXZXH0g-pGpbisnyketAiw/viewform',
-  chemistry: 'https://docs.google.com/forms/d/e/1FAIpQLScPwnne8jObiTRcYoOueho7FQtxhg5EVMEaLsuf8MVX43DsTg/viewform?usp=publish-editor',
-  english2: 'https://docs.google.com/spreadsheets/d/1glsFbjoquUo7WVyDuKl1q_UsTW_Htp2poTZoYoEmt-g/edit?gid=0#gid=0',
-  french2: 'https://docs.google.com/spreadsheets/d/1CWczRXL3Xzy2LZWoXSICbwzGHI0wIioK8cPhm2LA-3I/edit?gid=0#gid=0'
+  chemistry: 'https://docs.google.com/forms/d/e/1FAIpQLScPwnne8jObiTRcYoOueho7FQtxhg5EVMEaLsuf8MVX43DsTg/viewform',
+  english2: 'https://docs.google.com/forms/d/e/1FAIpQLSebcIT9xjTqcX0mo16St9aLbFdzNdsWA6ObkBWmdhMpu5jkTA/viewform',
+  french2: 'https://docs.google.com/forms/d/e/1FAIpQLSfjyBRKcFHYlKlr5tYPrQ1JnfyLcB4JCfYfacfTRISyqs0oVA/viewform'
 };
 
 // ================= ОСНОВНОЙ РОУТЕР (doGet) =================
