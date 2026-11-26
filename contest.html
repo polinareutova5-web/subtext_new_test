@@ -970,7 +970,7 @@
     <button id="zoom-out" title="Zoom out">−</button>
   </div>
 
-  <div id="top-actions"><button class="utility-btn" id="help-btn" type="button">❄ How to explore</button><button class="utility-btn" id="home-btn" type="button">⌂ Center map</button></div>
+  <div id="top-actions"><button class="utility-btn" id="rules-btn" type="button">📜 Правила конкурса</button><button class="utility-btn" id="help-btn" type="button">❄ How to explore</button><button class="utility-btn" id="home-btn" type="button">⌂ Center map</button></div>
   <nav id="social-links" aria-label="Subtext social media">
     <a class="social-link vk" href="https://vk.ru/club235482007" target="_blank" rel="noopener noreferrer">ВКонтакте · Подписаться</a>
     <a class="social-link telegram" href="https://t.me/subtext_platform" target="_blank" rel="noopener noreferrer">Telegram · Подписаться</a>
@@ -1027,6 +1027,25 @@
             ✨ Plant the tree &amp; send the letter
           </button>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="rules-modal" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+    <div class="modal">
+      <div class="form-card">
+        <button class="close-btn" data-close="rules-modal" aria-label="Закрыть">&times;</button>
+        <h2 id="rules-title">❄ Правила зимнего конкурса</h2>
+        <p class="subtitle">Winter Wish Contest от образовательной платформы Subtext</p>
+        <div class="rules-copy" style="color:#e8f0e8;font-size:.9rem;line-height:1.6;position:relative;z-index:1">
+          <p><strong>1. Как принять участие</strong><br>Нажмите красную кнопку «+» на карте и заполните форму письма Санте. Укажите имя, псевдоним или класс, напишите своё заветное желание, предложите оригинальную идею для урока английского языка и выберите оформление ёлочки.</p>
+          <p><strong>2. Требования к заявке</strong><br>Все поля формы обязательны. Текст должен быть самостоятельным, доброжелательным и соответствовать тематике зимнего конкурса. Не отправляйте чужие работы, рекламу, оскорбления или материалы, нарушающие права других людей.</p>
+          <p><strong>3. Публикация письма</strong><br>После отправки ёлочка с письмом появится на общей карте. Посетители сайта смогут увидеть указанное имя или псевдоним, пожелание и идею урока. Отправляя заявку, участник подтверждает, что согласен с такой публичной публикацией и обработкой данных в объёме, описанном в форме согласия.</p>
+          <p><strong>4. Конфиденциальность и безопасность</strong><br>Не указывайте фамилию, адрес, номер телефона, электронную почту, ссылки на личные страницы и другие сведения, по которым вас можно найти или связаться с вами. Для участия достаточно имени или псевдонима.</p>
+          <p><strong>5. Проверка заявок</strong><br>Организатор вправе не публиковать или удалить заявки с оскорбительным, рекламным, незаконным, чужим либо неподходящим содержанием. Если выбранное имя уже используется на карте, укажите другой псевдоним.</p>
+          <p><strong>6. Оценка работ</strong><br>Особое внимание уделяется оригинальности пожелания и творческой идее для урока английского языка. Сам факт размещения письма на карте означает участие, но не гарантирует получение приза или отдельного поощрения.</p>
+          <p><strong>7. Организационные вопросы</strong><br>Сроки подведения итогов, формат определения победителей и возможные призы объявляются организатором отдельно, если они предусмотрены.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -1317,7 +1336,7 @@
       document.getElementById('help-btn').addEventListener('click', () => showToast('Drag to travel · Use + / − to zoom · Tap a named tree to read its wish · Press the red + to plant yours'));
       document.getElementById('welcome-start').addEventListener('click', () => document.getElementById('welcome-note').classList.add('hidden'));
       document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') { formModal.classList.remove('open'); letterModal.classList.remove('open'); }
+        if (e.key === 'Escape') { formModal.classList.remove('open'); letterModal.classList.remove('open'); document.getElementById('rules-modal').classList.remove('open'); }
         if ((e.key === '+' || e.key === '=') && !e.target.matches('input,textarea')) zoomBy(1.15);
         if (e.key === '-' && !e.target.matches('input,textarea')) zoomBy(1 / 1.15);
       });
@@ -1492,7 +1511,10 @@
         });
       });
 
-      [formModal, letterModal].forEach(modal => {
+      const rulesModal = document.getElementById('rules-modal');
+      document.getElementById('rules-btn').addEventListener('click', () => rulesModal.classList.add('open'));
+
+      [formModal, letterModal, rulesModal].forEach(modal => {
         modal.addEventListener('click', e => {
           if (e.target === modal) modal.classList.remove('open');
         });
