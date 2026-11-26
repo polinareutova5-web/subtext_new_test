@@ -883,12 +883,32 @@
     .homework-hint { margin: .5rem 0; color: var(--muted); font-size: .86rem; line-height: 1.5; }
     .homework-file-name { min-height: 1.3rem; color: var(--accent); font-size: .9rem; overflow-wrap: anywhere; }
     .homework-submit-btn {
+      position: relative; isolation: isolate; overflow: hidden;
       display: block; width: 100%; margin-top: 1.2rem; padding: 1rem 1.2rem;
-      border: 0; border-radius: var(--radius-md); color: white; background: linear-gradient(110deg, var(--accent), #8b79c9);
-      font: inherit; font-weight: 700; cursor: pointer; transition: opacity .2s, transform .2s;
+      border: 1px solid rgba(255,255,255,.58); border-radius: var(--radius-md);
+      color: #fff; background: linear-gradient(115deg, rgba(91,166,220,.96) 0%, rgba(151,132,211,.96) 52%, rgba(220,139,180,.96) 100%);
+      box-shadow: 0 9px 22px rgba(116,119,190,.24), inset 0 1px 0 rgba(255,255,255,.48);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      font: inherit; font-weight: 750; letter-spacing: .01em; cursor: pointer;
+      text-shadow: 0 1px 2px rgba(53,54,105,.2);
+      transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
     }
-    .homework-submit-btn:hover { transform: translateY(-1px); }
-    .homework-submit-btn:disabled { opacity: .55; cursor: wait; transform: none; }
+    .homework-submit-btn::before {
+      content: ""; position: absolute; z-index: -1; inset: 0;
+      background: linear-gradient(105deg, transparent 18%, rgba(255,255,255,.3) 48%, transparent 72%);
+      transform: translateX(-110%); transition: transform .55s ease;
+    }
+    .homework-submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 13px 26px rgba(116,119,190,.3), inset 0 1px 0 rgba(255,255,255,.58);
+      filter: saturate(1.08);
+    }
+    .homework-submit-btn:hover::before { transform: translateX(110%); }
+    .homework-submit-btn:active { transform: translateY(0); }
+    .homework-submit-btn:disabled {
+      opacity: .82; cursor: wait; transform: none; filter: saturate(.75);
+      box-shadow: 0 5px 14px rgba(116,119,190,.16);
+    }
     .homework-upload-status { min-height: 1.4rem; margin: .9rem 0 0; color: var(--muted); line-height: 1.5; }
 
 
