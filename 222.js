@@ -15,6 +15,19 @@ function removeLegacyColumn_(sheet, headerName) {
   if (index >= 0) sheet.deleteColumn(index + 1);
 }
 
+// Удаляем только два явно устаревших листа шаблона.
+// Данные учеников и все остальные листы не затрагиваются.
+function removeUnusedTemplateSheets_(ss) {
+  const unusedNames = new Set(['поддержка', 'уведомления']);
+  ss.getSheets().forEach(sheet => {
+    const normalizedName = String(sheet.getName()).trim().toLowerCase().replace(/ё/g, 'е');
+    if (unusedNames.has(normalizedName)) {
+      if (ss.getSheets().length <= 1) return;
+      ss.deleteSheet(sheet);
+    }
+  });
+}
+
 function setupTemplateSheets() {
   if (!SPREADSHEET_ID || SPREADSHEET_ID.indexOf('ВСТАВЬТЕ_') === 0) throw new Error('Сначала укажите ID Google-таблицы в SPREADSHEET_ID.');
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -31,9 +44,10 @@ function setupTemplateSheets() {
   removeLegacyColumn_(ss.getSheetByName('Лист1'), 'progress');
   removeLegacyColumn_(ss.getSheetByName('Слоты'), 'contact');
   removeLegacyColumn_(ss.getSheetByName('ДЗ'), 'status');
+  removeUnusedTemplateSheets_(ss);
   ensureHomeworkColumns_();
   getHomeworkFolder_(); // Создаём общую папку и сохраняем её ID в свойствах проекта.
-  return 'Готово: листы созданы, папка «Домашние задания» подготовлена.';
+  return 'Готово: структура таблицы очищена от устаревших листов, папка «Домашние задания» подготовлена.';
 }
 
 // ================= ОСНОВНОЙ РОУТЕР (doGet) =================
